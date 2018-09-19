@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "server/FlyServer.h"
+#include "FlyServer.h"
 
 /**
  * flyDB，取名fly有两层含义：
@@ -14,10 +14,16 @@ int main() {
 
     FlyServer* flyServer = new FlyServer();
     if (NULL == flyServer) {
-        std::cout << "new FlyServer error" << std::endl;
-        exit(0);
+        std::cout << "error to new FlyServer!" << std::endl;
+        exit(1);
     }
+
     flyServer->init();
 
-    return 0;
+    while(true) {
+        std::cout << "flyDB> ";
+        std::string command;
+        std::cin >> command;
+        flyServer->dealWithCommand(command);
+    }
 }
