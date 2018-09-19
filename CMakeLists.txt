@@ -3,4 +3,4 @@ project(flyDB)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(flyDB main.cpp FlyServer.cpp FlyServer.h FlyDB.cpp FlyDB.h CommandEntry.cpp CommandEntry.h)
+add_executable(flyDB main.cpp server/FlyServer.cpp server/FlyServer.h server/FlyDB.cpp server/FlyDB.h server/CommandEntry.cpp server/CommandEntry.h)
