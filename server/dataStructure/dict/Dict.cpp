@@ -8,11 +8,11 @@
 Dict::Dict(class DictType* type) : type(type) {
     this->ht[0] = new HashTable(type);
     this->ht[1] = new HashTable(type);
-    this->rehashing = false;
+    this->rehashIndex = -1;
 }
 
 bool Dict::isRehashing() {
-    return this->rehashing;
+    return this->rehashIndex >= 0;
 }
 
 int Dict::addEntry(void* key, void* val) {
@@ -37,14 +37,23 @@ DictEntry* Dict::findEntry(void* key) {
         return NULL;
     }
 
-    HashTable* ht = this->ht[0];
+    // 先进行一步rehash
     if (isRehashing()) {
         // 进行一步rehash
         rehashStep(1);
-        ht = this->ht[1];
     }
 
-    return ht->findEntry(key);
+    // 先查找ht[0]
+    HashTable* ht = this->ht[0];
+    DictEntry* entry = ht->findEntry(key);
+
+    // 如果ht[0]中没有找到，并且正在进行rehash，则查找ht[1]
+    if (NULL == entry && isRehashing()) {
+        ht = this->ht[1];
+        entry = ht->findEntry(key);
+    }
+
+    return entry;
 }
 
 void* Dict::fetchValue(void* key) {

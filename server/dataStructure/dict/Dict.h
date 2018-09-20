@@ -22,7 +22,7 @@ public:
 private:
     std::array<class HashTable*, 2> ht;
     class DictType* type;
-    bool rehashing;
+    int rehashIndex;
 };
 
 
