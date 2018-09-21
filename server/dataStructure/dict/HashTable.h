@@ -7,22 +7,24 @@
 #include "DictEntry.h"
 #include "DictType.h"
 
-const int HASH_TABLE_INITIAL_SIZE = 4;
 
 class HashTable {
  public:
-    HashTable(class DictType* type);
+    HashTable(DictType* const type, int size);
     // < 0加入失败，> 0加入成功
     int addEntry(void* key, void* val);
     DictEntry* findEntry(void* key);
+    int deleteEntry(void* key);
     bool needExpand();
-    bool hasKey(void* key, DictType* type);
-    bool hasSameKey(void* key);
+    bool hasKey(void* key);
+    int getIndex(void* key);
 
-    class DictEntry** table;
+private:
+    DictEntry** table;
     unsigned long size;
     unsigned long used;
-    class DictType* type;
+    unsigned long mask;
+    DictType* const type;
 };
 
 

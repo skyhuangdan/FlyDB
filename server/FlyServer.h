@@ -12,6 +12,7 @@
 #include "CommandEntry.h"
 
 const int DB_NUM = 4;
+const std::string VERSION = "0.0.1";
 
 class FlyServer {
 public:
@@ -39,7 +40,7 @@ private:
     // 命令表
     std::map<std::string, CommandEntry*> commandTable;
     // 版本号
-    std::string version = "0.0.1";
+    std::string version = VERSION;
 };
 
 #endif //FLYDB_FLYSERVER_H

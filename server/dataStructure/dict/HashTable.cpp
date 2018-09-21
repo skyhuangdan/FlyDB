@@ -7,24 +7,31 @@
 
 const int REHASH_RATIO = 1;
 
-HashTable::HashTable(DictType* type) : type(type) {
-    this->table = new DictEntry*[4];
-    this->size = HASH_TABLE_INITIAL_SIZE;
+HashTable::HashTable(DictType* const type, int size) : type(type), size(size) {
+    this->table = new DictEntry*[size];
+    for (int i = 0; i < size; i++) {
+        this->table[i] = NULL;
+    }
     this->used = 0;
+    this->mask = size - 1;
+}
+
+int HashTable::getIndex(void* key) {
+    return this->type->hashFunction(key) & this->mask;
 }
 
 int HashTable::addEntry(void* key, void* val) {
-    int index = this->type->hashFunction(key);
+    int index = getIndex(key);
 
     // 判断是否已经有相同的键，如果有，则不能继续插入
-    if (hasSameKey(key)) {
+    if (hasKey(key)) {
         std::cout << "have same key in ht!" << key << std::endl;
         return -1;
     }
 
     // 将该entry插入头部
-    DictEntry* entry = new DictEntry(key, val);
-    struct DictEntry* head = this->table[index];
+    DictEntry* entry = new DictEntry(key, val, this->type);
+    DictEntry* head = this->table[index];
     this->table[index] = head;
     entry->next = head;
 
@@ -33,8 +40,8 @@ int HashTable::addEntry(void* key, void* val) {
 }
 
 DictEntry* HashTable::findEntry(void* key) {
-    int index = this->type->hashFunction(key);
-    struct DictEntry* node = this->table[index];
+    int index = getIndex(key);
+    DictEntry* node = this->table[index];
     while (node != NULL) {
         if (this->type->keyCompare(node->key, key) > 0) {
            return node;
@@ -44,7 +51,33 @@ DictEntry* HashTable::findEntry(void* key) {
     return NULL;
 }
 
-bool HashTable::hasSameKey(void* key) {
+int HashTable::deleteEntry(void* key) {
+    int index = getIndex(key);
+    DictEntry* node = this->table[index];
+    if (node != NULL) {
+        // 如果要删除的key是头结点
+        if (this->type->keyCompare(node, key)) {
+            free(node);
+            node = NULL;
+            return 1;
+        }
+
+        // 如果不是头结点，则查找链表中是否有该节点
+        while(node->next != NULL) {
+            if (this->type->keyCompare(node->key, key)) {
+                DictEntry* tmp = node->next;
+                node->next = node->next->next;
+                free(tmp);
+                return 1;
+            }
+            node = node->next;
+        }
+    }
+
+    return 0;
+}
+
+bool HashTable::hasKey(void* key) {
     return findEntry(key) != NULL;
 }
 

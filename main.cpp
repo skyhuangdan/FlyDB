@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include "server/FlyServer.h"
+#include "server/dataStructure/dict/Dict.h"
+#include "server/dataStructure/dict/test/TestDictType.h"
 
 /**
  * flyDB，取名fly有两层含义：
@@ -19,6 +21,8 @@ int main() {
     }
 
     flyServer->init();
+
+    Dict* dict = new Dict(new TestDictType());
 
     while(true) {
         std::cout << "flyDB> ";

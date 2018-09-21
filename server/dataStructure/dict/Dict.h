@@ -9,20 +9,23 @@
 #include <array>
 #include "HashTable.h"
 
+const int HASH_TABLE_INITIAL_SIZE = 4;
 
 class Dict {
 public:
-    Dict(class DictType* type);
+    Dict(DictType* const type);
     int addEntry(void* key, void* val);
     int replace(void* key, void* val);
     DictEntry* findEntry(void* key);
     void* fetchValue(void* key);
+    int deleteEntry(void* key);
     bool isRehashing();
-    void rehashStep(int steps);
+    void rehashOneStep(int steps);
+
 private:
     std::array<class HashTable*, 2> ht;
-    class DictType* type;
-    int rehashIndex;
+    DictType* const type;
+    int rehashIndex = -1;
 };
 
 
