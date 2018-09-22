@@ -23,6 +23,7 @@ public:
     int deleteEntry(void* key);
     bool isRehashing() const;
     void rehashSteps(int steps);
+    unsigned int getShrinkSize(unsigned int size, unsigned int used) const;
 
 private:
     std::array<class HashTable*, 2> ht;

@@ -95,6 +95,11 @@ int Dict::deleteEntry(void* key) {
     HashTable* ht = this->ht[0];
     int tmp = ht->deleteEntry(key);
     if (tmp > 0) {
+        if (ht->needShrink()) {
+            this->ht[1] = new HashTable(this->type, this->ht[0]->getShrinkSize());
+            this->rehashIndex = 0;
+            rehashSteps(1);
+        }
         return tmp;
     }
 
@@ -128,6 +133,7 @@ int Dict::replace(void* key, void* val) {
     entry->val = this->type->valDup(val);
     return 1;
 }
+
 
 void Dict::rehashSteps(int steps) {
     for (int i = 0; i < steps && !this->ht[0]->isEmpty(); i++) {

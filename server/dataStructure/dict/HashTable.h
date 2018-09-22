@@ -18,6 +18,8 @@ class HashTable {
     DictEntry* findEntry(void* key);
     int deleteEntry(void* key);
     bool needExpand() const;
+    bool needShrink() const;
+    unsigned int getShrinkSize() const;
     bool hasKey(void* key);
     unsigned int getIndex(void* key) const;
     unsigned long getSize() const;
