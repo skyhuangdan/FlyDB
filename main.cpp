@@ -29,7 +29,8 @@ int main() {
         dict->addEntry((void*)key, (void*)val);
     }
 
-    char* val2 = (char*)dict->fetchValue(key);
+    unsigned long cursor = dict->dictScan(2, 1, testScanProc, NULL);
+    std::cout << "next cursor: " << cursor << std::endl;
 
     while(true) {
         std::cout << "flyDB> ";

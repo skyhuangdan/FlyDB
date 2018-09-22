@@ -5,8 +5,8 @@
 #define FLYDB_HASHTABLE_H
 
 #include "DictEntry.h"
-#include "DictType.h"
-
+#include "Dict.h"
+#include "dictDef.h"
 
 class HashTable {
  public:
@@ -21,9 +21,12 @@ class HashTable {
     bool needShrink() const;
     bool hasKey(void* key);
     unsigned long getIndex(void* key) const;
+    unsigned long getIndex(unsigned long cursor) const;
     unsigned long getSize() const;
     unsigned long isEmpty() const;
-    DictEntry* getEntryBy(int index) const;
+    DictEntry* getEntryBy(unsigned long index) const;
+    void scanEntries(unsigned long index, scanProc proc, void* priv);
+    unsigned long getMask() const;
 
 private:
     DictEntry** table;

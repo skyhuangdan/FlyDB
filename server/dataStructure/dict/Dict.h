@@ -8,10 +8,7 @@
 #include <map>
 #include <array>
 #include "HashTable.h"
-
-const int HASH_TABLE_INITIAL_SIZE = 4;
-
-typedef void (*scanProc)(void* priv, void* key, void* val);
+#include "dictDef.h"
 
 class Dict {
 public:
@@ -25,9 +22,11 @@ public:
     int deleteEntry(void* key);
     bool isRehashing() const;
     void rehashSteps(int steps);
-    unsigned long dictScan(unsigned long index, scanProc proc, void* priv);
-
+    unsigned long dictScan(unsigned long cursor, int steps, scanProc proc, void *priv);
+    unsigned long dictScanOneStep(unsigned long cursor, scanProc proc, void *priv);
+    
 private:
+    unsigned long revBits(unsigned long bits);
     std::array<class HashTable*, 2> ht;
     DictType* const type;
     int rehashIndex = -1;

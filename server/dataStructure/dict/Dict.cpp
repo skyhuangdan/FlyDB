@@ -12,7 +12,7 @@ Dict::Dict(DictType* const type) : type(type) {
 }
 
 bool Dict::isRehashing() const {
-    return this->rehashIndex >= 0;
+   return this->rehashIndex >= 0;
 }
 
 int Dict::addEntry(void* key, void* val) {
@@ -157,7 +157,68 @@ void Dict::rehashSteps(int steps) {
     return;
 }
 
-unsigned long Dict::dictScan(unsigned long index, scanProc proc, void* priv) {
+unsigned long Dict::dictScan(unsigned long cursor, int steps, scanProc proc, void *priv) {
+    unsigned long nextCursor = cursor;
+    for (int i = 0; i < steps; i++) {
+        nextCursor = dictScanOneStep(nextCursor, proc, priv);
+        if (0 == nextCursor) {
+            return nextCursor;
+        }
+    }
+
+    return nextCursor;
+}
+
+unsigned long Dict::dictScanOneStep(unsigned long cursor, scanProc proc, void *priv) {
+    HashTable* ht0 = this->ht[0];
+    HashTable* ht1 = this->ht[1];
+    if (isRehashing()) {
+        // 确保ht0保存小的hashtable
+        if (ht0->getSize() > ht1->getSize()) {
+            HashTable* tmp = ht0;
+            ht0 = ht1;
+            ht1 = tmp;
+        }
+
+        // scan ht0
+        int index = ht0->getIndex(cursor);
+        ht0->scanEntries(index, proc, priv);
+
+        /* scan ht1: 由于ht1 > ht0, 所以ht1的大小是ht0的二倍
+         * 1.以ht0为基准去进行迭代遍历，函数最后进位的时候也是以ht0的坐标去递进(使用了ht0的掩码),
+         *   对于ht1中的遍历，只是查找ht1中与ht0中相对应的entry, 以防止遗漏
+         * 2.ht1中有两个连续的entry与ht0中的entry相对应, 因此需要scan ht1中两个entry,
+         *   例如ht0->size = 2, ht1->size = 4。那么ht0->mask = 0001, ht1->mask = 0011,
+         *   此时ht0中与index=0001相对应的ht1中的元素是0001和0011
+         * 3.ht1中的第二个scan就是将index的第二位置1, 以遍历相应的第二个桶
+         */
+        index = ht1->getIndex(cursor);
+        ht1->scanEntries(index, proc, priv);
+        index |= (~ht0->getMask() & ht1->getMask()) | (ht0->getMask() & ~ht1->getMask());
+        ht1->scanEntries(index, proc, priv);
+    } else {
+        // 如果未处于rehash, 只访问ht[0]就可以了
+        int index = ht0->getIndex(cursor);
+        ht0->scanEntries(index, proc, priv);
+    }
+
+    cursor |= ~ht0->getMask();
+    // 高位加1，向低位进位
+    cursor = revBits(cursor);
+    cursor++;
+    cursor = revBits(cursor);
+    return cursor;
+}
+
+// reserve bit位， 例如：b1 b2 b3 b4，经过reserve后变成b4 b3 b2 b1
+unsigned long Dict::revBits(unsigned long bits) {
+    unsigned long s = 8 * sizeof(bits); // bit size; must be power of 2
+    unsigned long mask = ~0;
+    while ((s >>= 1) > 0) {
+        mask ^= (mask << s);
+        bits = ((bits >> s) & mask) | ((bits << s) & ~mask);
+    }
+    return bits;
 }
 
 Dict::~Dict() {

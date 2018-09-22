@@ -4,7 +4,6 @@
 #include <iostream>
 #include "HashTable.h"
 
-const int NEED_REHASH_RATIO = 5;
 
 HashTable::HashTable(DictType* const type, unsigned long size) : type(type), size(size) {
     this->table = new DictEntry*[size];
@@ -21,6 +20,18 @@ HashTable::~HashTable() {
 
 unsigned long HashTable::getIndex(void* key) const {
     return this->type->hashFunction(key) & this->mask;
+}
+
+unsigned long HashTable::getIndex(unsigned long cursor) const {
+    return cursor & this->mask;
+}
+
+void HashTable::scanEntries(unsigned long index, scanProc proc, void* priv) {
+    DictEntry* entry = this->getEntryBy(index);
+    while (NULL != entry) {
+        proc(priv, entry->getKey(), entry->getVal());
+        entry = entry->next;
+    }
 }
 
 int HashTable::addEntry(void* key, void* val) {
@@ -103,6 +114,10 @@ unsigned long HashTable::isEmpty() const {
     return 0 == used;
 }
 
-DictEntry* HashTable::getEntryBy(int index) const {
+DictEntry* HashTable::getEntryBy(unsigned long index) const {
     return table[index];
+}
+
+unsigned long HashTable::getMask() const {
+    return mask;
 }

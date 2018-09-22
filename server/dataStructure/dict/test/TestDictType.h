@@ -5,8 +5,9 @@
 #ifndef FLYDB_TESTDICTTYPE_H
 #define FLYDB_TESTDICTTYPE_H
 
+#include "../dictDef.h"
 
-#include "../DictType.h"
+void testScanProc(void* priv, void* key, void* val);
 
 class TestDictType : public DictType {
 public:
@@ -17,6 +18,5 @@ public:
     void keyDestructor(void *key);
     void valDestructor(void *obj);
 };
-
 
 #endif //FLYDB_TESTDICTTYPE_H

@@ -6,7 +6,7 @@
 #define FLYDB_DICTENTRY_H
 
 #include <string>
-#include "DictType.h"
+#include "dictDef.h"
 
 struct DictEntry {
  public:
