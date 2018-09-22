@@ -91,24 +91,20 @@ int Dict::deleteEntry(void* key) {
         rehashSteps(1);
     }
 
-    // 如果从ht[0]中删除成功，返回
-    HashTable* ht = this->ht[0];
-    int tmp = ht->deleteEntry(key);
-    if (tmp > 0) {
-        if (ht->needShrink()) {
-            this->ht[1] = new HashTable(this->type, this->ht[0]->getShrinkSize());
+    // 先从ht[0]中尝试删除, 如果删除成功
+    if ((this->ht[0]->deleteEntry(key)) > 0) {
+        // 没有处于rehash过程中 && 需要缩容，则进行缩容
+        if (!isRehashing() && this->ht[0]->needShrink()) {
+            this->ht[1] = new HashTable(this->type, this->ht[0]->getSize() / 2);
             this->rehashIndex = 0;
             rehashSteps(1);
         }
-        return tmp;
-    }
-
-    // 如果ht[0]中删除失败，并且处于rehash过程中，则从ht[1]中尝试删除
-    if (isRehashing()) {
+        return 1;
+    } else if (isRehashing()) {  // 如果ht[0]中删除失败，并且正在rehash过程中, 则需要从ht[1]中进行查找删除
         return this->ht[1]->deleteEntry(key);
     }
 
-    return 1;
+    return -1;
 }
 
 int Dict::replace(void* key, void* val) {
@@ -133,7 +129,6 @@ int Dict::replace(void* key, void* val) {
     entry->val = this->type->valDup(val);
     return 1;
 }
-
 
 void Dict::rehashSteps(int steps) {
     for (int i = 0; i < steps && !this->ht[0]->isEmpty(); i++) {
@@ -160,6 +155,9 @@ void Dict::rehashSteps(int steps) {
     }
 
     return;
+}
+
+unsigned long Dict::dictScan(unsigned long index, scanProc proc, void* priv) {
 }
 
 Dict::~Dict() {

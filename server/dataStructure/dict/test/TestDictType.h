@@ -10,7 +10,7 @@
 
 class TestDictType : public DictType {
 public:
-    unsigned int hashFunction(const void *key);
+    unsigned long hashFunction(const void *key);
     void* keyDup(const void *key);
     void* valDup(const void *obj);
     int keyCompare(const void *key1, const void *key2);

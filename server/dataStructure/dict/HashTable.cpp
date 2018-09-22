@@ -19,7 +19,7 @@ HashTable::~HashTable() {
     delete this->table;
 }
 
-unsigned int HashTable::getIndex(void* key) const {
+unsigned long HashTable::getIndex(void* key) const {
     return this->type->hashFunction(key) & this->mask;
 }
 
@@ -93,15 +93,6 @@ bool HashTable::needExpand() const {
 
 bool HashTable::needShrink() const {
     return this->used * NEED_REHASH_RATIO <= this->size;
-}
-
-unsigned int HashTable::getShrinkSize() const {
-    int temp = this->size / 2;
-    while (temp > this->used) {
-        temp = temp / 2;
-    }
-
-    return temp * 2;
 }
 
 unsigned long HashTable::getSize() const {

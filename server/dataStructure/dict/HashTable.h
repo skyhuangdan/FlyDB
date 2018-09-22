@@ -19,9 +19,8 @@ class HashTable {
     int deleteEntry(void* key);
     bool needExpand() const;
     bool needShrink() const;
-    unsigned int getShrinkSize() const;
     bool hasKey(void* key);
-    unsigned int getIndex(void* key) const;
+    unsigned long getIndex(void* key) const;
     unsigned long getSize() const;
     unsigned long isEmpty() const;
     DictEntry* getEntryBy(int index) const;

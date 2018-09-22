@@ -7,7 +7,7 @@
 
 class DictType {
 public:
-    virtual unsigned int hashFunction(const void *key) = 0;
+    virtual unsigned long hashFunction(const void *key) = 0;
     virtual void* keyDup(const void *key) = 0;
     virtual void* valDup(const void *obj) = 0;
     virtual int keyCompare(const void *key1, const void *key2) = 0;

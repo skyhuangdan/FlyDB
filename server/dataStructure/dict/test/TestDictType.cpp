@@ -5,7 +5,7 @@
 #include <cstring>
 #include "TestDictType.h"
 
-unsigned int TestDictType::hashFunction(const void *key) {
+unsigned long TestDictType::hashFunction(const void *key) {
     return 1;
 }
 

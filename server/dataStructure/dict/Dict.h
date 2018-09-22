@@ -11,6 +11,8 @@
 
 const int HASH_TABLE_INITIAL_SIZE = 4;
 
+typedef void (*scanProc)(void* priv, void* key, void* val);
+
 class Dict {
 public:
     Dict(DictType* const type);
@@ -23,7 +25,7 @@ public:
     int deleteEntry(void* key);
     bool isRehashing() const;
     void rehashSteps(int steps);
-    unsigned int getShrinkSize(unsigned int size, unsigned int used) const;
+    unsigned long dictScan(unsigned long index, scanProc proc, void* priv);
 
 private:
     std::array<class HashTable*, 2> ht;
