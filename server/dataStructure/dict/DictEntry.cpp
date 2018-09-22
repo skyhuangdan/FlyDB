@@ -12,13 +12,13 @@ DictEntry::~DictEntry() {
 }
 
 void *DictEntry::getKey() const {
-    return key;
+    return this->key;
 }
 
 void *DictEntry::getVal() const {
-    return val;
+    return this->val;
 }
 
 void DictEntry::setVal(void *val) {
-    DictEntry::val = val;
+    this->val = type->valDup(val);
 }

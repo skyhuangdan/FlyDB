@@ -93,9 +93,8 @@ int HashTable::deleteEntry(void* key) {
     return -1;
 }
 
-
 bool HashTable::hasKey(void* key) {
-    return findEntry(key) != NULL;
+    return this->findEntry(key) != NULL;
 }
 
 bool HashTable::needExpand() const {
@@ -107,17 +106,17 @@ bool HashTable::needShrink() const {
 }
 
 unsigned long HashTable::getSize() const {
-    return size;
+    return this->size;
 }
 
-unsigned long HashTable::isEmpty() const {
-    return 0 == used;
+bool HashTable::isEmpty() const {
+    return 0 == this->used;
 }
 
 DictEntry* HashTable::getEntryBy(unsigned long index) const {
-    return table[index];
+    return this->table[index];
 }
 
 unsigned long HashTable::getMask() const {
-    return mask;
+    return this->mask;
 }

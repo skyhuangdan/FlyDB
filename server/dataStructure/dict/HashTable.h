@@ -13,7 +13,6 @@ class HashTable {
     HashTable(DictType* const type, unsigned long size);
     virtual ~HashTable();
 
-    // < 0加入失败，> 0加入成功
     int addEntry(void* key, void* val);
     DictEntry* findEntry(void* key);
     int deleteEntry(void* key);
@@ -23,7 +22,7 @@ class HashTable {
     unsigned long getIndex(void* key) const;
     unsigned long getIndex(unsigned long cursor) const;
     unsigned long getSize() const;
-    unsigned long isEmpty() const;
+    bool isEmpty() const;
     DictEntry* getEntryBy(unsigned long index) const;
     void scanEntries(unsigned long index, scanProc proc, void* priv);
     unsigned long getMask() const;
