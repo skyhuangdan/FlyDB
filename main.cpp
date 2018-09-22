@@ -23,6 +23,13 @@ int main() {
     flyServer->init();
 
     Dict* dict = new Dict(new TestDictType());
+    char *key = "key";
+    char *val = "val";
+    for (int i = 0; i < 5; i++) {
+        dict->addEntry((void*)key, (void*)val);
+    }
+
+    char* val2 = (char*)dict->fetchValue(key);
 
     while(true) {
         std::cout << "flyDB> ";

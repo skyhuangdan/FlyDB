@@ -14,13 +14,15 @@ const int HASH_TABLE_INITIAL_SIZE = 4;
 class Dict {
 public:
     Dict(DictType* const type);
+    virtual ~Dict();
+
     int addEntry(void* key, void* val);
     int replace(void* key, void* val);
     DictEntry* findEntry(void* key);
     void* fetchValue(void* key);
     int deleteEntry(void* key);
-    bool isRehashing();
-    void rehashOneStep(int steps);
+    bool isRehashing() const;
+    void rehashSteps(int steps);
 
 private:
     std::array<class HashTable*, 2> ht;

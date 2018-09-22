@@ -10,14 +10,19 @@
 
 class HashTable {
  public:
-    HashTable(DictType* const type, int size);
+    HashTable(DictType* const type, unsigned long size);
+    virtual ~HashTable();
+
     // < 0加入失败，> 0加入成功
     int addEntry(void* key, void* val);
     DictEntry* findEntry(void* key);
     int deleteEntry(void* key);
-    bool needExpand();
+    bool needExpand() const;
     bool hasKey(void* key);
-    int getIndex(void* key);
+    unsigned int getIndex(void* key) const;
+    unsigned long getSize() const;
+    unsigned long isEmpty() const;
+    DictEntry* getEntryBy(int index) const;
 
 private:
     DictEntry** table;

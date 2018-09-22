@@ -7,11 +7,11 @@
 
 Dict::Dict(DictType* const type) : type(type) {
     this->ht[0] = new HashTable(type, HASH_TABLE_INITIAL_SIZE);
-    this->ht[1] = new HashTable(type, HASH_TABLE_INITIAL_SIZE);
+    this->ht[1] = NULL;
     this->rehashIndex = -1;
 }
 
-bool Dict::isRehashing() {
+bool Dict::isRehashing() const {
     return this->rehashIndex >= 0;
 }
 
@@ -22,16 +22,24 @@ int Dict::addEntry(void* key, void* val) {
         return -1;
     }
 
-    HashTable* ht = this->ht[0];
-    if (isRehashing()) {
+    int res = 0;
+    if (isRehashing()) {  // 如果正在rehash
         // 进行一步rehash
-        rehashOneStep(1);
-        ht = this->ht[1];
-    } else {
-        // todo: 判断是否需要扩容
+        rehashSteps(1);
+        // 插入操作
+        res = this->ht[1]->addEntry(key, val);
+    } else {  // 如果没在rehash, 执行插入操作；并判断是否需要扩容
+        if ((res = this->ht[0]->addEntry(key, val)) > 0) {
+            if (this->ht[0]->needExpand()) {
+                this->ht[1] = new HashTable(this->type, this->ht[0]->getSize() * 2);
+                this->rehashIndex = 0;
+                rehashSteps(1);
+            }
+        }
     }
 
-    return ht->addEntry(key, val);
+    // 如果插入成功，判断是否需要rehash
+    return res;
 }
 
 DictEntry* Dict::findEntry(void* key) {
@@ -41,7 +49,7 @@ DictEntry* Dict::findEntry(void* key) {
 
     // 先进行一步rehash
     if (isRehashing()) {
-        rehashOneStep(1);
+        rehashSteps(1);
     }
 
     // 先查找ht[0]
@@ -65,7 +73,7 @@ void* Dict::fetchValue(void* key) {
 
     // 先进行一步rehash
     if (isRehashing()) {
-        rehashOneStep(1);
+        rehashSteps(1);
     }
 
     DictEntry* entry = findEntry(key);
@@ -75,12 +83,12 @@ void* Dict::fetchValue(void* key) {
 int Dict::deleteEntry(void* key) {
     if (NULL == key) {
         std::cout << "key or value is NULL, key = " << key << std::endl;
-        return NULL;
+        return -1;
     }
 
     // 先进行一步rehash
     if (isRehashing()) {
-        rehashOneStep(1);
+        rehashSteps(1);
     }
 
     // 如果从ht[0]中删除成功，返回
@@ -95,7 +103,7 @@ int Dict::deleteEntry(void* key) {
         return this->ht[1]->deleteEntry(key);
     }
 
-    return 0;
+    return 1;
 }
 
 int Dict::replace(void* key, void* val) {
@@ -107,11 +115,11 @@ int Dict::replace(void* key, void* val) {
 
     // 先进行一步rehash
     if (isRehashing()) {
-        rehashOneStep(1);
+        rehashSteps(1);
     }
 
     // 先执行插入步骤，如果插入成功，说明之前没有该key，直接返回成功
-    if(addEntry(key, val) > 0) {
+    if (addEntry(key, val) > 0) {
         return 1;
     }
 
@@ -121,6 +129,36 @@ int Dict::replace(void* key, void* val) {
     return 1;
 }
 
-void Dict::rehashOneStep(int steps) {
+void Dict::rehashSteps(int steps) {
+    for (int i = 0; i < steps && !this->ht[0]->isEmpty(); i++) {
+        // 找到存在元素的index
+        DictEntry* entry = NULL;
+        while (NULL == entry && this->rehashIndex < this->ht[0]->getSize()) {
+            entry = this->ht[0]->getEntryBy(this->rehashIndex++);
+        }
+
+        // 对该index下的链表中所有元素进行迁移
+        while (entry != NULL) {
+            this->ht[1]->addEntry(entry->getKey(), entry->getVal());
+            this->ht[0]->deleteEntry(entry->getKey());
+            entry = entry->next;
+        }
+    }
+
+    // 已经rehash完毕
+    if (this->ht[0]->isEmpty()) {
+        delete this->ht[0];
+        this->ht[0] = this->ht[1];
+        this->ht[1] = NULL;
+        this->rehashIndex = -1;
+    }
+
     return;
+}
+
+Dict::~Dict() {
+    delete this->ht[0];
+    if (isRehashing()) {
+        delete this->ht[1];
+    }
 }

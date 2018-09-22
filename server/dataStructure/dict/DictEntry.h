@@ -12,7 +12,6 @@ struct DictEntry {
  public:
     DictEntry(void* key, void* val, DictType* const type);
     virtual ~DictEntry();
-
     void *getKey() const;
     void *getVal() const;
     void setVal(void *val);
