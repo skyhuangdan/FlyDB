@@ -22,14 +22,14 @@ int main() {
 
     flyServer->init();
 
-    Dict* dict = new Dict(new TestDictType());
+    Dict* dict = new Dict(TestDictType());
     char *key = "key";
     char *val = "val";
     for (int i = 0; i < 5; i++) {
         dict->addEntry((void*)key, (void*)val);
     }
 
-    unsigned long cursor = dict->dictScan(2, 1, testScanProc, NULL);
+    unsigned long cursor = dict->dictScan(0, 5, testScanProc, NULL);
     std::cout << "next cursor: " << cursor << std::endl;
 
     while(true) {

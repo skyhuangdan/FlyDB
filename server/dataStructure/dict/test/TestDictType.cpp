@@ -6,25 +6,25 @@
 #include <iostream>
 #include "TestDictType.h"
 
-unsigned long TestDictType::hashFunction(const void *key) {
+unsigned long TestDictType::hashFunction(const void *key) const {
     return 0;
 }
 
-void* TestDictType::keyDup(const void *key) {
+void* TestDictType::keyDup(const void *key) const {
 }
 
-void* TestDictType::valDup(const void *obj) {
+void* TestDictType::valDup(const void *obj) const {
 }
 
-int TestDictType::keyCompare(const void *key1, const void *key2) {
+int TestDictType::keyCompare(const void *key1, const void *key2) const {
     // return strcmp((const char*)key1, (const char*)key2);
     return -1;
 }
 
-void TestDictType::keyDestructor(void *key) {
+void TestDictType::keyDestructor(void *key) const {
 }
 
-void TestDictType::valDestructor(void *obj) {
+void TestDictType::valDestructor(void *obj) const {
 }
 
 void testScanProc(void* priv, void* key, void* val) {

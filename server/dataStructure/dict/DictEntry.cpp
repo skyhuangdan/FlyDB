@@ -4,11 +4,11 @@
 
 #include "DictEntry.h"
 
-DictEntry::DictEntry(void *key, void *val, DictType* const type) : key(key), val(val), type(type) {}
+DictEntry::DictEntry(void *key, void *val, const DictType& type) : key(key), val(val), type(type) {}
 
 DictEntry::~DictEntry() {
-    type->keyDestructor(this->key);
-    type->valDestructor(this->val);
+    type.keyDestructor(this->key);
+    type.valDestructor(this->val);
 }
 
 void *DictEntry::getKey() const {
@@ -20,5 +20,5 @@ void *DictEntry::getVal() const {
 }
 
 void DictEntry::setVal(void *val) {
-    this->val = type->valDup(val);
+    this->val = type.valDup(val);
 }

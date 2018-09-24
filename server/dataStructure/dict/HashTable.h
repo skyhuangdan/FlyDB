@@ -6,11 +6,11 @@
 
 #include "DictEntry.h"
 #include "Dict.h"
-#include "dictDef.h"
+#include "DictDef.h"
 
 class HashTable {
  public:
-    HashTable(DictType* const type, unsigned long size);
+    HashTable(const DictType& type, unsigned long size);
     virtual ~HashTable();
 
     int addEntry(void* key, void* val);
@@ -32,7 +32,7 @@ private:
     unsigned long size;
     unsigned long used;
     unsigned long mask;
-    DictType* const type;
+    const DictType& type;
 };
 
 

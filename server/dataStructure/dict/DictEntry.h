@@ -6,11 +6,11 @@
 #define FLYDB_DICTENTRY_H
 
 #include <string>
-#include "dictDef.h"
+#include "DictType.h"
 
 struct DictEntry {
  public:
-    DictEntry(void* key, void* val, DictType* const type);
+    DictEntry(void* key, void* val, const DictType& type);
     virtual ~DictEntry();
     void *getKey() const;
     void *getVal() const;
@@ -19,7 +19,7 @@ struct DictEntry {
     void* key;
     void* val;
     DictEntry* next;
-    DictType* const type;
+    const DictType& type;
 
 };
 

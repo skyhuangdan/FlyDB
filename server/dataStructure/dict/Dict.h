@@ -8,11 +8,11 @@
 #include <map>
 #include <array>
 #include "HashTable.h"
-#include "dictDef.h"
+#include "DictDef.h"
 
 class Dict {
 public:
-    Dict(DictType* const type);
+    Dict(const DictType& type);
     virtual ~Dict();
 
     int addEntry(void* key, void* val);
@@ -28,7 +28,7 @@ public:
 private:
     unsigned long revBits(unsigned long bits);
     std::array<class HashTable*, 2> ht;
-    DictType* const type;
+    const DictType& type;
     int rehashIndex = -1;
 };
 
