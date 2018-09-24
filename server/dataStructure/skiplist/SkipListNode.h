@@ -13,11 +13,11 @@ class SkipListNode;
 struct SkipListLevel {
     SkipListLevel() {
     };
-
     SkipListLevel(unsigned int span, SkipListNode* next) {
         this->span = span;
         this->next = next;
     }
+
     unsigned int span;
     SkipListNode* next;
 };
@@ -25,6 +25,12 @@ struct SkipListLevel {
 class SkipListNode {
 public:
     SkipListNode(const SkipListType& type, void* obj, double score, unsigned int level);
+    void *getObj() const;
+    double getScore() const;
+    SkipListNode *getPrevious() const;
+    void setPrevious(SkipListNode *previous);
+    const SkipListType &getType() const;
+    std::vector<SkipListLevel> &getLevels();
 
 private:
     void* obj;

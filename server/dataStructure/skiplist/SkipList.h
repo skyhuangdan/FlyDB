@@ -8,6 +8,7 @@
 
 #include "SkipListNode.h"
 
+// 按小-->大的顺序排序
 class SkipList {
 public:
     SkipList(SkipListType& type);
@@ -15,6 +16,8 @@ public:
     SkipListNode *getTailer() const;
     unsigned long getLength() const;
     int getLevel() const;
+    int insertNode(double score, void* obj);
+    unsigned int randomLevel();
 
 private:
     SkipListNode *header, *tailer;
