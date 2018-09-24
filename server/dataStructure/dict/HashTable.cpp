@@ -5,9 +5,9 @@
 #include "HashTable.h"
 
 
-HashTable::HashTable(const DictType& type, unsigned long size) : type(type), size(size) {
+HashTable::HashTable(const DictType& type, uint32_t size) : type(type), size(size) {
     this->table = new DictEntry*[size];
-    for (int i = 0; i < size; i++) {
+    for (uint32_t i = 0; i < size; i++) {
         this->table[i] = NULL;
     }
     this->used = 0;
@@ -18,15 +18,15 @@ HashTable::~HashTable() {
     delete this->table;
 }
 
-unsigned long HashTable::getIndex(void* key) const {
+uint32_t HashTable::getIndex(void* key) const {
     return this->type.hashFunction(key) & this->mask;
 }
 
-unsigned long HashTable::getIndex(unsigned long cursor) const {
+uint32_t HashTable::getIndex(uint32_t cursor) const {
     return cursor & this->mask;
 }
 
-void HashTable::scanEntries(unsigned long index, scanProc proc, void* priv) {
+void HashTable::scanEntries(uint32_t index, scanProc proc, void* priv) {
     DictEntry* entry = this->getEntryBy(index);
     while (NULL != entry) {
         proc(priv, entry->getKey(), entry->getVal());
@@ -35,7 +35,7 @@ void HashTable::scanEntries(unsigned long index, scanProc proc, void* priv) {
 }
 
 int HashTable::addEntry(void* key, void* val) {
-    int index = getIndex(key);
+    uint32_t index = getIndex(key);
 
     // 判断是否已经有相同的键，如果有，则不能继续插入
     if (hasKey(key)) {
@@ -54,7 +54,7 @@ int HashTable::addEntry(void* key, void* val) {
 }
 
 DictEntry* HashTable::findEntry(void* key) {
-    int index = getIndex(key);
+    uint32_t index = getIndex(key);
     DictEntry* node = this->table[index];
     while (node != NULL) {
         if (this->type.keyCompare(node->key, key) > 0) {
@@ -66,7 +66,7 @@ DictEntry* HashTable::findEntry(void* key) {
 }
 
 int HashTable::deleteEntry(void* key) {
-    int index = getIndex(key);
+    uint32_t index = getIndex(key);
     DictEntry* node = this->table[index];
     if (node != NULL) {
         // 如果要删除的key是头结点
@@ -105,7 +105,7 @@ bool HashTable::needShrink() const {
     return this->used * NEED_REHASH_RATIO <= this->size;
 }
 
-unsigned long HashTable::getSize() const {
+uint32_t HashTable::getSize() const {
     return this->size;
 }
 
@@ -113,10 +113,10 @@ bool HashTable::isEmpty() const {
     return 0 == this->used;
 }
 
-DictEntry* HashTable::getEntryBy(unsigned long index) const {
+DictEntry* HashTable::getEntryBy(uint32_t index) const {
     return this->table[index];
 }
 
-unsigned long HashTable::getMask() const {
+uint32_t HashTable::getMask() const {
     return this->mask;
 }

@@ -19,17 +19,17 @@ SkipListNode *SkipList::getTailer() const {
     return tailer;
 }
 
-unsigned long SkipList::getLength() const {
+uint32_t SkipList::getLength() const {
     return length;
 }
 
-int SkipList::getLevel() const {
+uint32_t SkipList::getLevel() const {
     return level;
 }
 
-int SkipList::insertNode(double score, void* obj) {
+void SkipList::insertNode(double score, void* obj) {
     std::vector<SkipListNode*> forwards;
-    std::vector<unsigned int> rank(level+1, 0); // 第level+1个作为哨兵
+    std::vector<uint32_t > rank(level+1, 0); // 第level+1个作为哨兵
 
     /*
      * **是待插入点node， 插入前节点是prevNode[level]
@@ -46,7 +46,7 @@ int SkipList::insertNode(double score, void* obj) {
      */
     // forwards代表待插入点的前一个节点, rank则代表该节点在跳跃表中的排序
     SkipListNode* temp = this->header;
-    for (int i = this->level-1; i >= 0; i--) {
+    for (uint32_t i = this->level-1; i >= 0; i--) {
         rank[i] = rank[i+1];                  // 哨兵用于这里
         SkipListNode* next = temp->getLevels()[i].next;
         while (NULL != next && (next->getScore() < score
@@ -59,16 +59,16 @@ int SkipList::insertNode(double score, void* obj) {
     }
 
     // 假如level > 跳跃表当前level, 初始化新增加的几个层，用于后面计算
-    for (int i = this->level; i < level; i) {
+    for (uint32_t i = this->level; i < level; i) {
         forwards[i] = header;
         rank[i] = 0;
         header->getLevels()[i].span = this->length;
     }
 
     // 实际的插入操作，并计算相应节点的span
-    unsigned int level = randomLevel();
+    uint32_t level = randomLevel();
     SkipListNode *nodeToInsert = new SkipListNode(this->type, obj, score, level);
-    for (int i = 0; i < level; i++) {
+    for (uint32_t i = 0; i < level; i++) {
         nodeToInsert->getLevels()[i].next = forwards[i]->getLevels()[i].next;
         forwards[i]->getLevels()[i].next = nodeToInsert;
         nodeToInsert->getLevels()[i].span = forwards[i]->getLevels()[i].span - (rank[0] - rank[i]);
@@ -82,7 +82,7 @@ int SkipList::insertNode(double score, void* obj) {
     }
 
     // 如果level小于跳跃表的level，将没有进行插入的level的前节点span+1
-    for (int i = level; i < this->level; i++) {
+    for (uint32_t i = level; i < this->level; i++) {
         forwards[i]->getLevels()[i].span += 1;
     }
 
@@ -90,12 +90,17 @@ int SkipList::insertNode(double score, void* obj) {
     this->length++;
 }
 
-unsigned int SkipList::randomLevel() {
-    uint64_t rand = random() % (2 << SKIP_LIST_MAX_LEVEL) + 1;
-    int order = 0;
-    while (rand >= (2 << order++));
+uint32_t SkipList::randomLevel() {
+    // todo : 确认这里生成的是否是32位随机数
+    uint32_t rand = random() % (2 << SKIP_LIST_MAX_LEVEL);
+    uint32_t order = 0;
+    while (rand >= (2<<order++)-1);
 
     return 2 << (order-1);
+}
+
+int SkipList::deleteNode(double score, void* obj) {
+
 }
 
 SkipList::~SkipList() {

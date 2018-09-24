@@ -21,15 +21,15 @@ public:
     void* fetchValue(void* key);
     int deleteEntry(void* key);
     bool isRehashing() const;
-    void rehashSteps(int steps);
-    unsigned long dictScan(unsigned long cursor, int steps, scanProc proc, void *priv);
-    unsigned long dictScanOneStep(unsigned long cursor, scanProc proc, void *priv);
+    void rehashSteps(uint32_t steps);
+    uint32_t dictScan(uint32_t cursor, uint32_t steps, scanProc proc, void *priv);
+    uint32_t dictScanOneStep(uint32_t cursor, scanProc proc, void *priv);
     
 private:
-    unsigned long revBits(unsigned long bits);
+    uint32_t revBits(uint32_t bits);
     std::array<class HashTable*, 2> ht;
     const DictType& type;
-    int rehashIndex = -1;
+    int64_t rehashIndex = -1;
 };
 
 

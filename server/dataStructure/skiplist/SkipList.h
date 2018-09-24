@@ -13,15 +13,16 @@ public:
     virtual ~SkipList();
     SkipListNode *getHeader() const;
     SkipListNode *getTailer() const;
-    unsigned long getLength() const;
-    int getLevel() const;
-    int insertNode(double score, void* obj);
-    unsigned int randomLevel();
+    uint32_t getLength() const;
+    uint32_t getLevel() const;
+    void insertNode(double score, void* obj);
+    int deleteNode(double score, void* obj);
 
 private:
+    uint32_t randomLevel();
     SkipListNode *header, *tailer;
-    unsigned long length;
-    int level;
+    uint32_t length;
+    uint32_t level;
     SkipListType& type;
 };
 

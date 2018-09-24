@@ -130,8 +130,8 @@ int Dict::replace(void* key, void* val) {
     return 1;
 }
 
-void Dict::rehashSteps(int steps) {
-    for (int i = 0; i < steps && !this->ht[0]->isEmpty(); i++) {
+void Dict::rehashSteps(uint32_t steps) {
+    for (uint32_t i = 0; i < steps && !this->ht[0]->isEmpty(); i++) {
         // 找到存在元素的index
         DictEntry* entry = NULL;
         while (NULL == entry && this->rehashIndex < this->ht[0]->getSize()) {
@@ -157,9 +157,9 @@ void Dict::rehashSteps(int steps) {
     return;
 }
 
-unsigned long Dict::dictScan(unsigned long cursor, int steps, scanProc proc, void *priv) {
-    unsigned long nextCursor = cursor;
-    for (int i = 0; i < steps; i++) {
+uint32_t Dict::dictScan(uint32_t cursor, uint32_t steps, scanProc proc, void *priv) {
+    uint32_t nextCursor = cursor;
+    for (uint32_t i = 0; i < steps; i++) {
         nextCursor = dictScanOneStep(nextCursor, proc, priv);
         if (0 == nextCursor) {
             return nextCursor;
@@ -169,7 +169,7 @@ unsigned long Dict::dictScan(unsigned long cursor, int steps, scanProc proc, voi
     return nextCursor;
 }
 
-unsigned long Dict::dictScanOneStep(unsigned long cursor, scanProc proc, void *priv) {
+uint32_t Dict::dictScanOneStep(uint32_t cursor, scanProc proc, void *priv) {
     HashTable* ht0 = this->ht[0];
     HashTable* ht1 = this->ht[1];
     if (isRehashing()) {
@@ -211,9 +211,9 @@ unsigned long Dict::dictScanOneStep(unsigned long cursor, scanProc proc, void *p
 }
 
 // reserve bit位， 例如：b1 b2 b3 b4，经过reserve后变成b4 b3 b2 b1
-unsigned long Dict::revBits(unsigned long bits) {
-    unsigned long s = 8 * sizeof(bits); // bit size; must be power of 2
-    unsigned long mask = ~0;
+uint32_t Dict::revBits(uint32_t bits) {
+    uint32_t s = 8 * sizeof(bits); // bit size; must be power of 2
+    uint32_t mask = ~0;
     while ((s >>= 1) > 0) {
         mask ^= (mask << s);
         bits = ((bits >> s) & mask) | ((bits << s) & ~mask);

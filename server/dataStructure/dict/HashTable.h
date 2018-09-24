@@ -10,7 +10,7 @@
 
 class HashTable {
  public:
-    HashTable(const DictType& type, unsigned long size);
+    HashTable(const DictType& type, uint32_t size);
     virtual ~HashTable();
 
     int addEntry(void* key, void* val);
@@ -19,19 +19,19 @@ class HashTable {
     bool needExpand() const;
     bool needShrink() const;
     bool hasKey(void* key);
-    unsigned long getIndex(void* key) const;
-    unsigned long getIndex(unsigned long cursor) const;
-    unsigned long getSize() const;
+    uint32_t getIndex(void* key) const;
+    uint32_t getIndex(uint32_t cursor) const;
+    uint32_t getSize() const;
     bool isEmpty() const;
-    DictEntry* getEntryBy(unsigned long index) const;
-    void scanEntries(unsigned long index, scanProc proc, void* priv);
-    unsigned long getMask() const;
+    DictEntry* getEntryBy(uint32_t index) const;
+    void scanEntries(uint32_t index, scanProc proc, void* priv);
+    uint32_t getMask() const;
 
 private:
     DictEntry** table;
-    unsigned long size;
-    unsigned long used;
-    unsigned long mask;
+    uint32_t size;
+    uint32_t used;
+    uint32_t mask;
     const DictType& type;
 };
 
