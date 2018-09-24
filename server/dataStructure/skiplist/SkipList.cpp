@@ -97,3 +97,7 @@ unsigned int SkipList::randomLevel() {
 
     return 2 << (order-1);
 }
+
+SkipList::~SkipList() {
+    delete header;
+}

@@ -35,3 +35,8 @@ const SkipListType &SkipListNode::getType() const {
 void SkipListNode::setPrevious(SkipListNode *previous) {
     SkipListNode::previous = previous;
 }
+
+SkipListNode::~SkipListNode() {
+    type.destructor(this->obj);
+    delete levels[0].next;
+}

@@ -13,6 +13,7 @@ public:
      */
     virtual int compare(const void* val1, const void* val2) const = 0;
     virtual void* dup(const void* val) const = 0;
+    virtual void destructor(void *obj) const = 0;
 };
 
 #endif //FLYDB_SKIPLISTTYPE_H

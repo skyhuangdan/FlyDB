@@ -4,14 +4,13 @@
 
 #ifndef FLYDB_SKIPLIST_H
 #define FLYDB_SKIPLIST_H
-
-
 #include "SkipListNode.h"
 
 // 按小-->大的顺序排序
 class SkipList {
 public:
     SkipList(SkipListType& type);
+    virtual ~SkipList();
     SkipListNode *getHeader() const;
     SkipListNode *getTailer() const;
     unsigned long getLength() const;
