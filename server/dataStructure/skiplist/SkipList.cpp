@@ -91,12 +91,13 @@ void SkipList::insertNode(double score, void* obj) {
 }
 
 uint32_t SkipList::randomLevel() {
-    // todo : 确认这里生成的是否是32位随机数
-    uint32_t rand = random() % (2 << SKIP_LIST_MAX_LEVEL);
-    uint32_t order = 0;
-    while (rand >= (2<<order++)-1);
-
-    return 2 << (order-1);
+    uint32_t maxNum = 2<<(SKIP_LIST_MAX_LEVEL - 1);
+    uint32_t rand = random()%maxNum + 1;
+    uint8_t power = 0;
+    for (uint32_t num = maxNum; rand <= num; num = num >> 1) {
+        power++;
+    }
+    return power;
 }
 
 int SkipList::deleteNode(double score, void* obj) {
