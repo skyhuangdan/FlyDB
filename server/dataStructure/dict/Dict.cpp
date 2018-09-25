@@ -181,7 +181,7 @@ uint32_t Dict::dictScanOneStep(uint32_t cursor, scanProc proc, void *priv) {
         }
 
         // scan ht0
-        int index = ht0->getIndex(cursor);
+        uint32_t index = ht0->getIndex(cursor);
         ht0->scanEntries(index, proc, priv);
 
         /* scan ht1: 由于ht1 > ht0, 所以ht1的大小是ht0的二倍
@@ -198,7 +198,7 @@ uint32_t Dict::dictScanOneStep(uint32_t cursor, scanProc proc, void *priv) {
         ht1->scanEntries(index, proc, priv);
     } else {
         // 如果未处于rehash, 只访问ht[0]就可以了
-        int index = ht0->getIndex(cursor);
+        uint32_t index = ht0->getIndex(cursor);
         ht0->scanEntries(index, proc, priv);
     }
 

@@ -66,7 +66,7 @@ void SkipList::insertNode(double score, void* obj) {
     }
 
     // 实际的插入操作，并计算相应节点的span
-    uint32_t level = randomLevel();
+    uint8_t level = randomLevel();
     SkipListNode *nodeToInsert = new SkipListNode(this->type, obj, score, level);
     for (uint32_t i = 0; i < level; i++) {
         nodeToInsert->getLevels()[i].next = forwards[i]->getLevels()[i].next;
@@ -90,11 +90,14 @@ void SkipList::insertNode(double score, void* obj) {
     this->length++;
 }
 
-uint32_t SkipList::randomLevel() {
-    uint32_t maxNum = 2<<(SKIP_LIST_MAX_LEVEL - 1);
-    uint32_t rand = random()%maxNum + 1;
-    uint8_t power = 0;
-    for (uint32_t num = maxNum; rand <= num; num = num >> 1) {
+uint8_t SkipList::randomLevel() {
+    uint32_t maxNum = 2 << (SKIP_LIST_MAX_LEVEL - 1);
+    uint32_t rand = random() % maxNum + 1;
+    uint8_t power = 1;
+    for (uint32_t num = maxNum; num > 1; num = num >> 1) {
+        if (rand > num) {
+            break;
+        }
         power++;
     }
     return power;

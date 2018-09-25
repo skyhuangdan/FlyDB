@@ -5,6 +5,6 @@
 #ifndef FLYDB_SKIPDEF_H
 #define FLYDB_SKIPDEF_H
 
-const uint32_t SKIP_LIST_MAX_LEVEL = 32;
+const uint8_t SKIP_LIST_MAX_LEVEL = 32;
 
 #endif //FLYDB_SKIPDEF_H

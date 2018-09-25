@@ -19,7 +19,7 @@ public:
     int deleteNode(double score, void* obj);
 
 private:
-    uint32_t randomLevel();
+    uint8_t randomLevel();
     SkipListNode *header, *tailer;
     uint32_t length;
     uint32_t level;

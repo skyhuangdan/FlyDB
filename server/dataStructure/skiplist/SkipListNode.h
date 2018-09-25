@@ -14,13 +14,13 @@ struct SkipListLevel {
     SkipListLevel() {
     };
 
-    unsigned int span;
+    uint32_t span;
     SkipListNode* next;
 };
 
 class SkipListNode {
 public:
-    SkipListNode(const SkipListType& type, void* obj, double score, unsigned int level);
+    SkipListNode(const SkipListType& type, void* obj, double score, uint8_t level);
     virtual ~SkipListNode();
     void *getObj() const;
     double getScore() const;
