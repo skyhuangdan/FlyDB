@@ -12,6 +12,8 @@
 class SkipListNode;
 struct SkipListLevel {
     SkipListLevel() {
+        this->span = 0;
+        this->next = NULL;
     };
 
     uint32_t span;

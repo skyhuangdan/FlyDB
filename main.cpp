@@ -3,6 +3,8 @@
 #include "server/FlyServer.h"
 #include "server/dataStructure/dict/Dict.h"
 #include "server/dataStructure/dict/test/TestDictType.h"
+#include "server/dataStructure/skiplist/SkipList.h"
+#include "server/dataStructure/skiplist/test/TestSkipListType.h"
 
 /**
  * flyDB，取名fly有两层含义：
@@ -22,15 +24,22 @@ int main() {
 
     flyServer->init();
 
+    /*
     Dict* dict = new Dict(TestDictType());
     char *key = "key";
     char *val = "val";
     for (int i = 0; i < 5; i++) {
         dict->addEntry((void*)key, (void*)val);
     }
-
     unsigned long cursor = dict->dictScan(0, 5, testScanProc, NULL);
     std::cout << "next cursor: " << cursor << std::endl;
+     */
+
+    SkipList* list = new SkipList(TestSkipListType());
+    void * obj = new std::string("123");
+    list->insertNode(1, obj);
+    list->insertNode(2, obj);
+    list->insertNode(3, obj);
 
     while(true) {
         std::cout << "flyDB> ";

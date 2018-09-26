@@ -3,9 +3,10 @@
 //
 
 #include "SkipList.h"
-#include "SkipDef.h"
+#include "SkipListDef.h"
+#include <random>
 
-SkipList::SkipList(SkipListType& type) : type(type) {
+SkipList::SkipList(const SkipListType& type) : type(type) {
     this->level = 1;
     this->length = 0;
     this->header = this->tailer = new SkipListNode(type, NULL, 0, SKIP_LIST_MAX_LEVEL);
@@ -46,7 +47,7 @@ void SkipList::insertNode(double score, void* obj) {
      */
     // forwards代表待插入点的前一个节点, rank则代表该节点在跳跃表中的排序
     SkipListNode* temp = this->header;
-    for (uint32_t i = this->level-1; i >= 0; i--) {
+    for (int i = this->level-1; i >= 0; i--) {
         rank[i] = rank[i+1];                  // 哨兵用于这里
         SkipListNode* next = temp->getLevels()[i].next;
         while (NULL != next && (next->getScore() < score
@@ -55,30 +56,32 @@ void SkipList::insertNode(double score, void* obj) {
             temp = next;
             next = next->getLevels()[i].next;
         }
-        forwards[i] = next;
+        forwards[i] = temp;
     }
 
     // 假如level > 跳跃表当前level, 初始化新增加的几个层，用于后面计算
-    for (uint32_t i = this->level; i < level; i) {
+    for (uint32_t i = this->level; i < level; i++) {
         forwards[i] = header;
         rank[i] = 0;
         header->getLevels()[i].span = this->length;
     }
 
-    // 实际的插入操作，并计算相应节点的span
-    uint8_t level = randomLevel();
+    // 设置tailer以及previous指针
     SkipListNode *nodeToInsert = new SkipListNode(this->type, obj, score, level);
-    for (uint32_t i = 0; i < level; i++) {
-        nodeToInsert->getLevels()[i].next = forwards[i]->getLevels()[i].next;
-        forwards[i]->getLevels()[i].next = nodeToInsert;
-        nodeToInsert->getLevels()[i].span = forwards[i]->getLevels()[i].span - (rank[0] - rank[i]);
-        forwards[i]->getLevels()[i].span = rank[0] - rank[i] + 1;
-    }
     nodeToInsert->setPrevious(forwards[0] == header ? NULL : forwards[0]);
     if (NULL == forwards[0]->getLevels()[0].next) {
         this->tailer = nodeToInsert;
     } else {
         forwards[0]->getLevels()[0].next->setPrevious(nodeToInsert);
+    }
+
+    // 实际的插入操作，并计算相应节点的span
+    uint8_t level = randomLevel();
+    for (uint32_t i = 0; i < level; i++) {
+        nodeToInsert->getLevels()[i].next = forwards[i]->getLevels()[i].next;
+        forwards[i]->getLevels()[i].next = nodeToInsert;
+        nodeToInsert->getLevels()[i].span = forwards[i]->getLevels()[i].span - (rank[0] - rank[i]);
+        forwards[i]->getLevels()[i].span = rank[0] - rank[i] + 1;
     }
 
     // 如果level小于跳跃表的level，将没有进行插入的level的前节点span+1
@@ -97,8 +100,14 @@ void SkipList::insertNode(double score, void* obj) {
  * level:   4      3           2                      1
  */
 uint8_t SkipList::randomLevel() {
-    uint32_t maxNum = 2 << (SKIP_LIST_MAX_LEVEL - 1);
-    uint32_t rand = random() % maxNum + 1;
+    uint32_t maxNum = 1 << (SKIP_LIST_MAX_LEVEL - 1);
+
+    // 生成随机数
+    std::default_random_engine engine;
+    std::uniform_int_distribution<uint32_t> distribution(1, maxNum);
+    uint32_t rand = distribution(engine);
+
+    // 根据随机数获取具体的level
     uint8_t power = 0;
     for (uint32_t num = maxNum; num >= 1; num = num >> 1) {
         if (rand > num) {

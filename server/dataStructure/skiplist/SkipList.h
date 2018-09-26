@@ -9,7 +9,7 @@
 // 按小-->大的顺序排序
 class SkipList {
 public:
-    SkipList(SkipListType& type);
+    SkipList(const SkipListType& type);
     virtual ~SkipList();
     SkipListNode *getHeader() const;
     SkipListNode *getTailer() const;
@@ -23,7 +23,7 @@ private:
     SkipListNode *header, *tailer;
     uint32_t length;
     uint32_t level;
-    SkipListType& type;
+    const SkipListType& type;
 };
 
 #endif //FLYDB_SKIPLIST_H
