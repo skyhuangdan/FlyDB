@@ -191,6 +191,27 @@ uint32_t SkipList::getRank(double score, void* obj) {
     return -1;
 }
 
+SkipListNode* SkipList::getNodeByRank(uint32_t rank) {
+    SkipListNode* node = this->header;
+
+    for (int l = this->level - 1; l >= 0; l--) {
+        while (node != NULL && node->getLevels()[l].span < rank) {
+            rank -= node->getLevels()[l].span;
+            node = node->getLevels()[l].next;
+        }
+
+        if (NULL == node) {
+            return NULL;
+        }
+
+        if (node->getLevels()[l].span == rank) {
+            return node->getLevels()[l].next;
+        }
+    }
+
+    return NULL;
+}
+
 SkipList::~SkipList() {
     delete header;
 }
