@@ -17,6 +17,7 @@ public:
     uint32_t getLevel() const;
     void insertNode(double score, void* obj);
     int deleteNode(double score, void* obj, SkipListNode** res);
+    uint32_t getRank(double score, void* obj);
 
 private:
     uint8_t randomLevel();

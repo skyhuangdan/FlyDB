@@ -162,6 +162,35 @@ int SkipList::deleteNode(double score, void* obj, SkipListNode** res) {
     return 0;
 }
 
+uint32_t SkipList::getRank(double score, void* obj) {
+    int totalSpan = 0;
+
+    SkipListNode* prev = this->header;
+    for (int l = this->level - 1; l >= 0; l--) {
+        SkipListNode* next = prev->getLevels()[l].next;
+
+        /**
+          * 如果next小的话，往后遍历。该循环停下来有三个条件：
+          *      1.next==NULL
+          *      2.找到合适的node
+          *      3.当前node超过了查找的值，此时需要向下一层寻找
+         **/
+        while (next != NULL && (next->getScore() < score || type.compare(next->getObj(), obj) < 0)) {
+            prev = next;
+            next = prev->getLevels()[l].next;
+            totalSpan += prev->getLevels()[l].span;
+        }
+
+        // 如果找到了，直接返回
+        if (next != NULL && next->getScore() == score && type.compare(next->getObj(), obj) == 0) {
+            totalSpan += prev->getLevels()[l].span;
+            return totalSpan;
+        }
+    }
+
+    return -1;
+}
+
 SkipList::~SkipList() {
     delete header;
 }
