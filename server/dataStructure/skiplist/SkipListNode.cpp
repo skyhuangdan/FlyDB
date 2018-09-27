@@ -3,11 +3,12 @@
 //
 
 #include "SkipListNode.h"
+#include "SkipListDef.h"
 
-SkipListNode::SkipListNode(const SkipListType& type, void* obj, double score, uint8_t level) : type(type) {
+SkipListNode::SkipListNode(const SkipListType& type, void* obj, double score) : type(type) {
     this->obj = obj;
     this->score = score;
-    for (int i = 0; i < level; i++) {
+    for (int i = 0; i < SKIP_LIST_MAX_LEVEL; i++) {
         this->levels.push_back(SkipListLevel());
     }
 }

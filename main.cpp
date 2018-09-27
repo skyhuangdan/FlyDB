@@ -38,8 +38,13 @@ int main() {
     SkipList* list = new SkipList(TestSkipListType());
     void * obj = new std::string("123");
     list->insertNode(1, obj);
-    list->insertNode(2, obj);
+    list->insertNode(4, obj);
     list->insertNode(3, obj);
+
+    SkipListNode* node = NULL;
+    list->deleteNode(1, obj, &node);
+    list->deleteNode(4, obj, &node);
+    list->deleteNode(3, obj, &node);
 
     while(true) {
         std::cout << "flyDB> ";

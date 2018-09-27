@@ -22,7 +22,7 @@ struct SkipListLevel {
 
 class SkipListNode {
 public:
-    SkipListNode(const SkipListType& type, void* obj, double score, uint8_t level);
+    SkipListNode(const SkipListType& type, void* obj, double score);
     virtual ~SkipListNode();
     void *getObj() const;
     double getScore() const;

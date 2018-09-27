@@ -2,14 +2,14 @@
 // Created by 赵立伟 on 2018/9/24.
 //
 
+#include <random>
 #include "SkipList.h"
 #include "SkipListDef.h"
-#include <random>
 
 SkipList::SkipList(const SkipListType& type) : type(type) {
     this->level = 1;
     this->length = 0;
-    this->header = this->tailer = new SkipListNode(type, NULL, 0, SKIP_LIST_MAX_LEVEL);
+    this->header = this->tailer = new SkipListNode(type, NULL, 0);
 }
 
 SkipListNode *SkipList::getHeader() const {
@@ -60,14 +60,15 @@ void SkipList::insertNode(double score, void* obj) {
     }
 
     // 假如level > 跳跃表当前level, 初始化新增加的几个层，用于后面计算
-    for (uint32_t i = this->level; i < level; i++) {
+    uint8_t randLevel = randomLevel();
+    for (uint32_t i = this->level; i < randLevel; i++) {
         forwards[i] = header;
         rank[i] = 0;
         header->getLevels()[i].span = this->length;
     }
 
     // 设置tailer以及previous指针
-    SkipListNode *nodeToInsert = new SkipListNode(this->type, obj, score, level);
+    SkipListNode *nodeToInsert = new SkipListNode(this->type, obj, score);
     nodeToInsert->setPrevious(forwards[0] == header ? NULL : forwards[0]);
     if (NULL == forwards[0]->getLevels()[0].next) {
         this->tailer = nodeToInsert;
@@ -76,8 +77,7 @@ void SkipList::insertNode(double score, void* obj) {
     }
 
     // 实际的插入操作，并计算相应节点的span
-    uint8_t level = randomLevel();
-    for (uint32_t i = 0; i < level; i++) {
+    for (uint32_t i = 0; i < randLevel; i++) {
         nodeToInsert->getLevels()[i].next = forwards[i]->getLevels()[i].next;
         forwards[i]->getLevels()[i].next = nodeToInsert;
         nodeToInsert->getLevels()[i].span = forwards[i]->getLevels()[i].span - (rank[0] - rank[i]);
@@ -85,11 +85,11 @@ void SkipList::insertNode(double score, void* obj) {
     }
 
     // 如果level小于跳跃表的level，将没有进行插入的level的前节点span+1
-    for (uint32_t i = level; i < this->level; i++) {
+    for (uint32_t i = randLevel; i < this->level; i++) {
         forwards[i]->getLevels()[i].span += 1;
     }
 
-    this->level = level > this->level ? level : this->level;
+    this->level = randLevel > this->level ? randLevel : this->level;
     this->length++;
 }
 
@@ -155,7 +155,7 @@ int SkipList::deleteNode(double score, void* obj, SkipListNode** res) {
         }
 
         forwards[i]->getLevels()[i].next = node->getLevels()[i].next;
-        forwards[i]->getLevels()[i].span += node->getLevels()[i].span;
+        forwards[i]->getLevels()[i].span += node->getLevels()[i].span - 1;
     }
 
     this->length--;
