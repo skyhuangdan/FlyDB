@@ -122,19 +122,22 @@ uint8_t SkipList::randomLevel() {
 }
 
 int SkipList::deleteNode(double score, void* obj, SkipListNode** res) {
-    std::vector<SkipListNode*> forwards(this->level);
+    std::vector<SkipListNode*> forwards(this->level);       // forward找到待查节点的前节点
     for (int l = this->level - 1; l >= 0; l--) {
         SkipListNode* prevNode = this->header;
         SkipListNode* node = prevNode->getLevels()[l].next;
         // 找到node==NULL或者score、obj都相等的node
-        while (node != NULL && (node->getScore() != score || 0 != type.compare(node->getObj(), obj))) {
+        while (node != NULL && (node->getScore() < score || type.compare(node->getObj(), obj) < 0)) {
             prevNode = node;
             node = prevNode->getLevels()[l].next;
         }
         forwards[l] = prevNode;
     }
 
-    if (NULL == forwards[0]->getLevels()[0].next) {  // 没有找到符合条件的node
+    // 没有找到符合条件的node
+    if (NULL == forwards[0]->getLevels()[0].next
+        || (forwards[0]->getLevels()[0].next->getScore() != score
+            && 0 == type.compare(forwards[0]->getLevels()[0].next->getObj(), obj))) {
         return -1;
     } else {  // 处理previous指针
         SkipListNode* node = *res = forwards[0]->getLevels()[0].next;
@@ -145,21 +148,21 @@ int SkipList::deleteNode(double score, void* obj, SkipListNode** res) {
         }
     }
 
-    // 删除节点这里有问题，应该先判断第0层是否有，如果没有，直接返回-1， 如果有，对于level >= 0的所有层，都要进行span更改，node == NULL和非NULL要区分处理
+    // 对于level >= 0的所有层，都要进行span更改，node == NULL和非NULL要区分处理
     for (int i = 0; i < level; i++) {
         SkipListNode* node = forwards[i]->getLevels()[i].next;
         // 如果从该层开始找不到待删除节点，上面的那些层也不必找了
         if (NULL == node) {
-            break;
-        }
+            forwards[i]->getLevels()[i].span -= 1;
+        } else {
+            // 该层只剩header和待删除节点，那么level-1
+            if (forwards[i] == this->header && NULL == node->getLevels()[i].next) {
+                this->level--;
+            }
 
-        // 该层只剩header和待删除节点，那么level-1
-        if (forwards[i] == this->header && NULL == node->getLevels()[i].next) {
-            this->level--;
+            forwards[i]->getLevels()[i].next = node->getLevels()[i].next;
+            forwards[i]->getLevels()[i].span += node->getLevels()[i].span - 1;
         }
-
-        forwards[i]->getLevels()[i].next = node->getLevels()[i].next;
-        forwards[i]->getLevels()[i].span += node->getLevels()[i].span - 1;
     }
 
     this->length--;

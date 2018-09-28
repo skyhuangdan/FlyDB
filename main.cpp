@@ -42,76 +42,31 @@ int main() {
     list->insertNode(4, obj);
     list->insertNode(3, obj);
     list->insertNode(2, obj);
+    list->insertNode(9, obj);
+    list->insertNode(8, obj);
+    list->insertNode(6, obj);
+    list->insertNode(19, obj);
+    list->insertNode(18, obj);
+    list->insertNode(16, obj);
+    list->insertNode(14, obj);
+    list->insertNode(13, obj);
+    list->insertNode(12, obj);
 
-    SkipListNode* resNode = NULL;
-    list->deleteNode(3, obj, &resNode);
-    list->deleteNode(2, obj, &resNode);
-    list->deleteNode(4, obj, &resNode);
+    int score = 13;
+    int rank = list->getRank(score, obj);
+    std::cout << "find : "<< score << ": rank :" << rank << std::endl;
 
-    int level = list->randomLevel();
-    std::cout << "level : " << level << std::endl;
+    score = 5;
+    rank = list->getRank(score, obj);
+    std::cout << "find : "<< score << ": rank :" << list->getRank(score, obj) << std::endl;
 
-    level = list->randomLevel();
-    std::cout << "level : " << level << std::endl;
+    score = 1;
+    rank = list->getRank(score, obj);
+    std::cout << "find : "<< score << ": rank :" << list->getRank(score, obj) << std::endl;
 
-    level = list->randomLevel();
-    std::cout << "level : " << level << std::endl;
-
-    int rank = 3;
-    SkipListNode* find = list->getNodeByRank(rank);
-    if (NULL == find) {
-        std::cout << "didn`t find the node for rank " << rank << std::endl;
-    } else {
-        std::cout << "find : "<< rank << ": score :" << find->getScore() << std::endl;
-    }
-
-    level = list->randomLevel();
-    std::cout << "level : " << level << std::endl;
-
-    rank = 5;
-    find = list->getNodeByRank(rank);
-    if (NULL == find) {
-        std::cout << "didn`t find the node for rank" << rank << std::endl;
-    } else {
-        std::cout << "find : "<< rank << ": score :" << find->getScore() << std::endl;
-    }
-
-    rank = 4;
-    find = list->getNodeByRank(rank);
-    if (NULL == find) {
-        std::cout << "didn`t find the node for rank" << rank << std::endl;
-    } else {
-        std::cout << "find : "<< rank << ": score :" << find->getScore() << std::endl;
-    }
-
-    rank = 1;
-    find = list->getNodeByRank(rank);
-    if (NULL == find) {
-        std::cout << "didn`t find the node for rank" << rank << std::endl;
-    } else {
-        std::cout << "find : "<< rank << ": score :" << find->getScore() << std::endl;
-    }
-
-    SkipListNode* node = NULL;
-    std::cout << "delete res :" << list->deleteNode(3, obj, &node) << std::endl;
-
-    rank = 3;
-    find = list->getNodeByRank(rank);
-    if (NULL == find) {
-        std::cout << "didn`t find the node for rank " << rank << std::endl;
-    } else {
-        std::cout << "find : "<< rank << ": score :" << find->getScore() << std::endl;
-    }
-
-    std::cout << "delete res :" << list->deleteNode(1, obj, &node) << std::endl;
-
-    rank = 3;
-    find = list->getNodeByRank(rank);
-    if (NULL == find) {
-        std::cout << "didn`t find the node for rank " << rank << std::endl;
-    } else {
-        std::cout << "find : "<< rank << ": score :" << find->getScore() << std::endl;
-    }
+    score = 18;
+    rank = list->getRank(score, obj);
+    std::cout << "find : "<< score << ": rank :" << list->getRank(score, obj) << std::endl;
 
 
     while(true) {
