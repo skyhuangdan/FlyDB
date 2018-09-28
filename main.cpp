@@ -41,6 +41,21 @@ int main() {
     list->insertNode(5, obj);
     list->insertNode(4, obj);
     list->insertNode(3, obj);
+    list->insertNode(2, obj);
+
+    SkipListNode* resNode = NULL;
+    list->deleteNode(3, obj, &resNode);
+    list->deleteNode(2, obj, &resNode);
+    list->deleteNode(4, obj, &resNode);
+
+    int level = list->randomLevel();
+    std::cout << "level : " << level << std::endl;
+
+    level = list->randomLevel();
+    std::cout << "level : " << level << std::endl;
+
+    level = list->randomLevel();
+    std::cout << "level : " << level << std::endl;
 
     int rank = 3;
     SkipListNode* find = list->getNodeByRank(rank);
@@ -49,6 +64,9 @@ int main() {
     } else {
         std::cout << "find : "<< rank << ": score :" << find->getScore() << std::endl;
     }
+
+    level = list->randomLevel();
+    std::cout << "level : " << level << std::endl;
 
     rank = 5;
     find = list->getNodeByRank(rank);

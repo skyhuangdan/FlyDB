@@ -29,9 +29,13 @@ uint32_t SkipList::getLevel() const {
 }
 
 void SkipList::insertNode(double score, void* obj) {
-    std::vector<SkipListNode*> forwards(this->level);
-    std::vector<uint32_t> rank(this->level + 1, 0); // 第level+1个作为哨兵
 
+    // 随机获取level
+    uint8_t randLevel = randomLevel();
+    uint8_t finalLevel = randLevel > this->level ? randLevel : this->level;
+
+    std::vector<SkipListNode*> forwards(finalLevel);
+    std::vector<uint32_t> rank(finalLevel + 1, 0); // 第level+1个作为哨兵
     /*
      * **是待插入点node， 插入前节点是prevNode[level]
      * | ============================================> |    level = 3
@@ -47,7 +51,7 @@ void SkipList::insertNode(double score, void* obj) {
      */
     // forwards代表待插入点的前一个节点, rank则代表该节点在跳跃表中的排序
     SkipListNode* temp = this->header;
-    for (int i = this->level-1; i >= 0; i--) {
+    for (int i = finalLevel - 1; i >= 0; i--) {
         rank[i] = rank[i+1];                  // 哨兵用于这里
         SkipListNode* next = temp->getLevels()[i].next;
         while (NULL != next && (next->getScore() < score
@@ -60,11 +64,10 @@ void SkipList::insertNode(double score, void* obj) {
     }
 
     // 假如level > 跳跃表当前level, 初始化新增加的几个层，用于后面计算
-    uint8_t randLevel = randomLevel();
     for (uint32_t i = this->level; i < randLevel; i++) {
         forwards[i] = header;
         rank[i] = 0;
-        header->getLevels()[i].span = this->length;
+        header->getLevels()[i].span = rank[0];
     }
 
     // 设置tailer以及previous指针
@@ -86,10 +89,12 @@ void SkipList::insertNode(double score, void* obj) {
 
     // 如果level小于跳跃表的level，将没有进行插入的level的前节点span+1
     for (uint32_t i = randLevel; i < this->level; i++) {
-        forwards[i]->getLevels()[i].span += 1;
+        if (forwards[i]->getLevels()[i].next != NULL) {
+            forwards[i]->getLevels()[i].span += 1;
+        }
     }
 
-    this->level = randLevel > this->level ? randLevel : this->level;
+    this->level = finalLevel;
     this->length++;
 }
 
@@ -102,15 +107,13 @@ void SkipList::insertNode(double score, void* obj) {
 uint8_t SkipList::randomLevel() {
     uint32_t maxNum = 1 << (SKIP_LIST_MAX_LEVEL - 1);
 
-    // 生成随机数
-    std::default_random_engine engine;
-    std::uniform_int_distribution<uint32_t> distribution(1, maxNum);
-    uint32_t rand = distribution(engine);
+    srand((unsigned)time(NULL));
+    uint32_t randNum = ((rand() & 0xFFFF) << 16 | (rand() & 0xFFFF)) % maxNum;
 
     // 根据随机数获取具体的level
     uint8_t power = 0;
     for (uint32_t num = maxNum; num >= 1; num = num >> 1) {
-        if (rand > num) {
+        if (randNum > num) {
             break;
         }
         power++;
@@ -142,6 +145,7 @@ int SkipList::deleteNode(double score, void* obj, SkipListNode** res) {
         }
     }
 
+    // 删除节点这里有问题，应该先判断第0层是否有，如果没有，直接返回-1， 如果有，对于level >= 0的所有层，都要进行span更改，node == NULL和非NULL要区分处理
     for (int i = 0; i < level; i++) {
         SkipListNode* node = forwards[i]->getLevels()[i].next;
         // 如果从该层开始找不到待删除节点，上面的那些层也不必找了

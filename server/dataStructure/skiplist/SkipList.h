@@ -19,9 +19,9 @@ public:
     int deleteNode(double score, void* obj, SkipListNode** res);
     uint32_t getRank(double score, void* obj);
     SkipListNode* getNodeByRank(uint32_t rank);
+    uint8_t randomLevel();
 
 private:
-    uint8_t randomLevel();
     SkipListNode *header, *tailer;
     uint32_t length;
     uint32_t level;
