@@ -5,6 +5,7 @@
 #ifndef FLYDB_SKIPLIST_H
 #define FLYDB_SKIPLIST_H
 #include "SkipListNode.h"
+#include "SkipListDef.h"
 
 // 按小-->大的顺序排序
 class SkipList {
@@ -19,6 +20,7 @@ public:
     int deleteNode(double score, void* obj, SkipListNode** res);
     uint32_t getRank(double score, void* obj);
     SkipListNode* getNodeByRank(uint32_t rank);
+    int isInRange(SkipListRange range);
 
 private:
     uint8_t randomLevel();

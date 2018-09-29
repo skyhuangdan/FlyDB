@@ -219,6 +219,26 @@ SkipListNode* SkipList::getNodeByRank(uint32_t rank) {
     return NULL;
 }
 
+int SkipList::isInRange(SkipListRange range) {
+    // range入参有问题
+    if (range.max < range.min || range.max == range.min && (range.maxex || range.minex)) {
+        return -1;
+    }
+
+    // 跳跃表中无节点
+    if (this->tailer == this->header) {
+        return 0;
+    }
+
+    // 如果tail.score <= range并且表中第一个元素 >= range
+    SkipListNode* node = header->getLevels()[0].next;
+    if (!this->tailer->scoreGtRange(range) && !node->scoreLtRange(range)) {
+        return 1;
+    }
+
+    return 0;
+}
+
 SkipList::~SkipList() {
-    delete header;
+    delete this->header;
 }

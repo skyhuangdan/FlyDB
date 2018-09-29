@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "SkipListType.h"
+#include "SkipListDef.h"
 
 class SkipListNode;
 struct SkipListLevel {
@@ -30,6 +31,9 @@ public:
     void setPrevious(SkipListNode *previous);
     const SkipListType &getType() const;
     std::vector<SkipListLevel> &getLevels();
+    bool scoreLtRange(SkipListRange range);
+    bool scoreGtRange(SkipListRange range);
+    bool scoreInRange(SkipListRange range);
 
 private:
     void* obj;

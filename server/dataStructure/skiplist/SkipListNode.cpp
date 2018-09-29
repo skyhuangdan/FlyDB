@@ -3,7 +3,6 @@
 //
 
 #include "SkipListNode.h"
-#include "SkipListDef.h"
 
 SkipListNode::SkipListNode(const SkipListType& type, void* obj, double score) : type(type) {
     this->obj = obj;
@@ -15,6 +14,22 @@ SkipListNode::SkipListNode(const SkipListType& type, void* obj, double score) : 
 
 std::vector<SkipListLevel> &SkipListNode::getLevels() {
     return levels;
+}
+
+bool SkipListNode::scoreLtRange(SkipListRange range) {
+    range.minex ? this->score <= range.min : this->score < range.min;
+}
+
+bool SkipListNode::scoreGtRange(SkipListRange range) {
+    range.maxex ? this->score >= range.max : this->score > range.max;
+}
+
+bool SkipListNode::scoreInRange(SkipListRange range) {
+    if (!scoreLtRange(range) && !scoreGtRange(range)) {
+        return true;
+    }
+
+    return false;
 }
 
 void *SkipListNode::getObj() const {
