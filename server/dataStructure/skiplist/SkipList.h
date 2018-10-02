@@ -23,12 +23,15 @@ public:
     int isInRange(SkipListRange range);
     SkipListNode* firstInRange(SkipListRange range);
     SkipListNode* lastInRange(SkipListRange range);
+    uint32_t deleteRangeByScore(SkipListRange range);
+    uint32_t deleteRangeByRank(uint32_t start, uint32_t end);
 
 private:
+    int deleteNode(SkipListNode* node); // 会释放节点
     uint8_t randomLevel();
     SkipListNode *header, *tailer;
     uint32_t length;
-    uint32_t level;
+    uint8_t level;
     const SkipListType& type;
 };
 

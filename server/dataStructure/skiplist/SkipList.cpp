@@ -29,7 +29,6 @@ uint32_t SkipList::getLevel() const {
 }
 
 void SkipList::insertNode(double score, void* obj) {
-
     // 随机获取level
     uint8_t randLevel = randomLevel();
     uint8_t finalLevel = randLevel > this->level ? randLevel : this->level;
@@ -148,12 +147,13 @@ int SkipList::deleteNode(double score, void* obj, SkipListNode** res) {
         }
     }
 
-    // 对于level >= 0的所有层，都要进行span更改，node == NULL和非NULL要区分处理
-    for (int i = 0; i < level; i++) {
+    // 对于level >= 0的所有层，都要进行span更改
+    uint8_t resvLevel = this->level;
+    for (int i = 0; i < resvLevel; i++) {
         SkipListNode* node = forwards[i]->getLevels()[i].next;
-        // 如果从该层开始找不到待删除节点，上面的那些层也不必找了
+        // 如果从该层开始找不到待删除节点并且forward的下一个节点是NULL，上面的那些层也不必找了
         if (NULL == node) {
-            forwards[i]->getLevels()[i].span -= 1;
+            break;
         } else {
             // 该层只剩header和待删除节点，那么level-1
             if (forwards[i] == this->header && NULL == node->getLevels()[i].next) {
@@ -202,13 +202,9 @@ SkipListNode* SkipList::getNodeByRank(uint32_t rank) {
     SkipListNode* node = this->header;
 
     for (int l = this->level - 1; l >= 0; l--) {
-        while (node != NULL && node->getLevels()[l].span < rank) {
+        while (node->getLevels()[l].next != NULL && node->getLevels()[l].span < rank) {
             rank -= node->getLevels()[l].span;
             node = node->getLevels()[l].next;
-        }
-
-        if (NULL == node) {
-            return NULL;
         }
 
         if (node->getLevels()[l].span == rank) {
@@ -281,6 +277,120 @@ SkipListNode* SkipList::lastInRange(SkipListRange range) {
     return NULL;
 }
 
+uint32_t SkipList::deleteRangeByScore(SkipListRange range) {
+    SkipListNode* node = firstInRange(range);
+    if (node == NULL) {
+        return 0;
+    }
+
+    // 获取前一个节点
+    SkipListNode* prev = node->getPrevious();
+    if (NULL == prev) {
+        prev = this->header;
+    }
+
+    int removed = 0;
+    while (node != NULL && node->scoreInRange(range)) {
+        if (deleteNode(node) > 0) {
+            this->length--;
+        }
+        node = prev->getLevels()[0].next;
+        removed++;
+    }
+
+    return removed;
+}
+
+uint32_t SkipList::deleteRangeByRank(uint32_t start, uint32_t end) {
+    if (end <= start) {
+        return 0;
+    }
+
+    uint32_t totalSpan = 0;
+    uint32_t removed = 0;
+
+    // 找到第一个在[start, end]范围内的node
+    SkipListNode* node = this->header;
+    for (int l = this->level - 1; l >= 0; l--) {
+        while (node->getLevels()[l].next != NULL && totalSpan + node->getLevels()[l].span < start) {
+            totalSpan += node->getLevels()[l].span;
+            node = node->getLevels()[l].next;
+        }
+
+        if (totalSpan + node->getLevels()[l].span >= start) {
+            totalSpan += node->getLevels()[l].span;
+            node = node->getLevels()[l].next;
+            break;
+        }
+    }
+
+    SkipListNode* prev = node->getPrevious();
+    if (NULL == prev) {
+        prev = this->header;
+    }
+
+    while (node != NULL && totalSpan <= end) {
+        totalSpan += node->getLevels()[0].span;
+        if (deleteNode(node) > 0) {
+            this->length--;
+        }
+        node = prev->getLevels()[0].next;
+        removed++;
+    }
+
+    return removed;
+}
+
+int SkipList::deleteNode(SkipListNode* node) {
+    if (NULL == node) {
+        return -1;
+    }
+
+    // 对每一层做摘除操作
+    int res = 0;
+    SkipListNode* prev = node->getPrevious();
+    if (NULL == prev) {
+        prev = this->header;
+    }
+    uint8_t resvLevel = this->level;
+    for (int l = 0; l < resvLevel; l++) {
+        if (prev->getLevels()[l].next == node) {
+            prev->getLevels()[l].span += node->getLevels()[l].span - 1;
+            prev->getLevels()[l].next = node->getLevels()[l].next;
+            if (prev == this->header && NULL == node->getLevels()[l].next) {
+                this->level--;
+            }
+            res = 1;
+        } else {
+            // 如果从该层开始找不到待删除节点并且prev的下一个节点是NULL，上面的那些层也不必找了
+            if (prev->getLevels()[l].next == NULL) {
+                break;
+            } else {
+                prev->getLevels()[l].span--;
+            }
+        }
+    }
+
+    // 设置previos及tailer
+    if (NULL == node->getLevels()[0].next) {
+        this->tailer = prev;
+    } else {
+        node->getLevels()[0].next->setPrevious(prev);
+    }
+
+    // 释放该节点
+    delete node;
+
+    return res;
+}
+
 SkipList::~SkipList() {
+    SkipListNode* prev = this->header;
+    SkipListNode* node = prev->getLevels()[0].next;
+    while (NULL != node) {
+        delete node;
+        node = prev->getLevels()[0].next;
+    }
+
     delete this->header;
 }

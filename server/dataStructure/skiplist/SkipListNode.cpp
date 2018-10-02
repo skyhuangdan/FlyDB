@@ -7,6 +7,7 @@
 SkipListNode::SkipListNode(const SkipListType& type, void* obj, double score) : type(type) {
     this->obj = obj;
     this->score = score;
+    this->previous = NULL;
     for (int i = 0; i < SKIP_LIST_MAX_LEVEL; i++) {
         this->levels.push_back(SkipListLevel());
     }
@@ -54,5 +55,4 @@ void SkipListNode::setPrevious(SkipListNode *previous) {
 
 SkipListNode::~SkipListNode() {
     type.destructor(this->obj);
-    delete levels[0].next;
 }
