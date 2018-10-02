@@ -239,6 +239,48 @@ int SkipList::isInRange(SkipListRange range) {
     return 0;
 }
 
+SkipListNode* SkipList::firstInRange(SkipListRange range) {
+    SkipListNode* prev = this->header;
+    SkipListNode* node;
+    for (int l = this->level - 1; l >= 0; l--) {
+        node = prev->getLevels()[l].next;
+        while (node != NULL && node->scoreLtRange(range)) {
+            prev = node;
+            node = prev->getLevels()[l].next;
+        }
+
+        if (node->scoreInRange(range)) {
+            return node;
+        }
+    }
+
+    return NULL;
+}
+
+SkipListNode* SkipList::lastInRange(SkipListRange range) {
+    SkipListNode* prev = this->header;
+    SkipListNode* node;
+    for (int l = this->level - 1; l >= 0; l--) {
+        node = prev->getLevels()[l].next;
+        // 找到该层score > range的节点，或者是找到链表的最后一个节点
+        while (node != NULL && !node->scoreGtRange(range)) {
+            prev = node;
+            node = prev->getLevels()[l].next;
+        }
+
+        /**
+         * 找到了node->score > range，并且要符合以下两点：
+         * 1.prev到node的跨度只有1或者prev是链表最后一个节点
+         * 2.prev->score在range范围内
+         */
+        if ((1 == prev->getLevels()[l].span || node == NULL) && prev->scoreInRange(range)) {
+            return prev;
+        }
+    }
+
+    return NULL;
+}
+
 SkipList::~SkipList() {
     delete this->header;
 }

@@ -17,11 +17,11 @@ std::vector<SkipListLevel> &SkipListNode::getLevels() {
 }
 
 bool SkipListNode::scoreLtRange(SkipListRange range) {
-    range.minex ? this->score <= range.min : this->score < range.min;
+    return range.minex ? this->score <= range.min : this->score < range.min;
 }
 
 bool SkipListNode::scoreGtRange(SkipListRange range) {
-    range.maxex ? this->score >= range.max : this->score > range.max;
+    return range.maxex ? this->score >= range.max : this->score > range.max;
 }
 
 bool SkipListNode::scoreInRange(SkipListRange range) {

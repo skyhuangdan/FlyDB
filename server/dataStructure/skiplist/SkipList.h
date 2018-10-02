@@ -21,6 +21,8 @@ public:
     uint32_t getRank(double score, void* obj);
     SkipListNode* getNodeByRank(uint32_t rank);
     int isInRange(SkipListRange range);
+    SkipListNode* firstInRange(SkipListRange range);
+    SkipListNode* lastInRange(SkipListRange range);
 
 private:
     uint8_t randomLevel();

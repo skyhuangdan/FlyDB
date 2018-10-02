@@ -52,22 +52,20 @@ int main() {
     list->insertNode(13, obj);
     list->insertNode(12, obj);
 
-    int score = 13;
-    int rank = list->getRank(score, obj);
-    std::cout << "find : "<< score << ": rank :" << rank << std::endl;
+    SkipListRange range = SkipListRange(-5, 25, false, false);
+    SkipListNode *node = list->firstInRange(range);
+    if (node != NULL) {
+        std::cout << "the first node val = " << node->getScore() << std::endl;
+    } else {
+        std::cout << "the first node is NULL" << std::endl;
+    }
 
-    score = 5;
-    rank = list->getRank(score, obj);
-    std::cout << "find : "<< score << ": rank :" << list->getRank(score, obj) << std::endl;
-
-    score = 1;
-    rank = list->getRank(score, obj);
-    std::cout << "find : "<< score << ": rank :" << list->getRank(score, obj) << std::endl;
-
-    score = 18;
-    rank = list->getRank(score, obj);
-    std::cout << "find : "<< score << ": rank :" << list->getRank(score, obj) << std::endl;
-
+    node = list->lastInRange(range);
+    if (node != NULL) {
+        std::cout << "the last node val = " << node->getScore() << std::endl;
+    } else {
+        std::cout << "the last node is NULL" << std::endl;
+    }
 
     while(true) {
         std::cout << "flyDB> ";
