@@ -52,26 +52,10 @@ int main() {
     list->insertNode(13, obj);
     list->insertNode(12, obj);
 
-    SkipListRange range = SkipListRange(-5, 25, false, false);
-    //std::cout << "delete count: " << list->deleteRangeByScore(range) << std::endl;
-
-    SkipListNode *node = list->firstInRange(range);
-    if (node != NULL) {
-        std::cout << "the first node val = " << node->getScore() << std::endl;
-    } else {
-        std::cout << "the first node is NULL" << std::endl;
-    }
-
+    std::cout << "list level = " << list->getLevel() << std::endl;
     std::cout << "total count: " << list->getLength() << std::endl;
     uint32_t removed = list->deleteRangeByRank(1, 5);
     std::cout << "removed count: " << removed << " total count: " << list->getLength() << std::endl;
-
-    node = list->lastInRange(range);
-    if (node != NULL) {
-        std::cout << "the last node val = " << node->getScore() << std::endl;
-    } else {
-        std::cout << "the last node is NULL" << std::endl;
-    }
 
     while(true) {
         std::cout << "flyDB> ";

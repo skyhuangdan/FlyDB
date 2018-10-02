@@ -245,7 +245,8 @@ SkipListNode* SkipList::firstInRange(SkipListRange range) {
             node = prev->getLevels()[l].next;
         }
 
-        if (node->scoreInRange(range)) {
+        // 找到第一个属于范围内的节点，并且prev对应的span等于1
+        if (node != NULL && node->scoreInRange(range) && 1 == prev->getLevels()[l].span) {
             return node;
         }
     }
@@ -291,18 +292,17 @@ uint32_t SkipList::deleteRangeByScore(SkipListRange range) {
 
     int removed = 0;
     while (node != NULL && node->scoreInRange(range)) {
-        if (deleteNode(node) > 0) {
-            this->length--;
-        }
-        node = prev->getLevels()[0].next;
+        deleteNode(node);
+        this->length--;
         removed++;
+        node = prev->getLevels()[0].next;
     }
 
     return removed;
 }
 
 uint32_t SkipList::deleteRangeByRank(uint32_t start, uint32_t end) {
-    if (end <= start) {
+    if (end < start) {
         return 0;
     }
 
@@ -317,25 +317,25 @@ uint32_t SkipList::deleteRangeByRank(uint32_t start, uint32_t end) {
             node = node->getLevels()[l].next;
         }
 
-        if (totalSpan + node->getLevels()[l].span >= start) {
-            totalSpan += node->getLevels()[l].span;
-            node = node->getLevels()[l].next;
+        if (1 == node->getLevels()[l].span && totalSpan + node->getLevels()[l].span >= start) {
             break;
         }
     }
 
-    SkipListNode* prev = node->getPrevious();
-    if (NULL == prev) {
-        prev = this->header;
+    totalSpan += node->getLevels()[0].span;
+    if (totalSpan < start) {
+        return 0;
     }
 
+    // 依次删除所有范围内节点
+    SkipListNode* prev = node;
+    node = prev->getLevels()[0].next;
     while (node != NULL && totalSpan <= end) {
-        totalSpan += node->getLevels()[0].span;
-        if (deleteNode(node) > 0) {
-            this->length--;
-        }
-        node = prev->getLevels()[0].next;
+        deleteNode(node);
+        this->length--;
         removed++;
+        node = prev->getLevels()[0].next;
+        totalSpan += node->getLevels()[0].span;
     }
 
     return removed;
@@ -371,7 +371,7 @@ int SkipList::deleteNode(SkipListNode* node) {
         }
     }
 
-    // 设置previos及tailer
+    // 设置previous及tailer
     if (NULL == node->getLevels()[0].next) {
         this->tailer = prev;
     } else {
