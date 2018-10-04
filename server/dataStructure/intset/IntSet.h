@@ -18,13 +18,16 @@ public:
     int32_t lenth();
     int64_t blobLength();
     int64_t random();
+    int resize(uint32_t newLength);
 
 private:
+    int64_t getEncoded(uint32_t pos, uint8_t encoding);
+    void set(uint32_t pos, int64_t value);
     int upgradeAndAdd(int64_t value);
     uint8_t valueEncoding(int64_t value);
     uint8_t encoding;
     uint32_t length;
-    int8_t contents[];
+    int8_t* contents;
 };
 
 
