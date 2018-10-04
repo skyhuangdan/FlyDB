@@ -14,17 +14,19 @@ public:
     int add(int64_t value);
     int remove(int64_t value);
     bool find(int64_t value);
-    int64_t get(uint32_t index);
+    int get(uint32_t index, int64_t* pValue);
     int32_t lenth();
     int64_t blobLength();
     int64_t random();
     int resize(uint32_t newLength);
+    int upgradeAndAdd(int64_t value);
+    void set(uint32_t pos, int64_t value);
+    int search(int64_t value, uint32_t* pos);
 
 private:
     int64_t getEncoded(uint32_t pos, uint8_t encoding);
-    void set(uint32_t pos, int64_t value);
-    int upgradeAndAdd(int64_t value);
     uint8_t valueEncoding(int64_t value);
+    void moveTail(uint32_t from, uint32_t to);
     uint8_t encoding;
     uint32_t length;
     int8_t* contents;

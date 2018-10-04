@@ -9,8 +9,7 @@
 #include "../config.h"
 
 class EndianConvTool {
-
-public:
+private:
     static void memrev16(void *p) {
         unsigned char *x = (unsigned char*)p, t;
 
@@ -47,6 +46,7 @@ public:
         x[4] = t;
     }
 
+public:
     static void memrev16ifbe(void* p) {
         if (BYTE_ORDER == BIG_ENDIAN) {
             memrev16(p);
