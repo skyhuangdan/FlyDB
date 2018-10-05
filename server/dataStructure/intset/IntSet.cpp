@@ -26,7 +26,7 @@ int IntSet::add(int64_t value) {
 
         // 扩容+1
         resize(this->length + 1);
-        if(pos <= this->length) {
+        if(pos < this->length) {
             moveTail(pos, pos+1);
         }
         set(pos, value);
@@ -43,8 +43,10 @@ int IntSet::remove(int64_t value) {
     }
 
     // 删除操作
-    if (pos < this->length) moveTail(pos+1, pos);
+    if (pos < this->length - 1) moveTail(pos+1, pos);
     resize(--this->length);
+
+    return 1;
 }
 
 bool IntSet::find(int64_t value) {
@@ -118,7 +120,7 @@ int IntSet::upgradeAndAdd(int64_t value) {
     resize(this->length + 1);
 
     /// 重置contents中数据
-    for (int i = 0; i < this->length; i++) {
+    for (int i = this->length - 1; i >= 0; i--) {
         this->set(i + prepend, getEncoded(i, oldenc));
     }
     if (1 == prepend) {
@@ -162,7 +164,7 @@ void IntSet::set(uint32_t pos, int64_t value) {
         reinterpret_cast<int32_t*>(this->contents)[pos] = (int32_t)value;
         EndianConvTool::memrev32ifbe(reinterpret_cast<int32_t*>(this->contents) + pos);
     } else {
-        reinterpret_cast<int32_t*>(this->contents)[pos] = (int16_t)value;
+        reinterpret_cast<int16_t*>(this->contents)[pos] = (int16_t)value;
         EndianConvTool::memrev16ifbe(reinterpret_cast<int16_t*>(this->contents) + pos);
     }
 }
@@ -180,7 +182,7 @@ int IntSet::search(int64_t value, uint32_t* pos) {
     }
 
     // 折半查找
-    uint32_t min = 0, max = this->length - 1, mid;
+    int64_t min = 0, max = this->length - 1, mid;
     int64_t dstValue;
     while (max >= min) {
         mid = (max + min) / 2;
