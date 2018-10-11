@@ -2,13 +2,15 @@
 // Created by 赵立伟 on 2018/10/5.
 //
 
+#include <iostream>
 #include "ZipList.h"
 
 ZipList::ZipList() {
     this->bytes = 0;
-    this->entries = NULL;
+    this->entries = (unsigned char*)malloc(1);
+    *(this->entries) = ZIP_END;
     this->len = 0;
-    this->zltail = this->entries;
+    this->zltail = 1;
 }
 
 int ZipList::push(unsigned char* s, uint32_t len, int where) {
@@ -16,7 +18,15 @@ int ZipList::push(unsigned char* s, uint32_t len, int where) {
 }
 
 unsigned char* ZipList::getEntry(uint32_t index) {
+    unsigned char* entry = this->entries;
+    for (int i = 0; i < index; i++) {
+        entry = nextEntry(entry);
+        if (NULL == entry) {
+            return NULL;
+        }
+    }
 
+    return entry;
 }
 
 unsigned char* ZipList::findEntry(unsigned char* entry, uint32_t len, uint16_t skip) {
@@ -24,12 +34,12 @@ unsigned char* ZipList::findEntry(unsigned char* entry, uint32_t len, uint16_t s
 }
 
 unsigned char* ZipList::nextEntry(unsigned char* entry) {
-    // s为空或者s指向尾结点
-    if (NULL == entry || ZIP_END == this->entries) {
+    // s为空或者s指向ZIP_END
+    if (NULL == entry || ZIP_END == *this->entries) {
         return NULL;
     }
 
-    return entry + decodeEntryLen(entry);
+    return entry + decodeEntryLen(entry, decodePrevLenSize(entry));
 }
 
 unsigned char* ZipList::prevEntry(unsigned char* entry) {
@@ -40,7 +50,7 @@ unsigned char* ZipList::prevEntry(unsigned char* entry) {
 
     // entry指向尾节点
     if (ZIP_END == *entry) {
-        return ZIP_END == this->zltail ? NULL : this->zltail;
+        return this->entries + this->zltail;
     }
 
     return entry - decodePrevEntryLength(entry);
@@ -59,7 +69,23 @@ uint32_t ZipList::blobLen() {
 }
 
 int ZipList::deleteEntry(unsigned char* entry) {
+    // entry为空或者entry指向ZIP_END
+    if (NULL == entry || ZIP_END == *entry) {
+        return -1;
+    }
 
+    unsigned char* next = this->nextEntry(entry);
+    if (ZIP_END == *next) {
+        memmove(entry, next, 1);
+        this->zltail = this->prevEntry(entry) - this->entries;
+    } else {
+        unsigned char* entryEncoding = getEntryEncoding(entry);
+        unsigned char* nextEncoding = getEntryEncoding(next);
+        memmove(entryEncoding, nextEncoding, this->entries + this->zltail - nextEncoding + 1);
+        this->zltail -= nextEncoding - entryEncoding;
+    }
+
+    return 1;
 }
 
 uint32_t ZipList::decodePrevEntryLength(unsigned char* entry) {
@@ -71,6 +97,10 @@ uint32_t ZipList::decodePrevEntryLength(unsigned char* entry) {
     }
 }
 
+unsigned char* ZipList::getEntryEncoding(unsigned char* entry) {
+    return entry + this->decodePrevLenSize(entry);
+}
+
 uint8_t ZipList::decodePrevLenSize(unsigned char* entry) {
     if (NULL == entry) {
         return -1;
@@ -80,7 +110,7 @@ uint8_t ZipList::decodePrevLenSize(unsigned char* entry) {
 }
 
 uint32_t ZipList::decodeEntryLen(unsigned char* entry, uint8_t prevLenSize) {
-    char* encoding = entry + prevLenSize;
+    unsigned char* encoding = entry + prevLenSize;
     uint8_t flag = *encoding & 0xc0;
 
     uint8_t encodingSize = 0;
@@ -106,3 +136,4 @@ uint32_t ZipList::decodeEntryLen(unsigned char* entry, uint8_t prevLenSize) {
 
     return prevLenSize + encodingSize + contentSize;
 }
+

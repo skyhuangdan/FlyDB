@@ -4,6 +4,7 @@
 
 #ifndef FLYDB_ZIPLIST_H
 #define FLYDB_ZIPLIST_H
+#include <cstdint>
 
 const uint8_t ZIP_END = 255;
 const uint8_t ZIP_PREVENTRY_LONG_FLAG = 0XFE;
@@ -25,8 +26,10 @@ public:
 
 private:
     uint32_t decodePrevEntryLength(unsigned char* entry);
+    unsigned char* getEntryEncoding(unsigned char* entry);
     uint8_t decodePrevLenSize(unsigned char* entry);
     uint32_t decodeEntryLen(unsigned char* entry, uint8_t prevLenSize);
+    uint8_t decodeEncodingSize(unsigned char* entry, uint8_t prevLenSize);
     uint32_t bytes;
     uint32_t zltail;
     uint16_t len;
