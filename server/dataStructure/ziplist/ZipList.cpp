@@ -6,15 +6,52 @@
 #include "ZipList.h"
 
 ZipList::ZipList() {
-    this->bytes = 0;
     this->entries = (unsigned char*)malloc(1);
     *(this->entries) = ZIP_END;
     this->len = 0;
-    this->zltail = 1;
+    this->zltail = 0;
 }
 
-int ZipList::push(unsigned char* s, uint32_t len, int where) {
+// 在尾部添加
+int ZipList::push(unsigned char* s, uint32_t len) {
+    unsigned char* tail = this->entries + this->zltail;
+    uint32_t entryLen = this->decodeEntryLen(tail, decodePrevLenSize(tail));
+    uint8_t prevEntrySize = entryLen >= 254 ? 5 : 1;
+    uint8_t encodingSize = 0;
+    if (len <= 63) {
+        encodingSize = 1;
+    } else if (len < 16383) {
+        encodingSize = 2;
+    } else {
+        encodingSize = 5;
+    }
 
+    realloc(this->entries, this->blobLen() + prevEntrySize + encodingSize);
+    unsigned char* insert = this->nextEntry(tail);
+    if (1 == prevEntrySize) {
+        insert[0] = (uint8_t)entryLen;
+        insert++;
+    } else {
+        insert[0] = 0xFE;
+        reinterpret_cast<uint32_t*>(insert+1)[0] = entryLen;
+        insert += 5;
+    }
+
+    switch (encodingSize) {
+        case 1:
+            insert[0]= 0x3f & len;
+            break;
+        case 2:
+            reinterpret_cast<uint16_t*>(insert)[0] = (len & 0x7f) | 0x40;
+            break;
+        case 5:
+            insert[0]= 0x80;
+            reinterpret_cast<uint32_t*>(insert+1)[0] = len;
+            break;
+    }
+
+    this->len++;
+    this->zltail += len + encodingSize + prevEntrySize;
 }
 
 unsigned char* ZipList::getEntry(uint32_t index) {
@@ -27,10 +64,6 @@ unsigned char* ZipList::getEntry(uint32_t index) {
     }
 
     return entry;
-}
-
-unsigned char* ZipList::findEntry(unsigned char* entry, uint32_t len, uint16_t skip) {
-
 }
 
 unsigned char* ZipList::nextEntry(unsigned char* entry) {
@@ -56,16 +89,12 @@ unsigned char* ZipList::prevEntry(unsigned char* entry) {
     return entry - decodePrevEntryLength(entry);
 }
 
-int ZipList::merge(ZipList zl) {
-
-}
-
 uint16_t ZipList::length() {
     return this->len;
 }
 
 uint32_t ZipList::blobLen() {
-    return this->bytes;
+    return this->zltail + 1;
 }
 
 int ZipList::deleteEntry(unsigned char* entry) {
@@ -84,6 +113,10 @@ int ZipList::deleteEntry(unsigned char* entry) {
         memmove(entryEncoding, nextEncoding, this->entries + this->zltail - nextEncoding + 1);
         this->zltail -= nextEncoding - entryEncoding;
     }
+    this->len--;
+
+    // 改变内存大小
+    realloc(this->entries, this->blobLen());
 
     return 1;
 }
