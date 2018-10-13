@@ -227,3 +227,30 @@ Dict::~Dict() {
         delete this->ht[1];
     }
 }
+
+unsigned int dictGenHashFunction(const char *buf, int len) {
+    unsigned int hash = 5381;
+
+    while (len--)
+        hash = ((hash << 5) + hash) + (*buf++); /* hash * 33 + c */
+    return hash;
+}
+
+uint64_t dictStrHash(const void *key) {
+    return dictGenHashFunction(reinterpret_cast<const std::string*>(key)->c_str(),
+                               reinterpret_cast<const std::string*>(key)->length());
+}
+
+int dictStrKeyCompare(const void *key1, const void *key2) {
+    const std::string *str1 = reinterpret_cast<const std::string*>(key1);
+    return str1->compare(*reinterpret_cast<const std::string*>(key2));
+}
+
+void dictStrDestructor(void *val) {
+    if (NULL == val) {
+        return;
+    }
+
+    delete reinterpret_cast<std::string*>(val);
+}
+

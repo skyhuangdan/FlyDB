@@ -11,9 +11,9 @@ void testScanProc(void* priv, void* key, void* val);
 
 class TestDictType : public DictType {
 public:
-    unsigned long hashFunction(const void *key) const;
-    void* keyDup(const void *key) const;
-    void* valDup(const void *obj) const;
+    uint64_t hashFunction(const void *key) const;
+    void* keyDup(void *key) const;
+    void* valDup(void *obj) const;
     int keyCompare(const void *key1, const void *key2) const ;
     void keyDestructor(void *key) const;
     void valDestructor(void *obj) const;

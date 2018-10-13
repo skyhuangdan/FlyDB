@@ -6,10 +6,15 @@
 #define FLYDB_FLYDB_H
 
 
+#include "../dataStructure/dict/Dict.h"
+
 class FlyDB {
 public:
     FlyDB();
 
+private:
+    Dict* dict;
+    Dict* expires;
 };
 
 

@@ -8,7 +8,7 @@
 #include <array>
 #include <map>
 #include <string>
-#include "FlyDB.h"
+#include "db/FlyDB.h"
 #include "CommandEntry.h"
 
 const int DB_NUM = 4;

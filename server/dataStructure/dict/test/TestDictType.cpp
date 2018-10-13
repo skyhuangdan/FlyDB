@@ -6,14 +6,14 @@
 #include <iostream>
 #include "TestDictType.h"
 
-unsigned long TestDictType::hashFunction(const void *key) const {
+uint64_t TestDictType::hashFunction(const void *key) const {
     return 0;
 }
 
-void* TestDictType::keyDup(const void *key) const {
+void* TestDictType::keyDup(void *key) const {
 }
 
-void* TestDictType::valDup(const void *obj) const {
+void* TestDictType::valDup(void *obj) const {
 }
 
 int TestDictType::keyCompare(const void *key1, const void *key2) const {
