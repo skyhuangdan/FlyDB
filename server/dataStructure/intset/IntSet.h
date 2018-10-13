@@ -8,6 +8,9 @@
 #include <cstdint>
 #include "IntSetDef.h"
 
+/**
+ * 有序整数集合: 从小到大排列
+ */
 class IntSet {
 public:
     IntSet();
