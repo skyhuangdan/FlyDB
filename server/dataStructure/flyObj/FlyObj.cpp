@@ -2,7 +2,13 @@
 // Created by 赵立伟 on 2018/10/13.
 //
 
+#include <string>
+#include <list>
+#include <mach/mach.h>
 #include "FlyObj.h"
+#include "../dict/Dict.h"
+#include "../intset/IntSet.h"
+#include "../skiplist/SkipList.h"
 
 void FlyObj::incrRefCount() {
     this->refCount++;
@@ -10,6 +16,30 @@ void FlyObj::incrRefCount() {
 
 void FlyObj::decrRefCount() {
     this->refCount--;
+    if (0 == this->refCount) {
+        switch (this->encoding) {
+            case FLY_ENCODING_INT:
+                delete reinterpret_cast<int *>(ptr);
+                break;
+            case FLY_ENCODING_STRING:
+                delete reinterpret_cast<std::string *>(ptr);
+                break;
+            case FLY_ENCODING_HT:
+                delete reinterpret_cast<Dict*>(ptr);
+                break;
+            case FLY_ENCODING_LINKEDLIST:
+                delete reinterpret_cast<std::list<std::string> *>(ptr);
+                break;
+            case FLY_ENCODING_INTSET:
+                delete reinterpret_cast<IntSet *>(ptr);
+                break;
+            case FLY_ENCODING_SKIPLIST:
+                delete reinterpret_cast<SkipList *>(ptr);
+                break;
+            default:
+                panic("wrong fly encoding!");
+        }
+    }
 }
 
 void FlyObj::resetRefCount() {

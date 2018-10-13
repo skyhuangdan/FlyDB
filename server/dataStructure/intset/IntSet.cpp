@@ -14,6 +14,10 @@ IntSet::IntSet() {
     this->contents = NULL;
 }
 
+IntSet::~IntSet() {
+    free(this->contents);
+}
+
 int IntSet::add(int64_t value) {
     uint8_t encoding = valueEncoding(value);
     if (encoding > this->encoding) {

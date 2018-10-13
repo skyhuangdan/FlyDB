@@ -14,6 +14,7 @@
 class IntSet {
 public:
     IntSet();
+    virtual ~IntSet();
     int add(int64_t value);
     int remove(int64_t value);
     bool find(int64_t value);

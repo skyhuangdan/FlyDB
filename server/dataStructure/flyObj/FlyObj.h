@@ -15,25 +15,15 @@ public:
     void incrRefCount();
     void decrRefCount();
     void resetRefCount();
-
     FlyObjType getType() const;
-
     void setType(FlyObjType type);
-
     FlyObjEncoding getEncoding() const;
-
     void setEncoding(FlyObjEncoding encoding);
-
     uint32_t getRefCount() const;
-
     void setRefCount(uint32_t refCount);
-
     uint16_t getLru() const;
-
     void setLru(uint16_t lru);
-
     void *getPtr() const;
-
     void setPtr(void *ptr);
 
 private:
