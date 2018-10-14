@@ -3,9 +3,10 @@
 //
 
 #include "FlyDB.h"
-#include "DBDictType.h"
+#include "dictTypeImpl/DBDictType.h"
+#include "dictTypeImpl/KeyPtrDictType.h"
 
 FlyDB::FlyDB() {
     this->dict = new Dict(DBDictType());
-    this->expires = new Dict(DBDictType());
+    this->expires = new Dict(KeyPtrDictType());
 }

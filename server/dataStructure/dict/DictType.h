@@ -9,12 +9,12 @@
 
 class DictType {
 public:
-    virtual uint64_t hashFunction(const void *key) const = 0;
-    virtual void* keyDup(void *key) const = 0;
-    virtual void* valDup(void *obj) const = 0;
-    virtual int keyCompare(const void *key1, const void *key2) const = 0;
-    virtual void keyDestructor(void *key) const = 0;
-    virtual void valDestructor(void *obj) const = 0;
+    virtual uint64_t hashFunction(const void *key) const;
+    virtual void* keyDup(void *key) const;
+    virtual void* valDup(void *obj) const;
+    virtual int keyCompare(const void *key1, const void *key2) const;
+    virtual void keyDestructor(void *key) const;
+    virtual void valDestructor(void *obj) const;
 };
 
 #endif //FLYDB_DICTTYPE_H

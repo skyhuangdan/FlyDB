@@ -237,11 +237,24 @@ unsigned int dictGenHashFunction(const char *buf, int len) {
 }
 
 uint64_t dictStrHash(const void *key) {
+    if (NULL == key) {
+        return 0;
+    }
     return dictGenHashFunction(reinterpret_cast<const std::string*>(key)->c_str(),
                                reinterpret_cast<const std::string*>(key)->length());
 }
 
 int dictStrKeyCompare(const void *key1, const void *key2) {
+    if (NULL == key1 && NULL == key2) {
+        return 0;
+    }
+    if (NULL == key1) {
+        return -1;
+    }
+    if (NULL == key2) {
+        return 1;
+    }
+
     const std::string *str1 = reinterpret_cast<const std::string*>(key1);
     return str1->compare(*reinterpret_cast<const std::string*>(key2));
 }
