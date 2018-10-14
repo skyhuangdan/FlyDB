@@ -16,7 +16,7 @@ int dictStrKeyCompare(const void *key1, const void *key2);
 
 class Dict {
 public:
-    Dict(const DictType& type);
+    Dict(const DictType* type);
     virtual ~Dict();
 
     int addEntry(void* key, void* val);
@@ -32,7 +32,7 @@ public:
 private:
     uint32_t revBits(uint32_t bits);
     std::array<class HashTable*, 2> ht;
-    const DictType& type;
+    const DictType* type;
     int64_t rehashIndex = -1;
 };
 

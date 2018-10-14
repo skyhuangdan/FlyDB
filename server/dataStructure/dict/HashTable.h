@@ -10,7 +10,7 @@
 
 class HashTable {
  public:
-    HashTable(const DictType& type, uint32_t size);
+    HashTable(const DictType* type, uint32_t size);
     virtual ~HashTable();
 
     int addEntry(void* key, void* val);
@@ -32,7 +32,7 @@ private:
     uint32_t size;
     uint32_t used;
     uint32_t mask;
-    const DictType& type;
+    const DictType* type;
 };
 
 

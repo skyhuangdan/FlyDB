@@ -10,7 +10,7 @@
 
 struct DictEntry {
  public:
-    DictEntry(void* key, void* val, const DictType& type);
+    DictEntry(void* key, void* val, const DictType* type);
     virtual ~DictEntry();
     void *getKey() const;
     void *getVal() const;
@@ -19,7 +19,7 @@ struct DictEntry {
     void* key;
     void* val;
     DictEntry* next;
-    const DictType& type;
+    const DictType* type;
 
 };
 

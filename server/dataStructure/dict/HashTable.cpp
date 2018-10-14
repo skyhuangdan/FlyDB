@@ -5,7 +5,7 @@
 #include "HashTable.h"
 
 
-HashTable::HashTable(const DictType& type, uint32_t size) : type(type), size(size) {
+HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(size) {
     this->table = new DictEntry*[size];
     for (uint32_t i = 0; i < size; i++) {
         this->table[i] = NULL;
@@ -19,7 +19,7 @@ HashTable::~HashTable() {
 }
 
 uint32_t HashTable::getIndex(void* key) const {
-    return this->type.hashFunction(key) & this->mask;
+    return this->type->hashFunction(key) & this->mask;
 }
 
 uint32_t HashTable::getIndex(uint32_t cursor) const {
@@ -57,7 +57,7 @@ DictEntry* HashTable::findEntry(void* key) {
     uint32_t index = getIndex(key);
     DictEntry* node = this->table[index];
     while (node != NULL) {
-        if (this->type.keyCompare(node->key, key) > 0) {
+        if (this->type->keyCompare(node->key, key) > 0) {
            return node;
         }
         node = node->next;
@@ -70,7 +70,7 @@ int HashTable::deleteEntry(void* key) {
     DictEntry* node = this->table[index];
     if (node != NULL) {
         // 如果要删除的key是头结点
-        if (this->type.keyCompare(node->key, key)) {
+        if (this->type->keyCompare(node->key, key)) {
             this->table[index] = node->next;
             delete node;
             this->used--;
@@ -79,7 +79,7 @@ int HashTable::deleteEntry(void* key) {
 
         // 如果不是头结点，则查找链表中是否有该节点
         while (node->next != NULL) {
-            if (this->type.keyCompare(node->next->key, key)) {
+            if (this->type->keyCompare(node->next->key, key)) {
                 DictEntry* tmp = node->next;
                 node->next = node->next->next;
                 delete tmp;

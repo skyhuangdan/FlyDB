@@ -5,7 +5,7 @@
 #include <iostream>
 #include "Dict.h"
 
-Dict::Dict(const DictType& type) : type(type) {
+Dict::Dict(const DictType* type) : type(type) {
     this->ht[0] = new HashTable(type, HASH_TABLE_INITIAL_SIZE);
     this->ht[1] = NULL;
     this->rehashIndex = -1;
@@ -126,7 +126,7 @@ int Dict::replace(void* key, void* val) {
 
     // 如果插入失败，说明之前存在该key，需要替换value
     DictEntry* entry = findEntry(key);
-    entry->val = this->type.valDup(val);
+    entry->val = this->type->valDup(val);
     return 1;
 }
 

@@ -7,6 +7,6 @@
 #include "dictTypeImpl/KeyPtrDictType.h"
 
 FlyDB::FlyDB() {
-    this->dict = new Dict(DBDictType());
-    this->expires = new Dict(KeyPtrDictType());
+    this->dict = new Dict(new DBDictType());
+    this->expires = new Dict(new KeyPtrDictType());
 }
