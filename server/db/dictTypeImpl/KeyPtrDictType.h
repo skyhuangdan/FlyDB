@@ -9,7 +9,19 @@
 #include "../../dataStructure/dict/Dict.h"
 
 class KeyPtrDictType : public DictType {
+private:
+    KeyPtrDictType() {
+    }
+
 public:
+    static DictType* getInstance() {
+        static KeyPtrDictType* instance;
+        if (NULL == instance) {
+            instance = new KeyPtrDictType();
+        }
+        return instance;
+    }
+
     uint64_t hashFunction(const void *key) const {
         return dictStrHash(key);
     };

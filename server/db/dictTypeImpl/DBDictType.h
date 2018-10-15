@@ -10,7 +10,18 @@
 #include "../../dataStructure/flyObj/FlyObj.h"
 
 class DBDictType : public DictType {
+private:
+    DBDictType() {
+    }
 public:
+    static DictType* getInstance() {
+        static DBDictType* instance;
+        if (NULL == instance) {
+            instance = new DBDictType();
+        }
+        return instance;
+    }
+
     uint64_t hashFunction(const void *key) const {
         return dictStrHash(key);
     }
@@ -32,6 +43,5 @@ public:
         flyObj->decrRefCount();
     }
 };
-
 
 #endif //FLYDB_DBDICTTYPE_H
