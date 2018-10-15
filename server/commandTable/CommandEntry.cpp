@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "FlyServer.h"
+#include "../FlyServer.h"
 #include "CommandEntry.h"
 
 CommandEntry::CommandEntry(commandProc proc, int flag) :

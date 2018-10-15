@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "FlyServer.h"
-#include "CommandEntry.h"
+#include "commandTable/CommandEntry.h"
 
 FlyServer::FlyServer() {
 }
@@ -19,8 +19,8 @@ void FlyServer::init() {
         }
     }
 
-    // 初始化命令表
-    initCommandTable();
+    // init command table
+    commandTable = new CommandTable(this);
 
     return;
 }
@@ -33,23 +33,12 @@ FlyDB* FlyServer::getDB(int dbID) {
     return this->dbArray.at(dbID);
 }
 
-void FlyServer::initCommandTable() {
-    this->commandTable["version"] = new CommandEntry(versionProc, 0);
-}
-
 std::string FlyServer::getVersion() {
     return this->version;
 }
 
-int FlyServer::dealWithCommand(std::string command) {
-    auto iter = this->commandTable.find(command);
-    if (iter == this->commandTable.end()) {
-        std::cout << "wrong command type!" << std::endl;
-        return -1;
-    }
-
-    iter->second->proc(this);
-    return 1;
+int FlyServer::dealWithCommand(std::string* command) {
+    return this->commandTable->dealWithCommand(command);
 }
 
 

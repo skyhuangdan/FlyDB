@@ -9,7 +9,7 @@
 #include <map>
 #include <string>
 #include "db/FlyDB.h"
-#include "CommandEntry.h"
+#include "commandTable/CommandTable.h"
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -26,21 +26,17 @@ public:
     FlyDB* getDB(int dbID);
     // 获取版本号
     std::string getVersion();
-    // 处理command
-    int dealWithCommand(std::string command);
-
-private:
-    void initCommandTable();
+    // 处理命令
+    int dealWithCommand(std::string* command);
 
 private:
     // 运行server的线程标识
     int pid;
     // db列表
     std::array<FlyDB*, DB_NUM> dbArray;
-    // 命令表
-    std::map<std::string, CommandEntry*> commandTable;
     // 版本号
     std::string version = VERSION;
+    CommandTable* commandTable;
 };
 
 #endif //FLYDB_FLYSERVER_H

@@ -15,6 +15,6 @@ struct CommandEntry {
     int flag;
 };
 
-void versionProc(FlyServer* server);
+void versionProc(FlyServer*);
 
 #endif //FLYDB_COMMANDENTRY_H

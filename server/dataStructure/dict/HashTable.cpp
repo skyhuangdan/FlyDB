@@ -57,7 +57,7 @@ DictEntry* HashTable::findEntry(void* key) {
     uint32_t index = getIndex(key);
     DictEntry* node = this->table[index];
     while (node != NULL) {
-        if (this->type->keyCompare(node->key, key) > 0) {
+        if (this->type->keyCompare(node->key, key) == 0) {
            return node;
         }
         node = node->next;

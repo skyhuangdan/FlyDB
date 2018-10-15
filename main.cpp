@@ -28,8 +28,8 @@ int main() {
 
     while(true) {
         std::cout << "flyDB> ";
-        std::string command;
-        std::cin >> command;
+        std::string* command = new std::string();
+        std::cin >> *command;
         flyServer->dealWithCommand(command);
     }
 }
