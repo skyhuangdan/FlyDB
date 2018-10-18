@@ -8,8 +8,10 @@
 #include <array>
 #include <map>
 #include <string>
+#include <list>
 #include "db/FlyDB.h"
 #include "commandTable/CommandTable.h"
+#include "flyClient/FlyClient.h"
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -36,7 +38,10 @@ private:
     std::array<FlyDB*, DB_NUM> dbArray;
     // 版本号
     std::string version = VERSION;
+    // 命令表
     CommandTable* commandTable;
+    // client列表
+    std::list<FlyClient *> clients;
 };
 
 #endif //FLYDB_FLYSERVER_H
