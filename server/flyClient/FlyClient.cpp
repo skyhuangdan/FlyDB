@@ -72,14 +72,6 @@ void FlyClient::setBufSize(int bufSize) {
     FlyClient::bufSize = bufSize;
 }
 
-std::list<std::string> *FlyClient::getReply() const {
-    return reply;
-}
-
-void FlyClient::setReply(std::list<std::string> *reply) {
-    FlyClient::reply = reply;
-}
-
 int FlyClient::getAuthentiated() const {
     return authentiated;
 }
@@ -110,4 +102,12 @@ time_t FlyClient::getSoftLimitTime() const {
 
 void FlyClient::setSoftLimitTime(time_t softLimitTime) {
     FlyClient::softLimitTime = softLimitTime;
+}
+
+const std::list<std::string> &FlyClient::getReply() const {
+    return reply;
+}
+
+void FlyClient::setReply(const std::list<std::string> &reply) {
+    FlyClient::reply = reply;
 }

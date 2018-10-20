@@ -32,8 +32,8 @@ public:
     const char *getBuf() const;
     int getBufSize() const;
     void setBufSize(int bufSize);
-    std::list<std::string> *getReply() const;
-    void setReply(std::list<std::string> *reply);
+    const std::list<std::string> &getReply() const;
+    void setReply(const std::list<std::string> &reply);
     int getAuthentiated() const;
     void setAuthentiated(int authentiated);
     time_t getCreateTime() const;
@@ -61,7 +61,7 @@ private:
     char buf[FLY_REPLY_CHUNK_BYTES];
     int bufSize;
     // 可变长度输出缓冲区
-    std::list<std::string>* reply;
+    std::list<std::string> reply;
     // 是否通过了身份验证
     int authentiated;
     // 客户端创建事件

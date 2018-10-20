@@ -32,6 +32,9 @@ public:
     int dealWithCommand(std::string* command);
 
 private:
+    // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
+    void setMaxClientLimit();
+    void clientCron(void);
     // 运行server的线程标识
     int pid;
     // db列表
@@ -42,6 +45,10 @@ private:
     CommandTable* commandTable;
     // client列表
     std::list<FlyClient *> clients;
+    // tcp listening port
+    int port;
+    // 最大可同时连接的client数量
+    int maxClients;
 };
 
 #endif //FLYDB_FLYSERVER_H
