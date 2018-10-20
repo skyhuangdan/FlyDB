@@ -50,9 +50,9 @@ void FlyServer::setMaxClientLimit() {
     int maxFiles = this->maxClients + CONFIG_MIN_RESERVED_FDS;
     rlimit limit;
 
-    // 获取当前可打开的最大文件描述符
+    // 获取当前进程可打开的最大文件描述符
     if (getrlimit(RLIMIT_NOFILE, &limit) == -1) {
-        // 如果获取失败, 按照系统中最大文件数量为1024计算(内核默认1024), 重置maxClients
+        // 如果获取失败, 按照进程中最大文件数量为1024计算(内核默认1024), 重置maxClients
         this->maxClients = 1024 - CONFIG_MIN_RESERVED_FDS;
     } else {
         int softLimit = limit.rlim_cur;
@@ -63,7 +63,7 @@ void FlyServer::setMaxClientLimit() {
 
             // 逐步试探提高softlimit
             while (curLimit > softLimit) {
-                limit.rlim_cur = limit.rlim_max = curLimit;
+                limit.rlim_cur = curLimit;
                 if (setrlimit(RLIMIT_NOFILE, &limit) != -1) {
                     break;
                 }
