@@ -10,6 +10,9 @@
 #include "FileEvent.h"
 #include "TimeEvent.h"
 
+class EventLoop;
+typedef void beforeAndAfterSleepProc(EventLoop *eventLoop);
+
 class EventLoop {
 public:
     EventLoop(int setSize);
@@ -19,6 +22,13 @@ public:
     void stop();
     int createFileEvent(int fd, int mask, fileProc* proc, void *clientdata);
     int deleteFileEvent(int fd, int mask);
+    int getFileEvents(int fd);
+    beforeAndAfterSleepProc* getBeforeSleepProc() const;
+    void setBeforeSleepProc(beforeAndAfterSleepProc* proc);
+    beforeAndAfterSleepProc* getAfterSleepProc() const;
+    void setAfterSleepProc(beforeAndAfterSleepProc* proc);
+    int processEvents(int flags);
+    void eventMain();
 
 private:
     int maxfd;          // 当前注册的最大fd(file descriptor)
@@ -29,6 +39,8 @@ private:
     std::vector<TimeEvent> timeEvents;
     bool stopFlag;
     void *apiData;
+    beforeAndAfterSleepProc *beforeSleepProc;
+    beforeAndAfterSleepProc *afterSleepProc;
 };
 
 

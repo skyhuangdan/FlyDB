@@ -24,6 +24,19 @@ EventLoop::~EventLoop() {
     delete this->apiData;
 }
 
+int EventLoop::processEvents(int flags) {
+}
+
+void EventLoop::eventMain() {
+    this->stopFlag = 0;
+    while (!this->stopFlag) {
+        if (NULL != this->beforeSleepProc) {
+            this->beforeSleepProc(this);
+        }
+        this->processEvents(EVENT_ALL_EVENTS | EVENT_CALL_AFTER_SLEEP);
+    }
+}
+
 int EventLoop::getSetSize() const {
     return setSize;
 }
@@ -90,3 +103,28 @@ int EventLoop::resizeSetSize(int setSize) {
     this->setSize = setSize;
     return 1;
 }
+
+int EventLoop::getFileEvents(int fd) {
+    if (fd > this->setSize) {
+        return -1;
+    }
+
+    return this->fileEvents[fd].getMask();
+}
+
+beforeAndAfterSleepProc* EventLoop::getBeforeSleepProc() const {
+    return this->beforeSleepProc;
+}
+
+void EventLoop::setBeforeSleepProc(beforeAndAfterSleepProc* proc) {
+    this->beforeSleepProc = beforeSleepProc;
+}
+
+beforeAndAfterSleepProc* EventLoop::getAfterSleepProc() const {
+    return this->afterSleepProc;
+}
+
+void EventLoop::setAfterSleepProc(beforeAndAfterSleepProc* proc) {
+    this->afterSleepProc = afterSleepProc;
+}
+

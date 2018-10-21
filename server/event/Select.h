@@ -19,9 +19,4 @@ private:
     fd_set _rfds, _wfds;
 };
 
-class Select {
-
-};
-
-
 #endif //FLYDB_SELECT_H
