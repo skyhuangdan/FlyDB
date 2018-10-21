@@ -12,9 +12,4 @@ enum EventStatus {
     ES_WRITABLE
 };
 
-enum EventREsult {
-    ER_OK = 0,
-    ER_ERR
-};
-
 #endif //FLYDB_EVENTDEF_H

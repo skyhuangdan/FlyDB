@@ -17,7 +17,8 @@ public:
     int getSetSize() const;
     int resizeSetSize(int setSize);
     void stop();
-    int createfileevent(int fd, int mask, fileProc* proc, void *clientdata);
+    int createFileEvent(int fd, int mask, fileProc* proc, void *clientdata);
+    int deleteFileEvent(int fd, int mask);
 
 private:
     int maxfd;          // 当前注册的最大fd(file descriptor)

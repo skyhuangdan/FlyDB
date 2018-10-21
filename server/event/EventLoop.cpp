@@ -32,22 +32,54 @@ void EventLoop::stop() {
     this->stopFlag = true;
 }
 
-int EventLoop::createfileevent(int fd, int mask, fileProc* proc, void *clientdata) {
+int EventLoop::createFileEvent(int fd, int mask, fileProc* proc, void *clientdata) {
     if (fd > this->setSize) {
-        return ER_ERR;
+        return -1;
     }
 
-    // todo:
+    // 设置fileEvent, 添加file proc
+    FileEvent& fileEvent = this->fileEvents[fd];
+    fileEvent.addFileProc(fd, mask, proc, clientdata);
+
+    if (this->maxfd < fd) {
+        this->maxfd = fd;
+    }
+
+    return 1;
+}
+
+int EventLoop::deleteFileEvent(int fd, int mask) {
+    if (fd > this->setSize) {
+        return -1;
+    }
+
+    FileEvent &fileEvent = this->fileEvents[fd];
+    if (ES_NONE == fileEvent.getMask()) {
+        return -1;
+    }
+
+    fileEvent.delFileProc(fd, mask);
+
+    if (fd == this->maxfd && this->fileEvents[fd].noneMask()) {
+        for (int i = this->maxfd - 1; i >= 0; i--) {
+            if (!this->fileEvents[i].noneMask()) {
+                this->maxfd = i;
+                break;
+            }
+        }
+    }
+
+    return 1;
 }
 
 int EventLoop::resizeSetSize(int setSize) {
     if (setSize == this->setSize) {
-       return ER_OK;
+       return 1;
     }
 
     // 如果当前最大fd > setSize, 则返回失败
     if (this->maxfd > setSize) {
-        return ER_ERR;
+        return -1;
     }
 
     this->fileEvents.resize(setSize);
@@ -56,5 +88,5 @@ int EventLoop::resizeSetSize(int setSize) {
     }
 
     this->setSize = setSize;
-    return ER_OK;
+    return 1;
 }

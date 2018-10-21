@@ -10,6 +10,8 @@
 class EventState {
 public:
     EventState();
+    void add(int fd, int mask);
+    void del(int fd, int mask);
 
 private:
     fd_set rfds, wfds;

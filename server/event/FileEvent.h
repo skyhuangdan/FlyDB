@@ -10,10 +10,16 @@ typedef void fileProc(struct EventLoop *eventLoop, int fd, void *clientdata, int
 class FileEvent {
 public:
     void setMask(int mask);
+    int getMask() const;
     void setClientData(void *clientData);
+    void* getClientData() const;
     void setRFileProc(fileProc *rfileProc);
+    fileProc* getRFileProc() const;
     void setWFileProc(fileProc *wfileProc);
-
+    fileProc* getWFileProc() const;
+    int addFileProc(int fd, int mask, fileProc *proc, void *clientData);
+    void delFileProc(int fd, int mask);
+    bool noneMask();
 
 private:
     int mask;       // EVENT_READABLE或者EVENT_WRITABLE
