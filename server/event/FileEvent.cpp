@@ -23,23 +23,23 @@ void* FileEvent::getClientData() const {
     return this->clientData;
 }
 
-fileProc* FileEvent::getRFileProc() const {
+fileEventProc* FileEvent::getRFileProc() const {
     return this->rfileProc;
 }
 
-fileProc* FileEvent::getWFileProc() const {
+fileEventProc* FileEvent::getWFileProc() const {
     return this->wfileProc;
 }
 
-void FileEvent::setRFileProc(fileProc *rfileProc) {
+void FileEvent::setRFileProc(fileEventProc *rfileProc) {
     this->rfileProc = rfileProc;
 }
 
-void FileEvent::setWFileProc(fileProc *wfileProc) {
+void FileEvent::setWFileProc(fileEventProc *wfileProc) {
     this->wfileProc = wfileProc;
 }
 
-int FileEvent::addFileProc(int fd, int mask, fileProc *proc, void *clientData) {
+int FileEvent::addFileProc(int fd, int mask, fileEventProc *proc, void *clientData) {
     if (NULL == clientData) {
         return -1;
     }

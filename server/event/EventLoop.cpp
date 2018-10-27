@@ -45,7 +45,7 @@ void EventLoop::stop() {
     this->stopFlag = true;
 }
 
-int EventLoop::createFileEvent(int fd, int mask, fileProc* proc, void *clientdata) {
+int EventLoop::createFileEvent(int fd, int mask, fileEventProc* proc, void *clientdata) {
     if (fd > this->setSize) {
         return -1;
     }
@@ -126,5 +126,13 @@ beforeAndAfterSleepProc* EventLoop::getAfterSleepProc() const {
 
 void EventLoop::setAfterSleepProc(beforeAndAfterSleepProc* proc) {
     this->afterSleepProc = afterSleepProc;
+}
+
+int EventLoop::deleteTimeEvent(uint64_t id) {
+}
+
+void EventLoop::createTimeEvent(long long milliseconds, timeEventProc *proc,
+                    void *clientData, eventFinalizerProc *finalizerProc) {
+    this->timeEvents.push_front(TimeEvent(this->timeEventNextId++, milliseconds, proc, clientData, finalizerProc));
 }
 
