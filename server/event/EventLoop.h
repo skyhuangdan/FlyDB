@@ -10,6 +10,7 @@
 #include <ctime>
 #include "FileEvent.h"
 #include "TimeEvent.h"
+#include "FiredEvent.h"
 
 class EventLoop;
 typedef void beforeAndAfterSleepProc(EventLoop *eventLoop);
@@ -20,6 +21,7 @@ public:
     ~EventLoop();
     int processEvents(int flags);
     void eventMain();
+    int getMaxfd() const;
 
     // file event
     int getSetSize() const;
@@ -39,12 +41,16 @@ public:
     void createTimeEvent(long long milliseconds, timeEventProc *proc,
                         void *clientData, eventFinalizerProc *finalizerProc);
 
+    // fired event
+    void addFiredEvent(int fd, int mask);
+
 private:
     int maxfd;          // 当前注册的最大fd(file descriptor)
     int setSize;        // 最大fd数量
     uint64_t timeEventNextId;
     int64_t lastTime;
     std::vector<FileEvent> fileEvents;
+    std::vector<FiredEvent> firedEvent;
     std::list<TimeEvent> timeEvents;
     bool stopFlag;
     void *apiData;

@@ -13,10 +13,10 @@ EventLoop::EventLoop(int setSize) {
     this->timeEventNextId = 0;
     this->stopFlag = false;
     this->maxfd = -1;
-    this->apiData = new EventState();
+    this->apiData = new PollState();
     this->fileEvents.resize(this->setSize);
     for (int i = 0; i < this->setSize; i++) {
-        this->fileEvents[0].setMask(ES_NONE);
+        this->fileEvents[i].setMask(ES_NONE);
     }
 }
 
@@ -24,6 +24,7 @@ EventLoop::~EventLoop() {
     delete this->apiData;
     this->timeEvents.clear();
     this->fileEvents.clear();
+    this->firedEvent.clear();
 }
 
 int EventLoop::processEvents(int flags) {
@@ -37,6 +38,10 @@ void EventLoop::eventMain() {
         }
         this->processEvents(EVENT_ALL_EVENTS | EVENT_CALL_AFTER_SLEEP);
     }
+}
+
+int EventLoop::getMaxfd() const {
+    return this->maxfd;
 }
 
 int EventLoop::getSetSize() const {
@@ -132,6 +137,7 @@ void EventLoop::setAfterSleepProc(beforeAndAfterSleepProc* proc) {
 
 int EventLoop::processTimeEvents() {
     int64_t nowt = getCurrentTime();
+    int processed = 0;
 
     /** 如果系统时间曾经往后调、然后又调回来过，那么如果不处理的话，所有的timeevent处理时间可能会非常延后
      * 所以这里将处理时间置0，即马上处理定时任务，防止处理太滞后。**/
@@ -144,6 +150,7 @@ int EventLoop::processTimeEvents() {
     bool needSort = false;
     for (auto iter : this->timeEvents) {
         if (iter.getWhen() < nowt) {
+            processed++;
             int ret = iter.getTimeProc()(this, iter.getId(), iter.getClientData());
             if (ret > 0) {
                 iter.setWhen(nowt + ret);
@@ -156,6 +163,8 @@ int EventLoop::processTimeEvents() {
     if (needSort) {
         this->timeEvents.sort();
     }
+
+    return processed;
 }
 
 int EventLoop::deleteTimeEvent(uint64_t id) {
@@ -177,5 +186,9 @@ void EventLoop::createTimeEvent(long long milliseconds, timeEventProc *proc,
                     void *clientData, eventFinalizerProc *finalizerProc) {
     this->timeEvents.push_front(TimeEvent(this->timeEventNextId++, milliseconds, proc, clientData, finalizerProc));
     this->timeEvents.sort();
+}
+
+void EventLoop::addFiredEvent(int fd, int mask) {
+    this->firedEvent.push_back(FiredEvent(fd, mask));
 }
 

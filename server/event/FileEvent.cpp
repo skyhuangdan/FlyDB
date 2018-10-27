@@ -55,7 +55,7 @@ int FileEvent::addFileProc(int fd, int mask, fileEventProc *proc, void *clientDa
     this->clientData = clientData;
 
     // 设置监听fd
-    EventState* eventState = (EventState*) clientData;
+    PollState* eventState = (PollState*) clientData;
     eventState->add(fd, mask);
 
     return 1;
@@ -64,7 +64,7 @@ int FileEvent::addFileProc(int fd, int mask, fileEventProc *proc, void *clientDa
 void FileEvent::delFileProc(int fd, int mask) {
     this->mask &= ~mask;
     // 设置监听fd
-    EventState* eventState = (EventState*) clientData;
+    PollState* eventState = (PollState*) clientData;
     eventState->del(fd, mask);
 }
 
