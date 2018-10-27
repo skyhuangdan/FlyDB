@@ -24,10 +24,7 @@ EventLoop::~EventLoop() {
     delete this->apiData;
     this->timeEvents.clear();
     this->fileEvents.clear();
-    this->firedEvent.clear();
-}
-
-int EventLoop::processEvents(int flags) {
+    this->firedEvents.clear();
 }
 
 void EventLoop::eventMain() {
@@ -135,6 +132,81 @@ void EventLoop::setAfterSleepProc(beforeAndAfterSleepProc* proc) {
     this->afterSleepProc = afterSleepProc;
 }
 
+int EventLoop::processEvents(int flags) {
+    int processed = 0;
+    // 什么都不处理，则返回
+    if (!(flags & EVENT_FILE_EVENTS) && !(flags & EVENT_TIME_EVENTS)) {
+        return 0;
+    }
+
+    // 系统中存在文件事件描述符 或者 时间事件需要等待, 则执行poll操作（延时时间通过计算获得）
+    if (this->maxfd != -1 || ((flags & EVENT_TIME_EVENTS) && !(flags & EVENT_DONT_WAIT))) {
+        struct timeval tv, *tvp;
+
+        // 获取最新时间事件
+        TimeEvent* timeEvent = NULL;
+        if (0 != this->timeEvents.size()) {
+            timeEvent = &this->timeEvents.front();
+        }
+
+        /* 如果获取到, 则等待至该时间发生
+         * */
+        if (NULL != timeEvent) {
+            int64_t when = timeEvent->getWhen();
+            int64_t nowt = getCurrentTime();
+            if (when > nowt) {
+                tv.tv_sec = (when - nowt) / 1000;
+                tv.tv_usec = (when - nowt) % 1000;
+            } else {
+                tv.tv_sec = 0;
+                tv.tv_usec = 0;
+            }
+            tvp = &tv;
+        } else { // 如果未获取到(说明已经不存在时间事件了)，则看是否需要等待，如果无需等待，则等待时间为0; 否则一直等待
+            if (flags & EVENT_DONT_WAIT) {
+                tv.tv_sec = tv.tv_usec = 0;
+                tvp = &tv;
+            } else {
+                tvp = NULL;
+            }
+        }
+
+        int numEvents = reinterpret_cast<PollState*>(this->apiData)->poll(this, tvp);
+        if (afterSleepProc != NULL && flags & EVENT_CALL_AFTER_SLEEP) {
+            this->afterSleepProc(this);
+        }
+
+        // 处理获取到的文件事件
+        for (int i = 0; i < numEvents; i++) {
+            int fd = this->firedEvents[i].getFd();
+            int mask = this->firedEvents[i].getMask();
+            FileEvent* fileEvent = &this->fileEvents[fd];
+            int rfired = 0;
+
+            // 如果是有可读事件，则执行可读事件回调
+            if (mask & ES_READABLE) {
+                rfired = 1;
+                fileEvent->getRFileProc()(this, fd, fileEvent->getClientData(), mask);
+            }
+            // 如果是有可写事件，则执行可写事件回调
+            if (mask & ES_WRITABLE) {
+                if (fileEvent->getWFileProc() != fileEvent->getRFileProc() || 0 == rfired) {
+                    fileEvent->getWFileProc()(this, fd, fileEvent->getClientData(), mask);
+                }
+            }
+
+            processed++;
+        }
+    }
+
+    // 处理time event
+    if (flags & EVENT_TIME_EVENTS) {
+        processed += processTimeEvents();
+    }
+
+    return processed;
+}
+
 int EventLoop::processTimeEvents() {
     int64_t nowt = getCurrentTime();
     int processed = 0;
@@ -189,6 +261,6 @@ void EventLoop::createTimeEvent(long long milliseconds, timeEventProc *proc,
 }
 
 void EventLoop::addFiredEvent(int fd, int mask) {
-    this->firedEvent.push_back(FiredEvent(fd, mask));
+    this->firedEvents.push_back(FiredEvent(fd, mask));
 }
 

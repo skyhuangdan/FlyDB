@@ -17,7 +17,7 @@ const int EVENT_FILE_EVENTS = 1;
 const int EVENT_TIME_EVENTS = 2;
 const int EVENT_ALL_EVENTS = EVENT_FILE_EVENTS | EVENT_TIME_EVENTS;
 const int EVENT_CALL_AFTER_SLEEP = 8;
-const int EVENT_DELETED_EVENT_ID = -1;
+const int EVENT_DONT_WAIT = 4;
 
 class EventLoop;
 typedef int timeEventProc(EventLoop *eventLoop, uint64_t id, void *clientData);

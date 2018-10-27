@@ -50,7 +50,7 @@ private:
     uint64_t timeEventNextId;
     int64_t lastTime;
     std::vector<FileEvent> fileEvents;
-    std::vector<FiredEvent> firedEvent;
+    std::vector<FiredEvent> firedEvents;
     std::list<TimeEvent> timeEvents;
     bool stopFlag;
     void *apiData;
