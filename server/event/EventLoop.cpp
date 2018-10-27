@@ -9,7 +9,7 @@
 
 EventLoop::EventLoop(int setSize) {
     this->setSize = setSize;
-    this->lastTime = time(NULL);
+    this->lastTime = getCurrentTime();
     this->timeEventNextId = 0;
     this->stopFlag = false;
     this->maxfd = -1;
@@ -22,6 +22,8 @@ EventLoop::EventLoop(int setSize) {
 
 EventLoop::~EventLoop() {
     delete this->apiData;
+    this->timeEvents.clear();
+    this->fileEvents.clear();
 }
 
 int EventLoop::processEvents(int flags) {
@@ -128,11 +130,52 @@ void EventLoop::setAfterSleepProc(beforeAndAfterSleepProc* proc) {
     this->afterSleepProc = afterSleepProc;
 }
 
+int EventLoop::processTimeEvents() {
+    int64_t nowt = getCurrentTime();
+
+    /** 如果系统时间曾经往后调、然后又调回来过，那么如果不处理的话，所有的timeevent处理时间可能会非常延后
+     * 所以这里将处理时间置0，即马上处理定时任务，防止处理太滞后。**/
+    if (nowt < this->lastTime) {
+        for (auto iter : this->timeEvents) {
+            iter.setWhen(0);
+        }
+    }
+
+    bool needSort = false;
+    for (auto iter : this->timeEvents) {
+        if (iter.getWhen() < nowt) {
+            int ret = iter.getTimeProc()(this, iter.getId(), iter.getClientData());
+            if (ret > 0) {
+                iter.setWhen(nowt + ret);
+                needSort = true;
+            } else {
+                this->deleteTimeEvent(iter.getId());
+            }
+        }
+    }
+    if (needSort) {
+        this->timeEvents.sort();
+    }
+}
+
 int EventLoop::deleteTimeEvent(uint64_t id) {
+    std::list<TimeEvent>::iterator iter = this->timeEvents.begin();
+    for (iter; iter != this->timeEvents.end(); iter++) {
+        if (iter->getId() == id) {
+            if (iter->getFinalizerProc()) {
+                iter->getFinalizerProc()(this, iter->getClientData());
+            }
+            this->timeEvents.erase(iter++);
+            return 1;
+        }
+    }
+
+    return -1;
 }
 
 void EventLoop::createTimeEvent(long long milliseconds, timeEventProc *proc,
                     void *clientData, eventFinalizerProc *finalizerProc) {
     this->timeEvents.push_front(TimeEvent(this->timeEventNextId++, milliseconds, proc, clientData, finalizerProc));
+    this->timeEvents.sort();
 }
 

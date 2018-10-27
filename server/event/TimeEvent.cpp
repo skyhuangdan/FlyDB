@@ -4,40 +4,53 @@
 
 #include "TimeEvent.h"
 
-TimeEvent::TimeEvent(uint64_t id, long long milliseconds, timeEventProc *proc, void *clientData, eventFinalizerProc *finalizerProc) {
+TimeEvent::TimeEvent(int64_t id, int64_t milliseconds, timeEventProc *proc, void *clientData, eventFinalizerProc *finalizerProc) {
     this->id = id;
     this->timeProc = proc;
     this->clientData = clientData;
     this->finalizerProc = finalizerProc;
-    this->whenSec = milliseconds / 1000;
-    this->whenMs = milliseconds % 1000;
+    this->when = milliseconds;
 }
 
-uint64_t TimeEvent::getId() const {
-    return id;
+int64_t TimeEvent::getId() const {
+    return this->id;
 }
 
-long TimeEvent::getWhenSec() const {
-    return whenSec;
+void TimeEvent::setId(int64_t id) {
+    this->id = id;
 }
 
-long TimeEvent::getWhenMs() const {
-    return whenMs;
+int64_t TimeEvent::getWhen() const {
+    return this->when;
 }
 
-void *TimeEvent::getClientData() const {
-    return clientData;
+void TimeEvent::setWhen(int64_t milliseconds) {
+    this->when = milliseconds;
 }
 
-bool TimeEvent::operator< (const TimeEvent& timeEvent) {
-    return this->whenSec < timeEvent.whenSec
-           || (this->whenSec == timeEvent.whenSec && this->whenMs < timeEvent.whenMs);
+void *TimeEvent::getClientData() {
+    return this->clientData;
 }
 
-bool TimeEvent::operator== (const TimeEvent& timeEvent) {
-    return this->whenSec == timeEvent.whenSec && this->whenMs == timeEvent.whenMs;
+eventFinalizerProc* TimeEvent::getFinalizerProc() {
+    return this->finalizerProc;
 }
 
-bool TimeEvent::operator== (const uint64_t id) {
-    return this->id == id;
+timeEventProc* TimeEvent::getTimeProc() {
+    return this->timeProc;
 }
+
+bool TimeEvent::operator< (const TimeEvent& timeEvent) const {
+    return this->when < timeEvent.when;
+}
+
+bool TimeEvent::operator== (const TimeEvent& timeEvent) const {
+    return this->when == timeEvent.when;
+}
+
+int64_t getCurrentTime() {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+

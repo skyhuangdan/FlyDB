@@ -34,6 +34,7 @@ public:
     void setAfterSleepProc(beforeAndAfterSleepProc* proc);
 
     // time event
+    int processTimeEvents();
     int deleteTimeEvent(uint64_t id);
     void createTimeEvent(long long milliseconds, timeEventProc *proc,
                         void *clientData, eventFinalizerProc *finalizerProc);
@@ -42,7 +43,7 @@ private:
     int maxfd;          // 当前注册的最大fd(file descriptor)
     int setSize;        // 最大fd数量
     uint64_t timeEventNextId;
-    time_t lastTime;
+    int64_t lastTime;
     std::vector<FileEvent> fileEvents;
     std::list<TimeEvent> timeEvents;
     bool stopFlag;

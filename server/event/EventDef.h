@@ -5,6 +5,7 @@
 #ifndef FLYDB_EVENTDEF_H
 #define FLYDB_EVENTDEF_H
 #include <cstdint>
+#include <sys/time.h>
 
 enum EventStatus {
     ES_NONE = 0,
@@ -16,9 +17,11 @@ const int EVENT_FILE_EVENTS = 1;
 const int EVENT_TIME_EVENTS = 2;
 const int EVENT_ALL_EVENTS = EVENT_FILE_EVENTS | EVENT_TIME_EVENTS;
 const int EVENT_CALL_AFTER_SLEEP = 8;
+const int EVENT_DELETED_EVENT_ID = -1;
 
-typedef int timeEventProc(struct EventLoop *eventLoop, uint64_t id, void *clientData);
-typedef void fileEventProc(struct EventLoop *eventLoop, int fd, void *clientdata, int mask);
-typedef void eventFinalizerProc(struct EventLoop *eventLoop, void *clientData);
+class EventLoop;
+typedef int timeEventProc(EventLoop *eventLoop, uint64_t id, void *clientData);
+typedef void fileEventProc(EventLoop *eventLoop, int fd, void *clientdata, int mask);
+typedef void eventFinalizerProc(EventLoop *eventLoop, void *clientData);
 
 #endif //FLYDB_EVENTDEF_H

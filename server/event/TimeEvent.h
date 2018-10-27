@@ -7,24 +7,26 @@
 
 #include "EventDef.h"
 
+int64_t getCurrentTime();
+
 class TimeEvent {
 public:
-    TimeEvent(uint64_t id, long long milliseconds, timeEventProc *proc, void *clientData, eventFinalizerProc *finalizerProc);
-    uint64_t getId() const;
-    long getWhenSec() const;
-    long getWhenMs() const;
-    void *getClientData() const;
-    bool operator< (const TimeEvent& timeEvent);
-    bool operator== (const TimeEvent& timeEvent);
-    bool operator== (const uint64_t id);
+    TimeEvent(int64_t id, int64_t milliseconds, timeEventProc *proc, void *clientData, eventFinalizerProc *finalizerProc);
+    int64_t getId() const;
+    void setId(int64_t id);
+    int64_t getWhen() const;
+    void setWhen(int64_t milliseconds);
+    void *getClientData();
+    eventFinalizerProc* getFinalizerProc();
+    timeEventProc* getTimeProc();
+    bool operator< (const TimeEvent& timeEvent) const;
+    bool operator== (const TimeEvent& timeEvent) const;
 private:
-    uint64_t id;
-    long whenSec;
-    long whenMs;
+    int64_t id;
+    int64_t when;         // 单位：ms
     timeEventProc *timeProc;
     eventFinalizerProc *finalizerProc;
     void *clientData;
 };
-
 
 #endif //FLYDB_TIMEEVENT_H
