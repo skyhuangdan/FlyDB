@@ -5,8 +5,9 @@
 #ifndef FLYDB_FILEEVENT_H
 #define FLYDB_FILEEVENT_H
 
-
 #include "EventDef.h"
+
+class EventLoop;
 
 class FileEvent {
 public:
@@ -18,14 +19,21 @@ public:
     fileEventProc* getRFileProc() const;
     void setWFileProc(fileEventProc *wfileProc);
     fileEventProc* getWFileProc() const;
-    int addFileProc(int fd, int mask, fileEventProc *proc, void *clientData);
-    void delFileProc(int fd, int mask);
+    int addFileProc(int mask, fileEventProc *proc, void *clientData);
+    void delFileProc(int mask);
     bool noneMask();
+    void process(int mask);
+    int getFd() const;
+    void setFd(int fd);
+    EventLoop *getEventLoop() const;
+    void setEventLoop(EventLoop *eventLoop);
 
 private:
+    int fd;
     int mask;       // EVENT_READABLE或者EVENT_WRITABLE
     void *clientData;
     fileEventProc *rfileProc, *wfileProc;
+    EventLoop *eventLoop;
 };
 
 

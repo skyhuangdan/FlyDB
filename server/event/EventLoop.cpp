@@ -16,7 +16,8 @@ EventLoop::EventLoop(int setSize) {
     this->apiData = new PollState();
     this->fileEvents.resize(this->setSize);
     for (int i = 0; i < this->setSize; i++) {
-        this->fileEvents[i].setMask(ES_NONE);
+        this->fileEvents[i].setFd(i);
+        this->fileEvents[i].setEventLoop(this);
     }
 }
 
@@ -56,7 +57,7 @@ int EventLoop::createFileEvent(int fd, int mask, fileEventProc* proc, void *clie
 
     // 设置fileEvent, 添加file proc
     FileEvent& fileEvent = this->fileEvents[fd];
-    fileEvent.addFileProc(fd, mask, proc, clientdata);
+    fileEvent.addFileProc(mask, proc, clientdata);
 
     if (this->maxfd < fd) {
         this->maxfd = fd;
@@ -75,9 +76,9 @@ int EventLoop::deleteFileEvent(int fd, int mask) {
         return -1;
     }
 
-    fileEvent.delFileProc(fd, mask);
+    fileEvent.delFileProc(mask);
 
-    if (fd == this->maxfd && this->fileEvents[fd].noneMask()) {
+    if (fd == this->maxfd && fileEvent.noneMask()) {
         for (int i = this->maxfd - 1; i >= 0; i--) {
             if (!this->fileEvents[i].noneMask()) {
                 this->maxfd = i;
@@ -171,32 +172,21 @@ int EventLoop::processEvents(int flags) {
             }
         }
 
+        // 获取文件事件（及网络io）
         int numEvents = reinterpret_cast<PollState*>(this->apiData)->poll(this, tvp);
         if (afterSleepProc != NULL && flags & EVENT_CALL_AFTER_SLEEP) {
             this->afterSleepProc(this);
         }
 
-        // 处理获取到的文件事件
+        // 处理获取到的文件事件, 处理完清空firedEvents
         for (int i = 0; i < numEvents; i++) {
             int fd = this->firedEvents[i].getFd();
             int mask = this->firedEvents[i].getMask();
             FileEvent* fileEvent = &this->fileEvents[fd];
-            int rfired = 0;
-
-            // 如果是有可读事件，则执行可读事件回调
-            if (mask & ES_READABLE) {
-                rfired = 1;
-                fileEvent->getRFileProc()(this, fd, fileEvent->getClientData(), mask);
-            }
-            // 如果是有可写事件，则执行可写事件回调
-            if (mask & ES_WRITABLE) {
-                if (fileEvent->getWFileProc() != fileEvent->getRFileProc() || 0 == rfired) {
-                    fileEvent->getWFileProc()(this, fd, fileEvent->getClientData(), mask);
-                }
-            }
-
+            fileEvent->process(mask);
             processed++;
         }
+        this->firedEvents.clear();
     }
 
     // 处理time event

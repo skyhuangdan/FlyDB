@@ -39,7 +39,7 @@ void FileEvent::setWFileProc(fileEventProc *wfileProc) {
     this->wfileProc = wfileProc;
 }
 
-int FileEvent::addFileProc(int fd, int mask, fileEventProc *proc, void *clientData) {
+int FileEvent::addFileProc(int mask, fileEventProc *proc, void *clientData) {
     if (NULL == clientData) {
         return -1;
     }
@@ -56,12 +56,12 @@ int FileEvent::addFileProc(int fd, int mask, fileEventProc *proc, void *clientDa
 
     // 设置监听fd
     PollState* eventState = (PollState*) clientData;
-    eventState->add(fd, mask);
+    eventState->add(this->fd, mask);
 
     return 1;
 }
 
-void FileEvent::delFileProc(int fd, int mask) {
+void FileEvent::delFileProc(int mask) {
     this->mask &= ~mask;
     // 设置监听fd
     PollState* eventState = (PollState*) clientData;
@@ -70,4 +70,35 @@ void FileEvent::delFileProc(int fd, int mask) {
 
 bool FileEvent::noneMask() {
     return ES_NONE == this->mask;
+}
+
+void FileEvent::process(int mask) {
+    int rfired = 0;
+
+    // 如果是有可读/可写事件，则执行事件回调
+    if (mask & ES_READABLE) {
+        rfired = 1;
+        rfileProc(this->eventLoop, this->fd, clientData, mask);
+    }
+    if (mask & ES_WRITABLE) {
+        if (this->wfileProc != this->rfileProc || 0 == rfired) {
+            wfileProc(this->eventLoop, fd, clientData, mask);
+        }
+    }
+}
+
+int FileEvent::getFd() const {
+    return this->fd;
+}
+
+void FileEvent::setFd(int fd) {
+    this->fd = fd;
+}
+
+EventLoop *FileEvent::getEventLoop() const {
+    return eventLoop;
+}
+
+void FileEvent::setEventLoop(EventLoop *eventLoop) {
+    FileEvent::eventLoop = eventLoop;
 }
