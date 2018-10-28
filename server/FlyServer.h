@@ -12,6 +12,7 @@
 #include "db/FlyDB.h"
 #include "commandTable/CommandTable.h"
 #include "flyClient/FlyClient.h"
+#include "event/EventLoop.h"
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -30,6 +31,8 @@ public:
     std::string getVersion();
     // 处理命令
     int dealWithCommand(std::string* command);
+    // 事件循环处理
+    void eventMain();
 
 private:
     // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
@@ -49,6 +52,8 @@ private:
     int port;
     // 最大可同时连接的client数量
     int maxClients;
+    // 事件循环处理器
+    EventLoop *eventLoop;
 };
 
 #endif //FLYDB_FLYSERVER_H

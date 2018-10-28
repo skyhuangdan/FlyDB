@@ -7,6 +7,10 @@
 #include "commandTable/CommandEntry.h"
 #include "config.h"
 
+int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
+    return 0;
+}
+
 FlyServer::FlyServer() {
 }
 
@@ -23,8 +27,15 @@ void FlyServer::init() {
     // init command table
     this->commandTable = new CommandTable(this);
 
+    // server端口
     this->port = CONFIG_DEFAULT_SERVER_PORT;
+
+    // 设置最大客户端数量
     setMaxClientLimit();
+
+    // 时间循环处理器
+    this->eventLoop = new EventLoop(this->maxClients + CONFIG_FDSET_INCR);
+    this->eventLoop->createTimeEvent(1, serverCron, NULL, NULL);
 
     return;
 }
@@ -84,4 +95,9 @@ void FlyServer::setMaxClientLimit() {
 }
 
 void FlyServer::clientCron(void) {
+}
+
+
+void FlyServer::eventMain() {
+    this->eventLoop->eventMain();
 }

@@ -35,9 +35,10 @@
 #endif /* BSD */
 #endif /* BYTE_ORDER */
 
-#define CONFIG_DEFAULT_SERVER_PORT      6379    // TCP port
-#define CONFIG_DEFAULT_MAX_CLIENTS      10000   // 最多同时连接client数量
-#define CONFIG_MIN_RESERVED_FDS         32      // 保留文件数量
+const int CONFIG_DEFAULT_SERVER_PORT = 6379;    // TCP port
+const int CONFIG_DEFAULT_MAX_CLIENTS = 10000;   // 最多同时连接client数量
+const int CONFIG_MIN_RESERVED_FDS = 32;         // 保留文件数量
+const int CONFIG_FDSET_INCR = (CONFIG_MIN_RESERVED_FDS + 96);   // eventloop可以处理的文件事件数量
 
 
 #endif //FLYDB_CONFIG_H
