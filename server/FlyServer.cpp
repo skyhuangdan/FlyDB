@@ -27,8 +27,11 @@ void FlyServer::init() {
     setMaxClientLimit();
 
     // 时间循环处理器
-    this->eventLoop = new EventLoop(this->maxClients + CONFIG_FDSET_INCR);
+    this->eventLoop = new EventLoop(this, this->maxClients + CONFIG_FDSET_INCR);
     this->eventLoop->createTimeEvent(1, serverCron, NULL, NULL);
+
+    // serverCron运行频率
+    this->hz = CONFIG_CRON_HZ;
 
     return;
 }
@@ -87,16 +90,27 @@ void FlyServer::setMaxClientLimit() {
     }
 }
 
-int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
-    static int times = 0;
-    std::cout << "serverCron is running " << times++ << " times!" << std::endl;
-    return 50;
-}
-
-void FlyServer::clientCron(void) {
-}
-
 void FlyServer::eventMain() {
     this->eventLoop->eventMain();
 }
+
+int FlyServer::getHz() const {
+    return hz;
+}
+
+void FlyServer::setHz(int hz) {
+    FlyServer::hz = hz;
+}
+
+int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
+    if (NULL == eventLoop || NULL == eventLoop->getFlyServer()) {
+        return 0;
+    }
+
+    static int times = 0;
+    std::cout << "serverCron is running " << times++ << " times!" << std::endl;
+
+    return 1000 / eventLoop->getFlyServer()->getHz();
+}
+
 

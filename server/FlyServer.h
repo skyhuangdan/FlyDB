@@ -33,11 +33,12 @@ public:
     int dealWithCommand(std::string* command);
     // 事件循环处理
     void eventMain();
+    int getHz() const;
+    void setHz(int hz);
 
 private:
     // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
     void setMaxClientLimit();
-    void clientCron(void);
 
     // 运行server的线程标识
     int pid;
@@ -55,6 +56,8 @@ private:
     int maxClients;
     // 事件循环处理器
     EventLoop *eventLoop;
+    // serverCron运行频率
+    int hz;
 };
 
 #endif //FLYDB_FLYSERVER_H

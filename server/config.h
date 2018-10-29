@@ -35,7 +35,7 @@
 #endif /* BSD */
 #endif /* BYTE_ORDER */
 
-const int CONFIG_CRON_HZ = 1;
+const int CONFIG_CRON_HZ = 50;
 const int CONFIG_DEFAULT_SERVER_PORT = 6379;    // TCP port
 const int CONFIG_DEFAULT_MAX_CLIENTS = 10000;   // 最多同时连接client数量
 const int CONFIG_MIN_RESERVED_FDS = 32;         // 保留文件数量

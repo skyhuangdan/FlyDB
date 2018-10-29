@@ -7,7 +7,7 @@
 #include "Select.h"
 #include "EventDef.h"
 
-EventLoop::EventLoop(int setSize) {
+EventLoop::EventLoop(FlyServer *flyServer, int setSize) {
     this->setSize = setSize;
     this->lastTime = getCurrentTime();
     this->timeEventNextId = 0;
@@ -19,6 +19,7 @@ EventLoop::EventLoop(int setSize) {
         this->fileEvents[i].setFd(i);
         this->fileEvents[i].setEventLoop(this);
     }
+    this->flyServer = flyServer;
 }
 
 EventLoop::~EventLoop() {
@@ -256,5 +257,13 @@ void EventLoop::createTimeEvent(uint64_t milliseconds, timeEventProc *proc,
 
 void EventLoop::addFiredEvent(int fd, int mask) {
     this->firedEvents.push_back(FiredEvent(fd, mask));
+}
+
+FlyServer *EventLoop::getFlyServer() const {
+    return flyServer;
+}
+
+void EventLoop::setFlyServer(FlyServer *flyServer) {
+    EventLoop::flyServer = flyServer;
 }
 
