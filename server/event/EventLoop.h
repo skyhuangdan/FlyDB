@@ -38,7 +38,7 @@ public:
     // time event
     int processTimeEvents();
     int deleteTimeEvent(uint64_t id);
-    void createTimeEvent(long long milliseconds, timeEventProc *proc,
+    void createTimeEvent(uint64_t milliseconds, timeEventProc* proc,
                         void *clientData, eventFinalizerProc *finalizerProc);
 
     // fired event

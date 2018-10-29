@@ -20,6 +20,7 @@ const int EVENT_CALL_AFTER_SLEEP = 8;
 const int EVENT_DONT_WAIT = 4;
 
 class EventLoop;
+
 typedef int timeEventProc(EventLoop *eventLoop, uint64_t id, void *clientData);
 typedef void fileEventProc(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 typedef void eventFinalizerProc(EventLoop *eventLoop, void *clientData);

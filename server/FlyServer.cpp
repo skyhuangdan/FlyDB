@@ -7,13 +7,6 @@
 #include "commandTable/CommandEntry.h"
 #include "config.h"
 
-int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
-    return 0;
-}
-
-FlyServer::FlyServer() {
-}
-
 void FlyServer::init() {
     // init db array
     for (int i = 0; i < DB_NUM; i++) {
@@ -94,10 +87,16 @@ void FlyServer::setMaxClientLimit() {
     }
 }
 
-void FlyServer::clientCron(void) {
+int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
+    static int times = 0;
+    std::cout << "serverCron is running " << times++ << " times!" << std::endl;
+    return 50;
 }
 
+void FlyServer::clientCron(void) {
+}
 
 void FlyServer::eventMain() {
     this->eventLoop->eventMain();
 }
+

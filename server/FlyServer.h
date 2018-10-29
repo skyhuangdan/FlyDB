@@ -17,10 +17,10 @@
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
 
+int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData);
+
 class FlyServer {
 public:
-    FlyServer();
-
     // 初始化函数
     void init();
     // 获取server id
@@ -38,6 +38,7 @@ private:
     // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
     void setMaxClientLimit();
     void clientCron(void);
+
     // 运行server的线程标识
     int pid;
     // db列表
