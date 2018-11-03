@@ -102,6 +102,10 @@ void FlyServer::setHz(int hz) {
     FlyServer::hz = hz;
 }
 
+int FlyServer::listenToPort() {
+
+}
+
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
     if (NULL == eventLoop || NULL == eventLoop->getFlyServer()) {
         return 0;
@@ -112,5 +116,3 @@ int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
 
     return 1000 / eventLoop->getFlyServer()->getHz();
 }
-
-
