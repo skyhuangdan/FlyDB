@@ -7,6 +7,7 @@
 
 class NetHandler {
 public:
+    static NetHandler* getInstance();
     static int setV6Only(char *err, int fd);
     static int setSendTimeout(char *err, int fd, long long ms);
     static int setTcpNoDelay(char *err, int fd, int val);               // val: 1-enbale no delay, 0-disable

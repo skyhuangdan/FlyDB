@@ -14,8 +14,18 @@
 #include <arpa/inet.h>
 #include <zconf.h>
 #include <fcntl.h>
+#include <array>
 #include "NetHandler.h"
 #include "NetDef.h"
+
+NetHandler* NetHandler::getInstance() {
+    static NetHandler* instance;
+    if (NULL == instance) {
+        instance = new NetHandler();
+    }
+
+    return instance;
+}
 
 int NetHandler::setV6Only(char *err, int fd) {
     int yes = 1;
@@ -24,7 +34,6 @@ int NetHandler::setV6Only(char *err, int fd) {
         setError(err, "setsockopt IPV6_V6ONLY: %s", strerror(errno));
         return -1;
     }
-
     return 1;
 }
 
@@ -37,7 +46,6 @@ int NetHandler::setSendTimeout(char *err, int fd, long long ms) {
         setError(err, "setsockopt SO_SNDTIMEO: %s", strerror(errno));
         return -1;
     }
-
     return 1;
 }
 
@@ -46,7 +54,6 @@ int NetHandler::setTcpNoDelay(char *err, int fd, int val) {
         setError(err, "setsockopt TCP_NODELAY: %s", strerror(errno));
         return -1;
     }
-
     return 1;
 }
 
@@ -55,7 +62,6 @@ int NetHandler::setSendBuffer(char *err, int fd, int buffsize) {
         setError(err, "setsockopt SO_SNDBUF: %s", strerror(errno));
         return -1;
     }
-
     return 1;
 }
 
@@ -65,7 +71,6 @@ int NetHandler::setTcpKeepAlive(char *err, int fd) {
         setError(err, "setsockopt SO_KEEPALIVE: %s", strerror(errno));
         return -1;
     }
-
     return 1;
 }
 
@@ -132,19 +137,19 @@ int NetHandler::keepAlive(char *err, int fd, int interval) {
 }
 
 int NetHandler::tcpConnect(char *err, char *addr, int port) {
-    return tcpGenericConnect(err, addr, port, NULL, ANET_CONNECT_NONE);
+    return tcpGenericConnect(err, addr, port, NULL, NET_CONNECT_NONE);
 }
 
 int NetHandler::tcpNonBlockConnect(char *err, char *addr, int port) {
-    return tcpGenericConnect(err,addr,port,NULL,ANET_CONNECT_NONBLOCK);
+    return tcpGenericConnect(err, addr, port, NULL, NET_CONNECT_NONBLOCK);
 }
 
 int NetHandler::tcpNonBlockBindConnect(char *err, char *addr, int port, char *source_addr) {
-    return tcpGenericConnect(err,addr,port,source_addr, ANET_CONNECT_NONBLOCK);
+    return tcpGenericConnect(err, addr, port, source_addr, NET_CONNECT_NONBLOCK);
 }
 
 int NetHandler::tcpNonBlockBestEffortBindConnect(char *err, char *addr, int port, char *source_addr) {
-    return tcpGenericConnect(err,addr,port,source_addr, ANET_CONNECT_NONBLOCK|ANET_CONNECT_BE_BINDING);
+    return tcpGenericConnect(err, addr, port, source_addr, NET_CONNECT_NONBLOCK | NET_CONNECT_BE_BINDING);
 }
 
 int NetHandler::genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags) {
@@ -179,7 +184,6 @@ int NetHandler::setReuseAddr(char *err, int fd) {
         setError(err, "setsockopt SO_REUSEADDR: %s", strerror(errno));
         return -1;
     }
-
     return 1;
 }
 
@@ -199,8 +203,10 @@ int NetHandler::tcpGenericConnect(char *err, char *addr, int port, char *source_
     }
 
     for (p = servinfo; p != NULL; p = p->ai_next) {
-        // 创建并connect socket, 如果这个servinfo失败了，则尝试下一个
-        if ((s = socket(p->ai_family,p->ai_socktype,p->ai_protocol)) == -1) {
+        /**
+         * 创建并connect socket, 如果这个servinfo失败了，则尝试下一个
+         **/
+        if (-1 == (s = socket(p->ai_family, p->ai_socktype, p->ai_protocol))) {
             continue;
         }
 
@@ -208,20 +214,19 @@ int NetHandler::tcpGenericConnect(char *err, char *addr, int port, char *source_
             goto error;
 
         }
-        if (flags & ANET_CONNECT_NONBLOCK && setBlock(err, s, 0) != -1) {
+        if (flags & NET_CONNECT_NONBLOCK && -1 == setBlock(err, s, 0)) {
             goto error;
         }
 
-        if (source_addr) {
+        if (NULL != source_addr) {
             int bound = 0;
             /* Using getaddrinfo saves us from self-determining IPv4 vs IPv6 */
-            if ((rv = getaddrinfo(source_addr, NULL, &hints, &bservinfo)) != 0)
-            {
+            if ((rv = getaddrinfo(source_addr, NULL, &hints, &bservinfo)) != 0) {
                 setError(err, "%s", gai_strerror(rv));
                 goto error;
             }
             for (b = bservinfo; b != NULL; b = b->ai_next) {
-                if (bind(s,b->ai_addr,b->ai_addrlen) != -1) {
+                if (bind(s, b->ai_addr, b->ai_addrlen) != -1) {
                     bound = 1;
                     break;
                 }
@@ -235,7 +240,7 @@ int NetHandler::tcpGenericConnect(char *err, char *addr, int port, char *source_
         if (connect(s, p->ai_addr, p->ai_addrlen) == -1) {
             /* If the socket is non-blocking, it is ok for connect() to
              * return an EINPROGRESS error here. */
-            if (errno == EINPROGRESS && flags & ANET_CONNECT_NONBLOCK) {
+            if (errno == EINPROGRESS && flags & NET_CONNECT_NONBLOCK) {
                 goto end;
             }
             close(s);
@@ -262,7 +267,7 @@ int NetHandler::tcpGenericConnect(char *err, char *addr, int port, char *source_
 
     /* Handle best effort binding: if a binding address was used, but it is
      * not possible to create a socket, try again without a binding address. */
-    if (-1 == s && source_addr && (flags & ANET_CONNECT_BE_BINDING)) {
+    if (-1 == s && source_addr && (flags & NET_CONNECT_BE_BINDING)) {
         return tcpGenericConnect(err, addr, port, NULL, flags);
     } else {
         return s;

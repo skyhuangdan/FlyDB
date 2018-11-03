@@ -47,7 +47,7 @@ private:
     int hz;                                   // serverCron运行频率
     std::vector<int> ipfd;                    // TCP socket fd
     std::vector<char*> bindAddr;              // 绑定地址
-    std::vector<char> neterr;                 // 网络error buffer
+    char neterr[NET_ERR_LEN];                 // 网络error buffer
 };
 
 #endif //FLYDB_FLYSERVER_H
