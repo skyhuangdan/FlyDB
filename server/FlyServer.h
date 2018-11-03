@@ -13,6 +13,7 @@
 #include "commandTable/CommandTable.h"
 #include "flyClient/FlyClient.h"
 #include "event/EventLoop.h"
+#include "config.h"
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -21,18 +22,13 @@ int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData);
 
 class FlyServer {
 public:
-    // 初始化函数
-    void init();
-    // 获取server id
-    int getPID();
-    // 根据db id获取具体的db
-    FlyDB* getDB(int dbID);
-    // 获取版本号
-    std::string getVersion();
-    // 处理命令
-    int dealWithCommand(std::string* command);
-    // 事件循环处理
-    void eventMain();
+    void init();                                 // 初始化函数
+    int getPID();                                // 获取server id
+    FlyDB* getDB(int dbID);                      // 根据db id获取具体的db
+    std::string getVersion();                    // 获取版本号
+    int dealWithCommand(std::string* command);   // 处理命令
+    void eventMain();                            // 事件循环处理
+    int listenToPort();                          // 打开监听socket，用于监听用户命令
     int getHz() const;
     void setHz(int hz);
 
@@ -40,24 +36,18 @@ private:
     // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
     void setMaxClientLimit();
 
-    // 运行server的线程标识
-    int pid;
-    // db列表
-    std::array<FlyDB*, DB_NUM> dbArray;
-    // 版本号
-    std::string version = VERSION;
-    // 命令表
-    CommandTable* commandTable;
-    // client列表
-    std::list<FlyClient *> clients;
-    // tcp listening port
-    int port;
-    // 最大可同时连接的client数量
-    int maxClients;
-    // 事件循环处理器
-    EventLoop *eventLoop;
-    // serverCron运行频率
-    int hz;
+    int pid;                                  // 运行server的线程标识
+    std::array<FlyDB*, DB_NUM> dbArray;       // db列表
+    std::string version = VERSION;            // 版本号
+    CommandTable* commandTable;               // 命令表
+    std::list<FlyClient *> clients;           // client列表
+    int port;                                 // tcp listening port
+    int maxClients;                           // 最大可同时连接的client数量
+    EventLoop *eventLoop;                     // 事件循环处理器
+    int hz;                                   // serverCron运行频率
+    std::vector<int> ipfd;                    // TCP socket fd
+    std::vector<char*> bindAddr;              // 绑定地址
+    std::vector<char> neterr;                 // 网络error buffer
 };
 
 #endif //FLYDB_FLYSERVER_H
