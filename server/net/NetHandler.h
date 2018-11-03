@@ -15,7 +15,7 @@ public:
     static int setTcpKeepAlive(char *err, int fd);
     static int resolve(char *err, char *host, char *ipbuf, size_t ipbuf_len);
     static int resolveIP(char *err, char *host, char *ipbuf, size_t ipbuf_len);
-    static int anetCreateSocket(char *err, int domain);
+    static int createSocket(char *err, int domain);
     static int keepAlive(char *err, int fd, int interval);
     static int tcpConnect(char *err, char *addr, int port);
     static int tcpNonBlockConnect(char *err, char *addr, int port);
@@ -28,6 +28,5 @@ private:
     static int tcpGenericConnect(char *err, char *addr, int port, char *source_addr, int flags);
     static int setBlock(char *err, int fd, int non_block);
 };
-
 
 #endif //FLYDB_NETHANDLER_H

@@ -82,7 +82,7 @@ int NetHandler::resolveIP(char *err, char *host, char *ipbuf, size_t ipbuf_len) 
     return genericResolve(err, host, ipbuf, ipbuf_len, NET_IP_ONLY);
 }
 
-int NetHandler::anetCreateSocket(char *err, int domain) {
+int NetHandler::createSocket(char *err, int domain) {
     int sock;
     if ((sock = socket(domain, SOCK_STREAM, 0)) == -1) {
         setError(err, "creating socket: %s", strerror(errno));
@@ -109,8 +109,8 @@ int NetHandler::keepAlive(char *err, int fd, int interval) {
     // 开始首次keepAlive探测前的TCP空闲时间
     val = interval;
     if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &val, sizeof(val)) < 0) {
-        anetSetError(err, "setsockopt TCP_KEEPIDLE: %s\n", strerror(errno));
-        return ANET_ERR;
+        setError(err, "setsockopt TCP_KEEPIDLE: %s\n", strerror(errno));
+        return -1;
     }
 
     // 两次keepAlive探测间的间隔时间
@@ -119,15 +119,15 @@ int NetHandler::keepAlive(char *err, int fd, int interval) {
         val = 1;
     }
     if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &val, sizeof(val)) < 0) {
-        anetSetError(err, "setsockopt TCP_KEEPINTVL: %s\n", strerror(errno));
-        return ANET_ERR;
+        setError(err, "setsockopt TCP_KEEPINTVL: %s\n", strerror(errno));
+        return -1;
     }
 
     // 判定断开前的keepAlive探测次数
     val = 3;
     if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &val, sizeof(val)) < 0) {
-        anetSetError(err, "setsockopt TCP_KEEPCNT: %s\n", strerror(errno));
-        return ANET_ERR;
+        setError(err, "setsockopt TCP_KEEPCNT: %s\n", strerror(errno));
+        return -1;
     }
 #else
     ((void) interval); /* Avoid unused var warning for non Linux systems. */
