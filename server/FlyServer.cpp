@@ -102,8 +102,64 @@ void FlyServer::setHz(int hz) {
     FlyServer::hz = hz;
 }
 
-int FlyServer::listenToPort() {
+void FlyServer::loadConfig(std::string fileName, std::string option) {
+    char buf[CONFIG_MAX_LINE + 1];
+    std::string config;
 
+    if (fileName.length() != 0) {
+        FILE *fp = NULL;
+        if ('-' == fileName[0] && '\0' == fileName[1]) {
+            fp = stdin;
+        } else {
+            if (NULL == (fp = fopen(fileName.c_str(), "r"))) {
+                exit(1);
+            }
+        }
+
+        // 从配置文件中依次读取配置 --> config
+        while (fgets(buf, CONFIG_MAX_LINE + 1, fp) != NULL) {
+            config += buf;
+        }
+
+        // 读取完毕，如果不是stdin，则关闭文件
+        if (fp != stdin) {
+            fclose(fp);
+        }
+    }
+
+    config += "\n" + option;
+    loadConfigFromString(config);
+}
+
+void FlyServer::loadConfigFromString(const std::string& config) {
+    int pos = 0, find_pos = 0;
+    int len = config.length();
+    std::string subStr;
+
+    std::string delim = "\t\r\n";
+    while (pos < len) {
+        // 获取sub str
+        find_pos = config.find(delim, pos);
+        if (find_pos < 0) {
+            subStr = config.substr(pos, len - pos);
+        } else {
+            subStr = config.substr(pos, find_pos - pos);
+        }
+
+        // 从该子串获取config
+        if ('#' != subStr[0] && '\0' != subStr[0]) {
+            loadConfigFromSubString(subStr);
+        }
+
+        // 继续处理下一个子串
+        pos = find_pos;
+    }
+}
+
+void FlyServer::loadConfigFromSubString(const std::string& subStr) {
+}
+
+int FlyServer::listenToPort() {
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {

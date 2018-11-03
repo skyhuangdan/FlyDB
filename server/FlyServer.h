@@ -31,10 +31,13 @@ public:
     int listenToPort();                          // 打开监听socket，用于监听用户命令
     int getHz() const;
     void setHz(int hz);
+    void loadConfig(std::string fileName, std::string option);
+    void loadConfigFromString(const std::string& config);
 
 private:
     // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
     void setMaxClientLimit();
+    void loadConfigFromSubString(const std::string& subStr);
 
     int pid;                                  // 运行server的线程标识
     std::array<FlyDB*, DB_NUM> dbArray;       // db列表

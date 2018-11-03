@@ -41,6 +41,7 @@ const int CONFIG_DEFAULT_MAX_CLIENTS = 10000;   // 最多同时连接client数�
 const int CONFIG_MIN_RESERVED_FDS = 32;         // 保留文件数量
 const int CONFIG_FDSET_INCR = (CONFIG_MIN_RESERVED_FDS + 96);   // eventloop可以处理的文件事件数量
 const int CONFIG_BINDADDR_MAX = 16;
+const int CONFIG_MAX_LINE = 1024;
 const int NET_ERR_LEN = 256;                    // 网络error信息buffer
 
 
