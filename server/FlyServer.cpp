@@ -6,6 +6,7 @@
 #include "FlyServer.h"
 #include "commandTable/CommandEntry.h"
 #include "config.h"
+#include "utils/StringTool.h"
 
 void FlyServer::init(int argc, char **argv) {
     // init db array
@@ -136,7 +137,7 @@ void FlyServer::loadConfigFromString(const std::string& config) {
     // 将文件分隔成行
     std::string delim = "\n";
     std::vector<std::string> lines;
-    spiltString(config, delim, lines);
+    StringTool::spiltString(config, delim, lines);
 
     // 依次处理每行
     for (auto line : lines) {
@@ -150,7 +151,7 @@ void FlyServer::loadConfigFromString(const std::string& config) {
 void FlyServer::loadConfigFromLineString(const std::string &line) {
     // 截取words
     std::vector<std::string> words;
-    spiltString(line, " ", words);
+    StringTool::spiltString(line, " ", words);
     if (0 == words.size()) {
         return;
     }
@@ -164,32 +165,6 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
 }
 
 int FlyServer::listenToPort() {
-}
-
-void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res) {
-    int pos = 0, findPos = 0;
-    int len = str.length();
-    int delimLen = delim.length();
-
-    while (pos < len) {
-        while (pos < len && ' ' == str[pos]) {
-            pos++;
-        }
-        if (pos >= len) {
-            return;
-        }
-
-        findPos = str.find(delim, pos);
-        // 如果需要处理字符的特殊格式，则在这里处理
-        if (findPos < 0) {
-            res.push_back(str.substr(pos, len - pos));
-            return;
-        } else {
-            res.push_back(str.substr(pos, findPos - pos));
-        }
-
-        pos = findPos + delimLen;
-    }
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {

@@ -9,7 +9,7 @@
 #include "../config.h"
 
 class EndianConvTool {
-private:
+public:
     static void memrev16(void *p) {
         unsigned char *x = (unsigned char*)p, t;
 

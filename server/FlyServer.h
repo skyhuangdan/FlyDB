@@ -19,7 +19,6 @@ const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData);
-void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res);
 
 class FlyServer {
 public:
