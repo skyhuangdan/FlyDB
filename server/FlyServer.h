@@ -49,7 +49,7 @@ private:
     EventLoop *eventLoop;                     // 事件循环处理器
     int hz;                                   // serverCron运行频率
     std::vector<int> ipfd;                    // TCP socket fd
-    std::vector<char*> bindAddr;              // 绑定地址
+    std::vector<std::string> bindAddr;              // 绑定地址
     char neterr[NET_ERR_LEN];                 // 网络error buffer
 };
 

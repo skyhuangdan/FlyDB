@@ -165,6 +165,13 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
         if (0 <= port && port <= 65535) {
             this->port = port;
         }
+    } else if (0 == words[0].compare("bind")) {
+        int addressCount = words.size() - 1;
+        if (addressCount <= CONFIG_BINDADDR_MAX) {
+            for (int j = 0; j < addressCount; j++) {
+                this->bindAddr.push_back(words[j + 1]);
+            }
+        }
     }
 }
 
