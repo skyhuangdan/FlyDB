@@ -19,10 +19,11 @@ const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData);
+void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res);
 
 class FlyServer {
 public:
-    void init();                                 // 初始化函数
+    void init(int argc, char **argv);                                 // 初始化函数
     int getPID();                                // 获取server id
     FlyDB* getDB(int dbID);                      // 根据db id获取具体的db
     std::string getVersion();                    // 获取版本号
@@ -31,13 +32,13 @@ public:
     int listenToPort();                          // 打开监听socket，用于监听用户命令
     int getHz() const;
     void setHz(int hz);
-    void loadConfig(std::string fileName, std::string option);
+    void loadConfig(const std::string &fileName);
     void loadConfigFromString(const std::string& config);
 
 private:
     // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
     void setMaxClientLimit();
-    void loadConfigFromSubString(const std::string& subStr);
+    void loadConfigFromLineString(const std::string &line);
 
     int pid;                                  // 运行server的线程标识
     std::array<FlyDB*, DB_NUM> dbArray;       // db列表

@@ -14,7 +14,7 @@
  * created by zlw, 20180918
  */
 
-int main() {
+int main(int argc, char **argv) {
     std::cout << "Hello, flyDB. Wish you be better!" << std::endl;
 
     FlyServer* flyServer = new FlyServer();
@@ -24,7 +24,7 @@ int main() {
     }
 
     // init flyServer
-    flyServer->init();
+    flyServer->init(argc, argv);
 
     // 事件循环处理
     flyServer->eventMain();

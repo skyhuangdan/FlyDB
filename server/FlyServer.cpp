@@ -7,7 +7,7 @@
 #include "commandTable/CommandEntry.h"
 #include "config.h"
 
-void FlyServer::init() {
+void FlyServer::init(int argc, char **argv) {
     // init db array
     for (int i = 0; i < DB_NUM; i++) {
         this->dbArray[i] = new FlyDB();
@@ -32,6 +32,8 @@ void FlyServer::init() {
 
     // serverCron运行频率
     this->hz = CONFIG_CRON_HZ;
+
+    loadConfig("/Users/zhaoliwei/workspace/project/flyDB/server/fly.conf");
 
     return;
 }
@@ -102,7 +104,7 @@ void FlyServer::setHz(int hz) {
     FlyServer::hz = hz;
 }
 
-void FlyServer::loadConfig(std::string fileName, std::string option) {
+void FlyServer::loadConfig(const std::string& fileName) {
     char buf[CONFIG_MAX_LINE + 1];
     std::string config;
 
@@ -127,39 +129,67 @@ void FlyServer::loadConfig(std::string fileName, std::string option) {
         }
     }
 
-    config += "\n" + option;
     loadConfigFromString(config);
 }
 
 void FlyServer::loadConfigFromString(const std::string& config) {
-    int pos = 0, find_pos = 0;
-    int len = config.length();
-    std::string subStr;
+    // 将文件分隔成行
+    std::string delim = "\n";
+    std::vector<std::string> lines;
+    spiltString(config, delim, lines);
 
-    std::string delim = "\t\r\n";
-    while (pos < len) {
-        // 获取sub str
-        find_pos = config.find(delim, pos);
-        if (find_pos < 0) {
-            subStr = config.substr(pos, len - pos);
-        } else {
-            subStr = config.substr(pos, find_pos - pos);
+    // 依次处理每行
+    for (auto line : lines) {
+        if (0 == line.size() || '#' == line[0]) {
+            continue;
         }
-
-        // 从该子串获取config
-        if ('#' != subStr[0] && '\0' != subStr[0]) {
-            loadConfigFromSubString(subStr);
-        }
-
-        // 继续处理下一个子串
-        pos = find_pos;
+        loadConfigFromLineString(line);
     }
 }
 
-void FlyServer::loadConfigFromSubString(const std::string& subStr) {
+void FlyServer::loadConfigFromLineString(const std::string &line) {
+    // 截取words
+    std::vector<std::string> words;
+    spiltString(line, " ", words);
+    if (0 == words.size()) {
+        return;
+    }
+
+    if (0 == words[0].compare("port") && 2 == words.size()) {
+        int port = atoi(words[1].c_str());
+        if (0 <= port && port <= 65535) {
+            this->port = port;
+        }
+    }
 }
 
 int FlyServer::listenToPort() {
+}
+
+void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res) {
+    int pos = 0, findPos = 0;
+    int len = str.length();
+    int delimLen = delim.length();
+
+    while (pos < len) {
+        while (pos < len && ' ' == str[pos]) {
+            pos++;
+        }
+        if (pos >= len) {
+            return;
+        }
+
+        findPos = str.find(delim, pos);
+        // 如果需要处理字符的特殊格式，则在这里处理
+        if (findPos < 0) {
+            res.push_back(str.substr(pos, len - pos));
+            return;
+        } else {
+            res.push_back(str.substr(pos, findPos - pos));
+        }
+
+        pos = findPos + delimLen;
+    }
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
