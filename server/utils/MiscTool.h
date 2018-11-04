@@ -63,6 +63,13 @@ public:
         }
         absPath += fileName;
 
+        // 尝试打开一次文件，用于查看是否存在该文件
+        FILE *fp;
+        if (NULL == (fp = fopen(fileName.c_str(), "r"))) {
+            return -1;
+        }
+        fclose(fp);
+
         return 1;
     }
 };
