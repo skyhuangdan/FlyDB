@@ -6,7 +6,7 @@
 #include "FlyServer.h"
 #include "commandTable/CommandEntry.h"
 #include "config.h"
-#include "utils/StringTool.h"
+#include "utils/MiscTool.h"
 
 void FlyServer::init(int argc, char **argv) {
     // init db array
@@ -34,7 +34,11 @@ void FlyServer::init(int argc, char **argv) {
     // serverCron运行频率
     this->hz = CONFIG_CRON_HZ;
 
-    loadConfig("/Users/zhaoliwei/workspace/project/flyDB/server/fly.conf");
+    // 加载配置文件中配置
+    std::string fileName;
+    if (1 == MiscTool::getAbsolutePath("fly.conf", fileName)) {
+        loadConfig(fileName);
+    }
 
     return;
 }
@@ -137,7 +141,7 @@ void FlyServer::loadConfigFromString(const std::string& config) {
     // 将文件分隔成行
     std::string delim = "\n";
     std::vector<std::string> lines;
-    StringTool::spiltString(config, delim, lines);
+    MiscTool::spiltString(config, delim, lines);
 
     // 依次处理每行
     for (auto line : lines) {
@@ -151,7 +155,7 @@ void FlyServer::loadConfigFromString(const std::string& config) {
 void FlyServer::loadConfigFromLineString(const std::string &line) {
     // 截取words
     std::vector<std::string> words;
-    StringTool::spiltString(line, " ", words);
+    MiscTool::spiltString(line, " ", words);
     if (0 == words.size()) {
         return;
     }

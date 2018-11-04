@@ -7,8 +7,9 @@
 
 #include <string>
 #include <vector>
+#include <zconf.h>
 
-class StringTool {
+class MiscTool {
 public:
     static void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res) {
         int pos = 0, findPos = 0;
@@ -34,6 +35,35 @@ public:
 
             pos = findPos + delimLen;
         }
+    }
+
+    static int getAbsolutePath(const std::string &fileName, std::string &absPath) {
+        if (0 == fileName.size()) {
+            return -1;
+        }
+
+        // 如果已经是绝对地址，则直接返回
+        if ('/' == fileName[0]) {
+            absPath = fileName;
+        }
+
+        // 获取当前路径
+        char cwd[1024];
+        if (NULL == getcwd(cwd, sizeof(cwd))) {
+            return -1;
+        }
+
+        // 获取绝对路径
+        absPath = cwd;
+        if (0 == absPath.size()) {
+            return -1;
+        }
+        if (absPath[absPath.size() - 1] != '/') {
+            absPath += '/';
+        }
+        absPath += fileName;
+
+        return 1;
     }
 };
 
