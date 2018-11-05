@@ -72,6 +72,7 @@ public:
 
         return 1;
     }
+
 };
 
 #endif //FLYDB_STRINGTOOL_H

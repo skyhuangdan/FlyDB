@@ -44,6 +44,13 @@ void FlyServer::init(int argc, char **argv) {
     // 打开监听socket，用于监听用户命令
     this->listenToPort();
 
+    // 创建定时任务，用于创建客户端连接
+    for (auto fd : this->ipfd) {
+        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, acceptTcpHandler , NULL)) {
+            exit(1);
+        }
+    }
+
     return;
 }
 
@@ -233,4 +240,9 @@ int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
     std::cout << "serverCron is running " << times++ << " times!" << std::endl;
 
     return 1000 / eventLoop->getFlyServer()->getHz();
+}
+
+// todo(zlw) accomplish
+void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+
 }

@@ -19,10 +19,11 @@ const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData);
+void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 
 class FlyServer {
 public:
-    void init(int argc, char **argv);                                 // 初始化函数
+    void init(int argc, char **argv);            // 初始化函数
     int getPID();                                // 获取server id
     FlyDB* getDB(int dbID);                      // 根据db id获取具体的db
     std::string getVersion();                    // 获取版本号
@@ -50,7 +51,7 @@ private:
     int hz;                                   // serverCron运行频率
     std::vector<int> ipfd;                    // TCP socket fd
     std::vector<std::string> bindAddr;        // 绑定地址
-    int tcpBacklog;                          // TCP listen() backlog
+    int tcpBacklog;                           // TCP listen() backlog
     char neterr[NET_ERR_LEN];                 // 网络error buffer
 };
 
