@@ -7,6 +7,7 @@
 #include "commandTable/CommandEntry.h"
 #include "config.h"
 #include "utils/MiscTool.h"
+#include "net/NetHandler.h"
 
 void FlyServer::init(int argc, char **argv) {
     // init db array
@@ -39,6 +40,9 @@ void FlyServer::init(int argc, char **argv) {
     if (1 == MiscTool::getAbsolutePath("fly.conf", fileName)) {
         loadConfig(fileName);
     }
+
+    // 打开监听socket，用于监听用户命令
+    this->listenToPort();
 
     return;
 }
@@ -176,6 +180,48 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
 }
 
 int FlyServer::listenToPort() {
+    int fd;
+    // try to bind all to IPV4 and IPV6
+    if (0 == this->bindAddr.size()) {
+        int failure = 0;
+        // try to set *(any address) to ipv6
+        fd = NetHandler::tcp6Server(this->neterr, this->port, NULL, this->tcpBacklog);
+        if (fd != -1) {
+            // set nonblock
+            NetHandler::setBlock(NULL, fd, 0);
+            this->ipfd.push_back(fd);
+            failure++;
+        }
+
+        // try to set *(any address) to ipv4
+        fd = NetHandler::tcpServer(this->neterr, this->port, NULL, this->tcpBacklog);
+        if (fd != -1) {
+            // set nonblock
+            NetHandler::setBlock(NULL, fd, 0);
+            this->ipfd.push_back(fd);
+            failure++;
+        }
+
+        if (2 == failure) {
+            return -1;
+        }
+    } else {
+        for (auto addr : this->bindAddr) {
+            // 如果是IPV6
+            if (addr.find(":") != addr.npos) {
+                fd = NetHandler::tcp6Server(this->neterr, this->port, addr, this->tcpBacklog);
+            } else {
+                fd = NetHandler::tcpServer(this->neterr, this->port, addr, this->tcpBacklog);
+            }
+            if (-1 == fd) {
+                return -1;
+            }
+            NetHandler::setBlock(NULL, fd, 0);
+            this->ipfd.push_back(fd);
+        }
+    }
+
+    return 1;
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {

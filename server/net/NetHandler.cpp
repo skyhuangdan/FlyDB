@@ -4,7 +4,7 @@
 
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <cstring>
+#include <string>
 #include <errno.h>
 #include <netinet/in.h>
 #include <cstdarg>
@@ -293,15 +293,15 @@ int NetHandler::tcpGenericConnect(char *err, char *addr, int port, char *source_
     }
 }
 
-int NetHandler::tcpServer(char *err, int port, char *bindaddr, int backlog) {
+int NetHandler::tcpServer(char *err, int port, const std::string &bindaddr, int backlog) {
     return tcpGenericServer(err, port, bindaddr, AF_INET, backlog);
 }
 
-int NetHandler::tcp6Server(char *err, int port, char *bindaddr, int backlog) {
+int NetHandler::tcp6Server(char *err, int port, const std::string &bindaddr, int backlog) {
     return tcpGenericServer(err, port, bindaddr, AF_INET6, backlog);
 }
 
-int NetHandler::tcpGenericServer(char *err, int port, char *bindaddr, int af, int backlog) {
+int NetHandler::tcpGenericServer(char *err, int port, const std::string &bindaddr, int af, int backlog) {
     int s = -1, rv;
     char _port[6];  /* strlen("65535") */
     struct addrinfo hints, *servinfo, *p;
@@ -312,7 +312,7 @@ int NetHandler::tcpGenericServer(char *err, int port, char *bindaddr, int af, in
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if ((rv = getaddrinfo(bindaddr, _port, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(bindaddr.c_str(), _port, &hints, &servinfo)) != 0) {
         setError(err, "%s", gai_strerror(rv));
         return -1;
     }
@@ -372,7 +372,7 @@ int NetHandler::unixServer(char *err, char *path, mode_t perm, int backlog) {
     return s;
 }
 
-int NetHandler::setBlock(char *err, int fd, int non_block) {
+int NetHandler::setBlock(char *err, int fd, int block) {
     int flags;
 
     if ((flags = fcntl(fd, F_GETFL)) == -1) {
@@ -380,10 +380,12 @@ int NetHandler::setBlock(char *err, int fd, int non_block) {
         return -1;
     }
 
-    if (non_block)
-        flags |= O_NONBLOCK;
-    else
+    if (block) {
         flags &= ~O_NONBLOCK;
+
+    } else {
+        flags |= O_NONBLOCK;
+    }
 
     if (fcntl(fd, F_SETFL, flags) == -1) {
         setError(err, "fcntl(F_SETFL,O_NONBLOCK): %s", strerror(errno));

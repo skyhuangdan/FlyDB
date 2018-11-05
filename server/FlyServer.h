@@ -28,7 +28,6 @@ public:
     std::string getVersion();                    // 获取版本号
     int dealWithCommand(std::string* command);   // 处理命令
     void eventMain();                            // 事件循环处理
-    int listenToPort();                          // 打开监听socket，用于监听用户命令
     int getHz() const;
     void setHz(int hz);
     void loadConfig(const std::string &fileName);
@@ -38,6 +37,7 @@ private:
     // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
     void setMaxClientLimit();
     void loadConfigFromLineString(const std::string &line);
+    int listenToPort();                       // 打开监听socket，用于监听用户命令
 
     int pid;                                  // 运行server的线程标识
     std::array<FlyDB*, DB_NUM> dbArray;       // db列表
@@ -49,7 +49,8 @@ private:
     EventLoop *eventLoop;                     // 事件循环处理器
     int hz;                                   // serverCron运行频率
     std::vector<int> ipfd;                    // TCP socket fd
-    std::vector<std::string> bindAddr;              // 绑定地址
+    std::vector<std::string> bindAddr;        // 绑定地址
+    int tcpBacklog;                          // TCP listen() backlog
     char neterr[NET_ERR_LEN];                 // 网络error buffer
 };
 
