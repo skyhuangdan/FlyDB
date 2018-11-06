@@ -351,7 +351,7 @@ int NetHandler::tcpGenericServer(char *err, int port, const char *bindaddr, int 
     }
 }
 
-int NetHandler::unixServer(char *err, char *path, mode_t perm, int backlog) {
+int NetHandler::unixServer(char *err, const char *path, mode_t perm, int backlog) {
     int s;
     struct sockaddr_un sa;
 

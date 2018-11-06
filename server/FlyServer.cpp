@@ -10,6 +10,40 @@
 #include "net/NetHandler.h"
 
 void FlyServer::init(int argc, char **argv) {
+    // 默认初始化
+    this->defaultInit();
+
+    // 加载配置文件中配置
+    std::string fileName;
+    if (1 == MiscTool::getAbsolutePath("fly.conf", fileName)) {
+        loadConfig(fileName);
+    }
+
+    // 打开监听socket，用于监听用户命令
+    this->listenToPort();
+
+    // 打开Unix domain socket
+    if (NULL != this->unixsocket) {
+        unlink(this->unixsocket);
+        this->usfd = NetHandler::unixServer(this->neterr, this->unixsocket, this->unixsocketperm, this->tcpBacklog);
+        if (-1 == this->usfd) {
+            std::cout << "Opening Unix Domain Socket: " << this->neterr << std::endl;
+            exit(1);
+        }
+        NetHandler::setBlock(NULL, this->usfd, 0);
+    }
+
+    // 创建定时任务，用于创建客户端连接
+    for (auto fd : this->ipfd) {
+        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, acceptTcpHandler , NULL)) {
+            exit(1);
+        }
+    }
+
+    return;
+}
+
+void FlyServer::defaultInit() {
     // init db array
     for (int i = 0; i < DB_NUM; i++) {
         this->dbArray[i] = new FlyDB();
@@ -24,6 +58,9 @@ void FlyServer::init(int argc, char **argv) {
 
     // server端口
     this->port = CONFIG_DEFAULT_SERVER_PORT;
+    // unix domain socket
+    this->unixsocket = NULL;
+    this->unixsocketperm = CONFIG_DEFAULT_UNIX_SOCKET_PERM;
 
     // 设置最大客户端数量
     setMaxClientLimit();
@@ -35,23 +72,6 @@ void FlyServer::init(int argc, char **argv) {
     // serverCron运行频率
     this->hz = CONFIG_CRON_HZ;
 
-    // 加载配置文件中配置
-    std::string fileName;
-    if (1 == MiscTool::getAbsolutePath("fly.conf", fileName)) {
-        loadConfig(fileName);
-    }
-
-    // 打开监听socket，用于监听用户命令
-    this->listenToPort();
-
-    // 创建定时任务，用于创建客户端连接
-    for (auto fd : this->ipfd) {
-        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, acceptTcpHandler , NULL)) {
-            exit(1);
-        }
-    }
-
-    return;
 }
 
 int FlyServer::getPID() {
@@ -178,10 +198,20 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
         }
     } else if (0 == words[0].compare("bind")) {
         int addressCount = words.size() - 1;
-        if (addressCount <= CONFIG_BINDADDR_MAX) {
-            for (int j = 0; j < addressCount; j++) {
-                this->bindAddr.push_back(words[j + 1]);
-            }
+        if (addressCount > CONFIG_BINDADDR_MAX) {
+            std::cout << "Too many bind addresses specified!" << std::endl;
+            exit(1);
+        }
+        for (int j = 0; j < addressCount; j++) {
+            this->bindAddr.push_back(words[j + 1]);
+        }
+    } else if (0 == words[0].compare("unixsocket") && 2 == words.size()) {
+        this->unixsocket = strdup(words[1].c_str());
+    } else if (0 == words[0].compare("unixsocketperm") && 2 == words.size()) {
+        this->unixsocketperm = (mode_t) strtol(words[1].c_str(), NULL, 0);
+        if (this->unixsocketperm > 777) {
+            std::cout << "Invalid socket file permissions" << std::endl;
+            exit(1);
         }
     }
 }

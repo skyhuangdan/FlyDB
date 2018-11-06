@@ -35,8 +35,8 @@ public:
     void loadConfigFromString(const std::string& config);
 
 private:
-    // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
-    void setMaxClientLimit();
+    void defaultInit();
+    void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
     void loadConfigFromLineString(const std::string &line);
     int listenToPort();                       // 打开监听socket，用于监听用户命令
 
@@ -53,6 +53,9 @@ private:
     std::vector<std::string> bindAddr;        // 绑定地址
     int tcpBacklog;                           // TCP listen() backlog
     char neterr[NET_ERR_LEN];                 // 网络error buffer
+    const char *unixsocket;                   // UNIX socket path
+    mode_t unixsocketperm;                    // UNIX socket permission
+    int usfd;                                 // Unix socket file descriptor
 };
 
 #endif //FLYDB_FLYSERVER_H

@@ -24,7 +24,7 @@ public:
     static int tcpNonBlockBindConnect(char *err, char *addr, int port, char *source_addr);
     static int tcpNonBlockBestEffortBindConnect(char *err, char *addr, int port, char *source_addr);
     static int setListen(char *err, int s, struct sockaddr *sa, socklen_t len, int backlog);
-    static int unixServer(char *err, char *path, mode_t perm, int backlog);
+    static int unixServer(char *err, const char *path, mode_t perm, int backlog);
     static int tcpServer(char *err, int port, const char *bindaddr, int backlog);
     static int tcp6Server(char *err, int port, const char *bindaddr, int backlog);
     static int setBlock(char *err, int fd, int block);
