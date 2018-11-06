@@ -293,15 +293,15 @@ int NetHandler::tcpGenericConnect(char *err, char *addr, int port, char *source_
     }
 }
 
-int NetHandler::tcpServer(char *err, int port, const std::string &bindaddr, int backlog) {
+int NetHandler::tcpServer(char *err, int port, const char *bindaddr, int backlog) {
     return tcpGenericServer(err, port, bindaddr, AF_INET, backlog);
 }
 
-int NetHandler::tcp6Server(char *err, int port, const std::string &bindaddr, int backlog) {
+int NetHandler::tcp6Server(char *err, int port, const char *bindaddr, int backlog) {
     return tcpGenericServer(err, port, bindaddr, AF_INET6, backlog);
 }
 
-int NetHandler::tcpGenericServer(char *err, int port, const std::string &bindaddr, int af, int backlog) {
+int NetHandler::tcpGenericServer(char *err, int port, const char *bindaddr, int af, int backlog) {
     int s = -1, rv;
     char _port[6];  /* strlen("65535") */
     struct addrinfo hints, *servinfo, *p;
@@ -312,7 +312,7 @@ int NetHandler::tcpGenericServer(char *err, int port, const std::string &bindadd
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if ((rv = getaddrinfo(bindaddr.c_str(), _port, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(bindaddr, _port, &hints, &servinfo)) != 0) {
         setError(err, "%s", gai_strerror(rv));
         return -1;
     }

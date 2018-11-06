@@ -20,6 +20,7 @@ EventLoop::EventLoop(FlyServer *flyServer, int setSize) {
         this->fileEvents[i].setEventLoop(this);
     }
     this->flyServer = flyServer;
+    this->beforeSleepProc = NULL;
 }
 
 EventLoop::~EventLoop() {

@@ -190,14 +190,14 @@ int FlyServer::listenToPort() {
     int fd;
     // try to bind all to IPV4 and IPV6
     if (0 == this->bindAddr.size()) {
-        int failure = 0;
+        int success = 0;
         // try to set *(any address) to ipv6
         fd = NetHandler::tcp6Server(this->neterr, this->port, NULL, this->tcpBacklog);
         if (fd != -1) {
             // set nonblock
             NetHandler::setBlock(NULL, fd, 0);
             this->ipfd.push_back(fd);
-            failure++;
+            success++;
         }
 
         // try to set *(any address) to ipv4
@@ -206,19 +206,19 @@ int FlyServer::listenToPort() {
             // set nonblock
             NetHandler::setBlock(NULL, fd, 0);
             this->ipfd.push_back(fd);
-            failure++;
+            success++;
         }
 
-        if (2 == failure) {
+        if (0 == success) {
             return -1;
         }
     } else {
         for (auto addr : this->bindAddr) {
             // 如果是IPV6
             if (addr.find(":") != addr.npos) {
-                fd = NetHandler::tcp6Server(this->neterr, this->port, addr, this->tcpBacklog);
+                fd = NetHandler::tcp6Server(this->neterr, this->port, addr.c_str(), this->tcpBacklog);
             } else {
-                fd = NetHandler::tcpServer(this->neterr, this->port, addr, this->tcpBacklog);
+                fd = NetHandler::tcpServer(this->neterr, this->port, addr.c_str(), this->tcpBacklog);
             }
             if (-1 == fd) {
                 return -1;
