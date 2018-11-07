@@ -11,9 +11,9 @@
 #include "FileEvent.h"
 #include "TimeEvent.h"
 #include "FiredEvent.h"
+#include "../FlyServer.h"
 
 class EventLoop;
-class FlyServer;
 
 typedef void beforeAndAfterSleepProc(EventLoop *eventLoop);
 

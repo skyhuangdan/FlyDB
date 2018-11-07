@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include "NetHandler.h"
 #include "NetDef.h"
+#include "../config.h"
 
 NetHandler* NetHandler::getInstance() {
     static NetHandler* instance;
@@ -152,6 +153,44 @@ int NetHandler::tcpNonBlockBindConnect(char *err, char *addr, int port, char *so
 
 int NetHandler::tcpNonBlockBestEffortBindConnect(char *err, char *addr, int port, char *source_addr) {
     return tcpGenericConnect(err, addr, port, source_addr, NET_CONNECT_NONBLOCK | NET_CONNECT_BE_BINDING);
+}
+
+int NetHandler::tcpAccept(char *err, int s, char *ip, size_t iplen, int *port) {
+    struct sockaddr sa;
+    socklen_t salen = sizeof(sa);
+
+    // accept
+    int fd = tcpGenericAccept(err, s, &sa, &salen);
+    if(-1 == fd) {
+        return -1;
+    }
+
+    // analysis the ip and port
+    if (AF_INET == sa.sa_family) {
+        struct sockaddr_in *sin = (struct sockaddr_in *) &sa;
+        if (NULL != ip) {
+            inet_ntop(AF_INET, (void *)&sin->sin_addr, ip, iplen);
+        }
+        if (NULL != port) {
+            *port = ntohs(sin->sin_port);
+        }
+    } else {
+        struct sockaddr_in6 *sin = (struct sockaddr_in6 *) &sa;
+        if (NULL != ip) {
+            inet_ntop(AF_INET6, (void*)&sin->sin6_addr, ip, iplen);
+        }
+        if (NULL != port) {
+            *port = ntohs(sin->sin6_port);
+        }
+    }
+
+    return fd;
+}
+
+int NetHandler::unixAccept(char *err, int s) {
+    struct sockaddr sa;
+    socklen_t salen = sizeof(sa);
+    return tcpGenericAccept(err, s, &sa, &salen);
 }
 
 int NetHandler::genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags) {
@@ -413,3 +452,34 @@ void NetHandler::dealError(int fd, struct addrinfo *servinfo) {
     freeaddrinfo(servinfo);
 }
 
+void NetHandler::acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+    FlyServer *flyServer = eventLoop->getFlyServer();
+    int cfd, cport;
+    char cip[NET_IP_STR_LEN];
+
+    for (int i = 0; i < MAX_ACCEPTS_PER_CALL; i++) {
+        cfd = tcpAccept(NULL, fd, cip, sizeof(cip), &cport);
+        if (-1 == cfd) {
+
+            return;
+        }
+
+        // todo: accept common handler
+    }
+}
+
+int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
+    while (1) {
+        int fd = accept(s, sa, len);
+        if (-1 == fd) {
+            if (EINTR == errno) {
+                continue;
+            } else {
+                setError(err, "accept: %s", strerror(errno));
+                return -1;
+            }
+        }
+
+        return fd;
+    }
+}

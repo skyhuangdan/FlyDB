@@ -19,7 +19,6 @@ const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData);
-void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 
 class FlyServer {
 public:
@@ -32,6 +31,7 @@ public:
     void eventMain();                            // 事件循环处理
     int getHz() const;
     void setHz(int hz);
+    char *getNeterr() const;
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
@@ -52,7 +52,7 @@ private:
     std::vector<int> ipfd;                    // TCP socket fd
     std::vector<std::string> bindAddr;        // 绑定地址
     int tcpBacklog;                           // TCP listen() backlog
-    char neterr[NET_ERR_LEN];                 // 网络error buffer
+    char *neterr;                 // 网络error buffer
     const char *unixsocket;                   // UNIX socket path
     mode_t unixsocketperm;                    // UNIX socket permission
     int usfd;                                 // Unix socket file descriptor

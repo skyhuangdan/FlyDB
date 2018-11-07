@@ -37,6 +37,7 @@ FlyServer::FlyServer() {
 
     // serverCron运行频率
     this->hz = CONFIG_CRON_HZ;
+    this->neterr = (char*)malloc(sizeof(char) * NET_ERR_LEN);
 }
 
 void FlyServer::init(int argc, char **argv) {
@@ -51,7 +52,7 @@ void FlyServer::init(int argc, char **argv) {
 
     // 打开Unix domain socket
     if (NULL != this->unixsocket) {
-        unlink(this->unixsocket);
+        unlink(this->unixsocket);       // 如果存在，则删除unixsocket文件
         this->usfd = NetHandler::unixServer(this->neterr, this->unixsocket, this->unixsocketperm, this->tcpBacklog);
         if (-1 == this->usfd) {
             std::cout << "Opening Unix Domain Socket: " << this->neterr << std::endl;
@@ -62,7 +63,7 @@ void FlyServer::init(int argc, char **argv) {
 
     // 创建定时任务，用于创建客户端连接
     for (auto fd : this->ipfd) {
-        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, acceptTcpHandler , NULL)) {
+        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, NetHandler::acceptTcpHandler , NULL)) {
             exit(1);
         }
     }
@@ -257,6 +258,10 @@ int FlyServer::listenToPort() {
     return 1;
 }
 
+char *FlyServer::getNeterr() const {
+    return neterr;
+}
+
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
     if (NULL == eventLoop || NULL == eventLoop->getFlyServer()) {
         return 0;
@@ -266,9 +271,4 @@ int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
     std::cout << "serverCron is running " << times++ << " times!" << std::endl;
 
     return 1000 / eventLoop->getFlyServer()->getHz();
-}
-
-// todo(zlw) accomplish
-void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
-
 }

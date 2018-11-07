@@ -6,6 +6,7 @@
 #define FLYDB_NETHANDLER_H
 
 #include <sys/socket.h>
+#include "../event/EventLoop.h"
 
 class NetHandler {
 public:
@@ -28,12 +29,16 @@ public:
     static int tcpServer(char *err, int port, const char *bindaddr, int backlog);
     static int tcp6Server(char *err, int port, const char *bindaddr, int backlog);
     static int setBlock(char *err, int fd, int block);
+    static void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
+    static int tcpAccept(char *err, int s, char *ip, size_t iplen, int *port);
+    static int unixAccept(char *err, int s);
 private:
     static void setError(char *err, const char *fmt, ...);
     static int genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags);
     static int setReuseAddr(char *err, int fd);
     static int tcpGenericConnect(char *err, char *addr, int port, char *source_addr, int flags);
     static int tcpGenericServer(char *err, int port, const char *bindaddr, int af, int backlog);
+    static int tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len);
     static void dealError(int fd, struct addrinfo *servinfo);
 };
 
