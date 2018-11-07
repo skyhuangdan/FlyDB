@@ -23,6 +23,7 @@ void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 
 class FlyServer {
 public:
+    FlyServer();
     void init(int argc, char **argv);            // 初始化函数
     int getPID();                                // 获取server id
     FlyDB* getDB(int dbID);                      // 根据db id获取具体的db
@@ -31,12 +32,11 @@ public:
     void eventMain();                            // 事件循环处理
     int getHz() const;
     void setHz(int hz);
-    void loadConfig(const std::string &fileName);
-    void loadConfigFromString(const std::string& config);
 
 private:
-    void defaultInit();
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
+    void loadConfig(const std::string &fileName);
+    void loadConfigFromString(const std::string& config);
     void loadConfigFromLineString(const std::string &line);
     int listenToPort();                       // 打开监听socket，用于监听用户命令
 

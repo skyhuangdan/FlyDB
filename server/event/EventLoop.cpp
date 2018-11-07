@@ -21,6 +21,7 @@ EventLoop::EventLoop(FlyServer *flyServer, int setSize) {
     }
     this->flyServer = flyServer;
     this->beforeSleepProc = NULL;
+    this->afterSleepProc = NULL;
 }
 
 EventLoop::~EventLoop() {

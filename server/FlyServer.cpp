@@ -9,10 +9,37 @@
 #include "utils/MiscTool.h"
 #include "net/NetHandler.h"
 
-void FlyServer::init(int argc, char **argv) {
-    // 默认初始化
-    this->defaultInit();
+FlyServer::FlyServer() {
+    // init db array
+    for (int i = 0; i < DB_NUM; i++) {
+        this->dbArray[i] = new FlyDB();
+        if (NULL == this->dbArray.at(i)) {
+            std::cout << "error to create FlyDB[" << i << "]" << std::endl;
+            exit(1);
+        }
+    }
 
+    // init command table
+    this->commandTable = new CommandTable(this);
+
+    // server端口
+    this->port = CONFIG_DEFAULT_SERVER_PORT;
+    // unix domain socket
+    this->unixsocket = NULL;
+    this->unixsocketperm = CONFIG_DEFAULT_UNIX_SOCKET_PERM;
+
+    // 设置最大客户端数量
+    setMaxClientLimit();
+
+    // 时间循环处理器
+    this->eventLoop = new EventLoop(this, this->maxClients + CONFIG_FDSET_INCR);
+    this->eventLoop->createTimeEvent(1, serverCron, NULL, NULL);
+
+    // serverCron运行频率
+    this->hz = CONFIG_CRON_HZ;
+}
+
+void FlyServer::init(int argc, char **argv) {
     // 加载配置文件中配置
     std::string fileName;
     if (1 == MiscTool::getAbsolutePath("fly.conf", fileName)) {
@@ -41,37 +68,6 @@ void FlyServer::init(int argc, char **argv) {
     }
 
     return;
-}
-
-void FlyServer::defaultInit() {
-    // init db array
-    for (int i = 0; i < DB_NUM; i++) {
-        this->dbArray[i] = new FlyDB();
-        if (NULL == this->dbArray.at(i)) {
-            std::cout << "error to create FlyDB[" << i << "]" << std::endl;
-            exit(1);
-        }
-    }
-
-    // init command table
-    this->commandTable = new CommandTable(this);
-
-    // server端口
-    this->port = CONFIG_DEFAULT_SERVER_PORT;
-    // unix domain socket
-    this->unixsocket = NULL;
-    this->unixsocketperm = CONFIG_DEFAULT_UNIX_SOCKET_PERM;
-
-    // 设置最大客户端数量
-    setMaxClientLimit();
-
-    // 时间循环处理器
-    this->eventLoop = new EventLoop(this, this->maxClients + CONFIG_FDSET_INCR);
-    this->eventLoop->createTimeEvent(1, serverCron, NULL, NULL);
-
-    // serverCron运行频率
-    this->hz = CONFIG_CRON_HZ;
-
 }
 
 int FlyServer::getPID() {
@@ -209,7 +205,7 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
         this->unixsocket = strdup(words[1].c_str());
     } else if (0 == words[0].compare("unixsocketperm") && 2 == words.size()) {
         this->unixsocketperm = (mode_t) strtol(words[1].c_str(), NULL, 0);
-        if (this->unixsocketperm > 777) {
+        if (this->unixsocketperm > 0777) {
             std::cout << "Invalid socket file permissions" << std::endl;
             exit(1);
         }
