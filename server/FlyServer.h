@@ -23,6 +23,7 @@ int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData);
 class FlyServer {
 public:
     FlyServer();
+    ~FlyServer();
     void init(int argc, char **argv);            // 初始化函数
     int getPID();                                // 获取server id
     FlyDB* getDB(int dbID);                      // 根据db id获取具体的db
@@ -32,6 +33,7 @@ public:
     int getHz() const;
     void setHz(int hz);
     char *getNeterr() const;
+    FlyClient* createClient(int fd);
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
@@ -52,10 +54,11 @@ private:
     std::vector<int> ipfd;                    // TCP socket fd
     std::vector<std::string> bindAddr;        // 绑定地址
     int tcpBacklog;                           // TCP listen() backlog
-    char *neterr;                 // 网络error buffer
+    char *neterr;                             // 网络error buffer
     const char *unixsocket;                   // UNIX socket path
     mode_t unixsocketperm;                    // UNIX socket permission
     int usfd;                                 // Unix socket file descriptor
+    int tcpKeepAlive;
 };
 
 #endif //FLYDB_FLYSERVER_H

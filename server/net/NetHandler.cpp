@@ -460,12 +460,19 @@ void NetHandler::acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata
     for (int i = 0; i < MAX_ACCEPTS_PER_CALL; i++) {
         cfd = tcpAccept(NULL, fd, cip, sizeof(cip), &cport);
         if (-1 == cfd) {
-
             return;
         }
 
         // todo: accept common handler
+        FlyClient* flyClient = flyServer->createClient(fd);
+        if (NULL == flyClient) {
+            // todo:
+        }
     }
+}
+
+void NetHandler::readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+    
 }
 
 int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {

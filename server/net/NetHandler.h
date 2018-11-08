@@ -29,9 +29,12 @@ public:
     static int tcpServer(char *err, int port, const char *bindaddr, int backlog);
     static int tcp6Server(char *err, int port, const char *bindaddr, int backlog);
     static int setBlock(char *err, int fd, int block);
-    static void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
     static int tcpAccept(char *err, int s, char *ip, size_t iplen, int *port);
     static int unixAccept(char *err, int s);
+
+    // 对应socket的绑定接口
+    static void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
+    static void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 private:
     static void setError(char *err, const char *fmt, ...);
     static int genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags);

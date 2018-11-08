@@ -37,7 +37,19 @@ FlyServer::FlyServer() {
 
     // serverCron运行频率
     this->hz = CONFIG_CRON_HZ;
-    this->neterr = (char*)malloc(sizeof(char) * NET_ERR_LEN);
+    this->neterr = new char[NET_ERR_LEN];
+
+    // keep alive
+    this->tcpKeepAlive = CONFIG_DEFAULT_TCP_KEEPALIVE;
+}
+
+FlyServer::~FlyServer() {
+    for (int i = 0; i < DB_NUM; i++) {
+        delete this->dbArray.at(i);
+    }
+    delete this->commandTable;
+    delete this->eventLoop;
+    delete[] this->neterr;
 }
 
 void FlyServer::init(int argc, char **argv) {
@@ -210,6 +222,12 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
             std::cout << "Invalid socket file permissions" << std::endl;
             exit(1);
         }
+    } else if (0 == words[0].compare("tcp-keepalive") && 2 == words.size()) {
+        this->tcpKeepAlive = atoi(words[1].c_str());
+        if (this->tcpKeepAlive < 0) {
+            std::cout << "Invalid tcp-keepalive value" << std::endl;
+            exit(1);
+        }
     }
 }
 
@@ -260,6 +278,37 @@ int FlyServer::listenToPort() {
 
 char *FlyServer::getNeterr() const {
     return neterr;
+}
+
+FlyClient* FlyServer::createClient(int fd) {
+    if (fd <= 0 || this->clients.size() >= this->maxClients) {
+       return NULL;
+    }
+
+    // create FlyClient
+    FlyClient *flyClient = new FlyClient(fd);
+    if (NULL == flyClient) {
+        return NULL;
+    }
+
+    // 设置读socket，并为其创建相应的file event
+    NetHandler::setBlock(NULL, fd, 0);
+    NetHandler::setTcpNoDelay(NULL, fd, 1);
+    if (this->tcpKeepAlive > 0) {
+        NetHandler::keepAlive(NULL, fd, this->tcpKeepAlive);
+    }
+    // create file event
+    if (-1 == this->eventLoop->createFileEvent(
+            fd, ES_READABLE, NetHandler::readQueryFromClient, flyClient)) {
+        close(fd);
+        delete flyClient;
+        return NULL;
+    }
+
+    // 加入到clients队列中
+    this->clients.push_back(flyClient);
+
+    return flyClient;
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {

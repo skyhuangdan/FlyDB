@@ -15,6 +15,8 @@ const int FLY_REPLY_CHUNK_BYTES = 16 * 1024;
 
 class FlyClient {
 public:
+    FlyClient(int fd);
+    ~FlyClient();
     int getFd() const;
     void setFd(int fd);
     FlyObj *getName() const;

@@ -4,6 +4,23 @@
 
 #include "FlyClient.h"
 
+FlyClient::FlyClient(int fd) {
+    this->fd = fd;
+    this->name = NULL;
+    this->flags = 0;
+    this->argc = 0;
+    this->argv = NULL;
+    this->cmd = NULL;
+    this->bufSize = 0;
+    this->authentiated = 0;
+    this->createTime = this->lastInteractionTime = time(NULL);
+    this->softLimitTime = 0;
+}
+
+FlyClient::~FlyClient() {
+
+}
+
 int FlyClient::getFd() const {
     return fd;
 }

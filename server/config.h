@@ -44,6 +44,6 @@ const int CONFIG_BINDADDR_MAX = 16;
 const int CONFIG_MAX_LINE = 1024;
 const int NET_ERR_LEN = 256;                                    // 网络error信息buffer
 const int CONFIG_DEFAULT_UNIX_SOCKET_PERM = 0;
-
+const int CONFIG_DEFAULT_TCP_KEEPALIVE = 300;
 
 #endif //FLYDB_CONFIG_H
