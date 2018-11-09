@@ -54,13 +54,17 @@ void EventLoop::stop() {
 }
 
 int EventLoop::createFileEvent(int fd, int mask, fileEventProc* proc, void *clientdata) {
-    if (fd > this->setSize) {
+    if (fd >= this->setSize) {
         return -1;
     }
 
     // 设置fileEvent, 添加file proc
     FileEvent& fileEvent = this->fileEvents[fd];
     fileEvent.addFileProc(mask, proc, clientdata);
+
+    // 设置监听fd
+    PollState* eventState = (PollState*) this->apiData;
+    eventState->add(fd, mask);
 
     if (this->maxfd < fd) {
         this->maxfd = fd;

@@ -59,6 +59,7 @@ private:
     mode_t unixsocketperm;                    // UNIX socket permission
     int usfd;                                 // Unix socket file descriptor
     int tcpKeepAlive;
+    long long statRejectedConn;               // 由于超过了maxclients而拒绝连接的次数
 };
 
 #endif //FLYDB_FLYSERVER_H

@@ -39,17 +39,21 @@ int PollState::poll(EventLoop *eventLoop, struct timeval *tvp) {
     int retval = select(eventLoop->getMaxfd() + 1, &this->_rfds, &this->_wfds, NULL, tvp);
     if (retval > 0) {
         for (int i = 0; i <= eventLoop->getMaxfd(); i++) {
-            int mask = 0;
             int eventMask = eventLoop->getFileEvents(i);
-
             if (ES_NONE == eventMask) {
                 continue;
             }
+
+            // 获取状态
+            int mask = ES_NONE;
             if (eventMask & ES_READABLE && FD_ISSET(i, &this->_rfds)) {
                 mask |= ES_READABLE;
             }
             if (eventMask & ES_WRITABLE && FD_ISSET(i, &this->_wfds)) {
                 mask |= ES_WRITABLE;
+            }
+            if (ES_NONE == mask) {
+                continue;
             }
 
             eventLoop->addFiredEvent(i, mask);

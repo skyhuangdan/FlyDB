@@ -17,6 +17,7 @@
 #include <array>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <iostream>
 #include "NetHandler.h"
 #include "NetDef.h"
 #include "../config.h"
@@ -463,10 +464,10 @@ void NetHandler::acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata
             return;
         }
 
-        // todo: accept common handler
-        FlyClient* flyClient = flyServer->createClient(fd);
+        FlyClient* flyClient = flyServer->createClient(cfd);
         if (NULL == flyClient) {
-            // todo:
+            std::cout<< "error to create fly client" << std::endl;
+            close(cfd);
         }
     }
 }

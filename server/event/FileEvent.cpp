@@ -54,10 +54,6 @@ int FileEvent::addFileProc(int mask, fileEventProc *proc, void *clientData) {
     }
     this->clientData = clientData;
 
-    // 设置监听fd
-    PollState* eventState = (PollState*) clientData;
-    eventState->add(this->fd, mask);
-
     return 1;
 }
 

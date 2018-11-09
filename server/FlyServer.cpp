@@ -41,6 +41,9 @@ FlyServer::FlyServer() {
 
     // keep alive
     this->tcpKeepAlive = CONFIG_DEFAULT_TCP_KEEPALIVE;
+
+    // 拒绝连接次数设置为0
+    this->statRejectedConn = 0;
 }
 
 FlyServer::~FlyServer() {
@@ -75,7 +78,7 @@ void FlyServer::init(int argc, char **argv) {
 
     // 创建定时任务，用于创建客户端连接
     for (auto fd : this->ipfd) {
-        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, NetHandler::acceptTcpHandler , NULL)) {
+        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, NetHandler::acceptTcpHandler, NULL)) {
             exit(1);
         }
     }
@@ -281,15 +284,18 @@ char *FlyServer::getNeterr() const {
 }
 
 FlyClient* FlyServer::createClient(int fd) {
-    if (fd <= 0 || this->clients.size() >= this->maxClients) {
-       return NULL;
+    if (fd <= 0) {
+        return NULL;
+    }
+
+    // 超过了客户端最大数量
+    if (this->clients.size() >= this->maxClients) {
+        this->statRejectedConn++;
+        return NULL;
     }
 
     // create FlyClient
     FlyClient *flyClient = new FlyClient(fd);
-    if (NULL == flyClient) {
-        return NULL;
-    }
 
     // 设置读socket，并为其创建相应的file event
     NetHandler::setBlock(NULL, fd, 0);
@@ -297,10 +303,8 @@ FlyClient* FlyServer::createClient(int fd) {
     if (this->tcpKeepAlive > 0) {
         NetHandler::keepAlive(NULL, fd, this->tcpKeepAlive);
     }
-    // create file event
     if (-1 == this->eventLoop->createFileEvent(
             fd, ES_READABLE, NetHandler::readQueryFromClient, flyClient)) {
-        close(fd);
         delete flyClient;
         return NULL;
     }
