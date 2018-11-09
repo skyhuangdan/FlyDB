@@ -11,10 +11,11 @@ const int NET_IP_ONLY = 1<<0;
 enum NetConnectFlag {
     NET_CONNECT_NONE = 0,
     NET_CONNECT_NONBLOCK = 1,
-    NET_CONNECT_BE_BINDING = 2     /* Best effort binding. */
+    NET_CONNECT_BE_BINDING = 2          // Best effort binding
 };
 
 const int MAX_ACCEPTS_PER_CALL = 1000;
 const int NET_IP_STR_LEN = 46;
+const int PROTO_IOBUF_LEN = 1024 * 16;  // Generic I/O buffer size
 
 #endif //FLYDB_NETDEF_H

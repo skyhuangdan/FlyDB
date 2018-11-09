@@ -315,6 +315,28 @@ FlyClient* FlyServer::createClient(int fd) {
     return flyClient;
 }
 
+int FlyServer::deleteClient(int fd) {
+    std::list<FlyClient *>::iterator iter = this->clients.begin();
+    for (iter; iter != this->clients.end(); iter++) {
+        if (fd == (*iter)->getFd()) {
+            // 关闭socket
+            close(fd);
+
+            // 删除file event
+            this->eventLoop->deleteFileEvent(fd, ES_READABLE | ES_WRITABLE);
+
+            // 删除FlyClient
+            delete (*iter);
+            this->clients.erase(iter);
+
+            return 1;
+        }
+    }
+
+    //没有找到对应的FlyClient
+    return -1;
+}
+
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
     if (NULL == eventLoop || NULL == eventLoop->getFlyServer()) {
         return 0;

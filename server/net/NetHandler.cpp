@@ -473,6 +473,18 @@ void NetHandler::acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata
 }
 
 void NetHandler::readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+    FlyServer *flyServer = eventLoop->getFlyServer();
+    FlyClient *flyClient = (FlyClient *) clientdata;
+
+    int readCnt = read(fd, flyClient->getQueryBuf(), PROTO_IOBUF_LEN);
+    // 读取失败, 如果错误码是EAGAIN, 说明本次读取没数据则直接返回，否则需要删除client
+    if (-1 == readCnt) {
+        if (EAGAIN == errno) {
+            return;
+        } else {
+            flyServer->deleteClient(fd);
+        }
+    }
     
 }
 

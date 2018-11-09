@@ -3,6 +3,7 @@
 //
 
 #include "FlyClient.h"
+#include "../net/NetDef.h"
 
 FlyClient::FlyClient(int fd) {
     this->fd = fd;
@@ -15,10 +16,11 @@ FlyClient::FlyClient(int fd) {
     this->authentiated = 0;
     this->createTime = this->lastInteractionTime = time(NULL);
     this->softLimitTime = 0;
+    this->queryBuf = new char[PROTO_IOBUF_LEN];
 }
 
 FlyClient::~FlyClient() {
-
+    delete[] this->queryBuf;
 }
 
 int FlyClient::getFd() const {
@@ -43,14 +45,6 @@ int FlyClient::getFlags() const {
 
 void FlyClient::setFlags(int flags) {
     FlyClient::flags = flags;
-}
-
-const std::string &FlyClient::getQueryBuf() const {
-    return queryBuf;
-}
-
-void FlyClient::setQueryBuf(const std::string &queryBuf) {
-    FlyClient::queryBuf = queryBuf;
 }
 
 FlyObj **FlyClient::getArgv() const {
@@ -127,4 +121,12 @@ const std::list<std::string> &FlyClient::getReply() const {
 
 void FlyClient::setReply(const std::list<std::string> &reply) {
     FlyClient::reply = reply;
+}
+
+char *FlyClient::getQueryBuf() const {
+    return queryBuf;
+}
+
+void FlyClient::setQueryBuf(char *queryBuf) {
+    FlyClient::queryBuf = queryBuf;
 }

@@ -23,8 +23,8 @@ public:
     void setName(FlyObj *name);
     int getFlags() const;
     void setFlags(int flags);
-    const std::string &getQueryBuf() const;
-    void setQueryBuf(const std::string &queryBuf);
+    char *getQueryBuf() const;
+    void setQueryBuf(char *queryBuf);
     FlyObj **getArgv() const;
     void setArgv(FlyObj **argv);
     int getArgc() const;
@@ -53,7 +53,7 @@ private:
     // 标志
     int flags;
     // 输入缓冲区
-    std::string queryBuf;
+    char* queryBuf;
     // 命令参数
     FlyObj **argv;
     int argc;

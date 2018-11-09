@@ -34,6 +34,7 @@ public:
     void setHz(int hz);
     char *getNeterr() const;
     FlyClient* createClient(int fd);
+    int deleteClient(int fd);
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
