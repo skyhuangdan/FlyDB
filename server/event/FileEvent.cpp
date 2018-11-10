@@ -40,10 +40,6 @@ void FileEvent::setWFileProc(fileEventProc *wfileProc) {
 }
 
 int FileEvent::addFileProc(int mask, fileEventProc *proc, void *clientData) {
-    if (NULL == clientData) {
-        return -1;
-    }
-
     // 设置相应的proc
     this->mask |= mask;
     if (mask & ES_READABLE) {
