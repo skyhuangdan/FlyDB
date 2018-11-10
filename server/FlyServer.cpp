@@ -98,8 +98,8 @@ std::string FlyServer::getVersion() {
     return this->version;
 }
 
-int FlyServer::dealWithCommand(std::string* command) {
-    return this->commandTable->dealWithCommand(command);
+int FlyServer::dealWithCommand(FlyClient *flyclient) {
+    return this->commandTable->dealWithCommand(flyclient);
 }
 
 void FlyServer::setMaxClientLimit() {
@@ -319,9 +319,6 @@ int FlyServer::deleteClient(int fd) {
     std::list<FlyClient *>::iterator iter = this->clients.begin();
     for (iter; iter != this->clients.end(); iter++) {
         if (fd == (*iter)->getFd()) {
-            // 关闭socket
-            close(fd);
-
             // 删除file event
             this->eventLoop->deleteFileEvent(fd, ES_READABLE | ES_WRITABLE);
 

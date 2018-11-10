@@ -477,15 +477,20 @@ void NetHandler::readQueryFromClient(EventLoop *eventLoop, int fd, void *clientd
     FlyClient *flyClient = (FlyClient *) clientdata;
 
     int readCnt = read(fd, flyClient->getQueryBuf(), PROTO_IOBUF_LEN);
-    // 读取失败, 如果错误码是EAGAIN, 说明本次读取没数据则直接返回，否则需要删除client
+    // 读取失败, 如果错误码是EAGAIN说明本次读取没数据, 则直接返回，否则需要删除client
     if (-1 == readCnt) {
         if (EAGAIN == errno) {
             return;
         } else {
             flyServer->deleteClient(fd);
+            close(fd);
         }
     }
-    
+
+    flyClient->setLastInteractionTime(time(NULL));
+
+    // todo: deal with command
+    flyServer->dealWithCommand(flyClient);
 }
 
 int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {

@@ -6,7 +6,8 @@
 #define FLYDB_COMMANDENTRY_H
 
 class FlyServer;
-typedef void (*commandProc)(FlyServer*);
+class FlyClient;
+typedef void (*commandProc)(FlyServer*, FlyClient*, std::vector<std::string> &words);
 
 struct CommandEntry {
     CommandEntry(commandProc proc, int flag);
@@ -15,6 +16,6 @@ struct CommandEntry {
     int flag;
 };
 
-void versionProc(FlyServer*);
+void versionProc(FlyServer*, FlyClient*, std::vector<std::string> &words);
 
 #endif //FLYDB_COMMANDENTRY_H

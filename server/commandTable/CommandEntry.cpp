@@ -9,7 +9,7 @@
 CommandEntry::CommandEntry(commandProc proc, int flag) :
         proc(proc), flag(flag) {}
 
-void versionProc(FlyServer* server) {
+void versionProc(FlyServer* server, FlyClient *client, std::vector<std::string> &words) {
     if (NULL == server) {
         return;
     }

@@ -28,7 +28,7 @@ public:
     int getPID();                                // 获取server id
     FlyDB* getDB(int dbID);                      // 根据db id获取具体的db
     std::string getVersion();                    // 获取版本号
-    int dealWithCommand(std::string* command);   // 处理命令
+    int dealWithCommand(FlyClient *flyclient);          // 处理命令
     void eventMain();                            // 事件循环处理
     int getHz() const;
     void setHz(int hz);

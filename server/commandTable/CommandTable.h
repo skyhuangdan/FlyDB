@@ -7,12 +7,14 @@
 
 
 #include "../dataStructure/dict/Dict.h"
+#include "../flyClient/FlyClient.h"
 
 class FlyServer;
 class CommandTable {
 public:
     CommandTable(FlyServer* flyServer);
-    int dealWithCommand(std::string* command);
+    ~CommandTable();
+    int dealWithCommand(FlyClient *flyClient);
 
 private:
     FlyServer* flyServer;

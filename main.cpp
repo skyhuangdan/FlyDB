@@ -29,12 +29,5 @@ int main(int argc, char **argv) {
     // 事件循环处理
     flyServer->eventMain();
 
-    while(true) {
-        std::cout << "flyDB> ";
-        std::string* command = new std::string();
-        std::cin >> *command;
-        flyServer->dealWithCommand(command);
-    }
-
     delete flyServer;
 }

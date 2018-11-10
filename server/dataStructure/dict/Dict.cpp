@@ -11,6 +11,13 @@ Dict::Dict(const DictType* type) : type(type) {
     this->rehashIndex = -1;
 }
 
+Dict::~Dict() {
+    delete this->ht[0];
+    if (isRehashing()) {
+        delete this->ht[1];
+    }
+}
+
 bool Dict::isRehashing() const {
    return this->rehashIndex >= 0;
 }
@@ -219,13 +226,6 @@ uint32_t Dict::revBits(uint32_t bits) {
         bits = ((bits >> s) & mask) | ((bits << s) & ~mask);
     }
     return bits;
-}
-
-Dict::~Dict() {
-    delete this->ht[0];
-    if (isRehashing()) {
-        delete this->ht[1];
-    }
 }
 
 unsigned int dictGenHashFunction(const char *buf, int len) {
