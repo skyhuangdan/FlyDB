@@ -21,7 +21,7 @@ int CommandTable::dealWithCommand(FlyClient* flyClient) {
     std::vector<std::string> words;
     MiscTool::spiltString(flyClient->getQueryBuf(), " ", words);
 
-    DictEntry* dictEntry = this->commands->findEntry((void*) words[0].c_str());
+    DictEntry* dictEntry = this->commands->findEntry(&words[0]);
     if (NULL == dictEntry) {
         std::cout << "wrong command type!" << std::endl;
         return -1;
