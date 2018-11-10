@@ -476,15 +476,18 @@ void NetHandler::readQueryFromClient(EventLoop *eventLoop, int fd, void *clientd
     FlyServer *flyServer = eventLoop->getFlyServer();
     FlyClient *flyClient = (FlyClient *) clientdata;
 
-    int readCnt = read(fd, flyClient->getQueryBuf(), PROTO_IOBUF_LEN);
+    int readCnt = read(fd, (char*)flyClient->getQueryBuf().c_str(), PROTO_IOBUF_LEN);
     // 读取失败, 如果错误码是EAGAIN说明本次读取没数据, 则直接返回，否则需要删除client
     if (-1 == readCnt) {
         if (EAGAIN == errno) {
             return;
-        } else {
+        } else {                                // 连接异常
             flyServer->deleteClient(fd);
             close(fd);
         }
+    } else if (0 == readCnt) {                  // 关闭连接
+        flyServer->deleteClient(fd);
+        close(fd);
     }
 
     flyClient->setLastInteractionTime(time(NULL));

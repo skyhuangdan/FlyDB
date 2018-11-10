@@ -8,6 +8,7 @@
 #include "config.h"
 #include "utils/MiscTool.h"
 #include "net/NetHandler.h"
+#include "atomic/AtomicHandler.h"
 
 FlyServer::FlyServer() {
     // init db array
@@ -44,6 +45,10 @@ FlyServer::FlyServer() {
 
     // 拒绝连接次数设置为0
     this->statRejectedConn = 0;
+
+    // next client id
+    this->nextClientId = 1;
+    pthread_mutex_init(&this->nextClientIdMutex, NULL);
 }
 
 FlyServer::~FlyServer() {
@@ -296,6 +301,9 @@ FlyClient* FlyServer::createClient(int fd) {
 
     // create FlyClient
     FlyClient *flyClient = new FlyClient(fd);
+    uint64_t clientId = 0;
+    atomicGetIncr(this->nextClientId, clientId, 1);
+    flyClient->setId(clientId);
 
     // 设置读socket，并为其创建相应的file event
     NetHandler::setBlock(NULL, fd, 0);

@@ -17,14 +17,16 @@ class FlyClient {
 public:
     FlyClient(int fd);
     ~FlyClient();
+    uint64_t getId() const;
+    void setId(uint64_t id);
     int getFd() const;
     void setFd(int fd);
     FlyObj *getName() const;
     void setName(FlyObj *name);
     int getFlags() const;
     void setFlags(int flags);
-    char *getQueryBuf() const;
-    void setQueryBuf(char *queryBuf);
+    const std::string &getQueryBuf() const;
+    void setQueryBuf(const std::string &queryBuf);
     FlyObj **getArgv() const;
     void setArgv(FlyObj **argv);
     int getArgc() const;
@@ -46,6 +48,7 @@ public:
     void setSoftLimitTime(time_t softLimitTime);
 
 private:
+    uint64_t id;
     // 套接字
     int fd;
     // client名字
@@ -53,7 +56,7 @@ private:
     // 标志
     int flags;
     // 输入缓冲区
-    char* queryBuf;
+    std::string queryBuf;
     // 命令参数
     FlyObj **argv;
     int argc;

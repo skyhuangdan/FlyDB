@@ -16,11 +16,9 @@ FlyClient::FlyClient(int fd) {
     this->authentiated = 0;
     this->createTime = this->lastInteractionTime = time(NULL);
     this->softLimitTime = 0;
-    this->queryBuf = new char[PROTO_IOBUF_LEN];
 }
 
 FlyClient::~FlyClient() {
-    delete[] this->queryBuf;
 }
 
 int FlyClient::getFd() const {
@@ -123,10 +121,19 @@ void FlyClient::setReply(const std::list<std::string> &reply) {
     FlyClient::reply = reply;
 }
 
-char *FlyClient::getQueryBuf() const {
+const std::string &FlyClient::getQueryBuf() const {
     return queryBuf;
 }
 
-void FlyClient::setQueryBuf(char *queryBuf) {
+void FlyClient::setQueryBuf(const std::string &queryBuf) {
     FlyClient::queryBuf = queryBuf;
 }
+
+uint64_t FlyClient::getId() const {
+    return id;
+}
+
+void FlyClient::setId(uint64_t id) {
+    FlyClient::id = id;
+}
+

@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <list>
+#include <pthread.h>
 #include "db/FlyDB.h"
 #include "commandTable/CommandTable.h"
 #include "flyClient/FlyClient.h"
@@ -60,7 +61,9 @@ private:
     mode_t unixsocketperm;                    // UNIX socket permission
     int usfd;                                 // Unix socket file descriptor
     int tcpKeepAlive;
-    long long statRejectedConn;               // 由于超过了maxclients而拒绝连接的次数
+    uint64_t statRejectedConn;               // 由于超过了maxclients而拒绝连接的次数
+    uint64_t nextClientId;
+    pthread_mutex_t nextClientIdMutex;
 };
 
 #endif //FLYDB_FLYSERVER_H
