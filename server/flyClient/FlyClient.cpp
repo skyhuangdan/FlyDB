@@ -12,13 +12,14 @@ FlyClient::FlyClient(int fd) {
     this->argc = 0;
     this->argv = NULL;
     this->cmd = NULL;
-    this->bufSize = 0;
     this->authentiated = 0;
     this->createTime = this->lastInteractionTime = time(NULL);
     this->softLimitTime = 0;
+    this->buf = new char[FLY_REPLY_CHUNK_BYTES];
 }
 
 FlyClient::~FlyClient() {
+    delete[] this->buf;
 }
 
 int FlyClient::getFd() const {
@@ -26,7 +27,7 @@ int FlyClient::getFd() const {
 }
 
 void FlyClient::setFd(int fd) {
-    FlyClient::fd = fd;
+    this->fd = fd;
 }
 
 FlyObj *FlyClient::getName() const {
@@ -34,7 +35,7 @@ FlyObj *FlyClient::getName() const {
 }
 
 void FlyClient::setName(FlyObj *name) {
-    FlyClient::name = name;
+    this->name = name;
 }
 
 int FlyClient::getFlags() const {
@@ -42,7 +43,7 @@ int FlyClient::getFlags() const {
 }
 
 void FlyClient::setFlags(int flags) {
-    FlyClient::flags = flags;
+    this->flags = flags;
 }
 
 FlyObj **FlyClient::getArgv() const {
@@ -50,7 +51,7 @@ FlyObj **FlyClient::getArgv() const {
 }
 
 void FlyClient::setArgv(FlyObj **argv) {
-    FlyClient::argv = argv;
+    this->argv = argv;
 }
 
 int FlyClient::getArgc() const {
@@ -58,7 +59,7 @@ int FlyClient::getArgc() const {
 }
 
 void FlyClient::setArgc(int argc) {
-    FlyClient::argc = argc;
+    this->argc = argc;
 }
 
 CommandEntry *FlyClient::getCmd() const {
@@ -66,19 +67,7 @@ CommandEntry *FlyClient::getCmd() const {
 }
 
 void FlyClient::setCmd(CommandEntry *cmd) {
-    FlyClient::cmd = cmd;
-}
-
-const char *FlyClient::getBuf() const {
-    return buf;
-}
-
-int FlyClient::getBufSize() const {
-    return bufSize;
-}
-
-void FlyClient::setBufSize(int bufSize) {
-    FlyClient::bufSize = bufSize;
+    this->cmd = cmd;
 }
 
 int FlyClient::getAuthentiated() const {
@@ -86,7 +75,7 @@ int FlyClient::getAuthentiated() const {
 }
 
 void FlyClient::setAuthentiated(int authentiated) {
-    FlyClient::authentiated = authentiated;
+    this->authentiated = authentiated;
 }
 
 time_t FlyClient::getCreateTime() const {
@@ -94,7 +83,7 @@ time_t FlyClient::getCreateTime() const {
 }
 
 void FlyClient::setCreateTime(time_t createTime) {
-    FlyClient::createTime = createTime;
+    this->createTime = createTime;
 }
 
 time_t FlyClient::getLastInteractionTime() const {
@@ -102,7 +91,7 @@ time_t FlyClient::getLastInteractionTime() const {
 }
 
 void FlyClient::setLastInteractionTime(time_t lastInteractionTime) {
-    FlyClient::lastInteractionTime = lastInteractionTime;
+    this->lastInteractionTime = lastInteractionTime;
 }
 
 time_t FlyClient::getSoftLimitTime() const {
@@ -110,7 +99,7 @@ time_t FlyClient::getSoftLimitTime() const {
 }
 
 void FlyClient::setSoftLimitTime(time_t softLimitTime) {
-    FlyClient::softLimitTime = softLimitTime;
+    this->softLimitTime = softLimitTime;
 }
 
 const std::list<std::string> &FlyClient::getReply() const {
@@ -118,7 +107,7 @@ const std::list<std::string> &FlyClient::getReply() const {
 }
 
 void FlyClient::setReply(const std::list<std::string> &reply) {
-    FlyClient::reply = reply;
+    this->reply = reply;
 }
 
 const std::string &FlyClient::getQueryBuf() const {
@@ -126,7 +115,7 @@ const std::string &FlyClient::getQueryBuf() const {
 }
 
 void FlyClient::setQueryBuf(const std::string &queryBuf) {
-    FlyClient::queryBuf = queryBuf;
+    this->queryBuf = queryBuf;
 }
 
 uint64_t FlyClient::getId() const {
@@ -134,6 +123,14 @@ uint64_t FlyClient::getId() const {
 }
 
 void FlyClient::setId(uint64_t id) {
-    FlyClient::id = id;
+    this->id = id;
+}
+
+char *FlyClient::getBuf() const {
+    return buf;
+}
+
+void FlyClient::setBuf(char *buf) {
+    this->buf = buf;
 }
 

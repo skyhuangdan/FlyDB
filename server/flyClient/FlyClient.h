@@ -33,9 +33,8 @@ public:
     void setArgc(int argc);
     CommandEntry *getCmd() const;
     void setCmd(CommandEntry *cmd);
-    const char *getBuf() const;
-    int getBufSize() const;
-    void setBufSize(int bufSize);
+    char *getBuf() const;
+    void setBuf(char *buf);
     const std::list<std::string> &getReply() const;
     void setReply(const std::list<std::string> &reply);
     int getAuthentiated() const;
@@ -63,8 +62,7 @@ private:
     // 命令实现函数
     CommandEntry* cmd;
     // 固定大小输出缓冲区
-    char buf[FLY_REPLY_CHUNK_BYTES];
-    int bufSize;
+    char *buf;
     // 可变长度输出缓冲区
     std::list<std::string> reply;
     // 是否通过了身份验证

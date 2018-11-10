@@ -35,6 +35,7 @@ public:
     // 对应socket的绑定接口
     static void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
     static void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
+    static void sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 private:
     static void setError(char *err, const char *fmt, ...);
     static int genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags);

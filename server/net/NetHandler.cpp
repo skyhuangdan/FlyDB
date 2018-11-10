@@ -485,16 +485,29 @@ void NetHandler::readQueryFromClient(EventLoop *eventLoop, int fd, void *clientd
         } else {                                // 连接异常
             flyServer->deleteClient(fd);
             close(fd);
+            return;
         }
     } else if (0 == readCnt) {                  // 关闭连接
         flyServer->deleteClient(fd);
         close(fd);
+        return;
     }
     flyClient->setQueryBuf(buf);
     flyClient->setLastInteractionTime(time(NULL));
 
-    // todo: deal with command
+    // 处理命令
     flyServer->dealWithCommand(flyClient);
+
+    // 创建返回结果的file event
+    eventLoop->createFileEvent(fd, ES_WRITABLE, sendReplyToClient, flyClient);
+}
+
+void NetHandler::sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+    eventLoop->deleteFileEvent(fd, ES_WRITABLE);
+
+    // 回复命令
+    FlyClient *flyClient = (FlyClient *) clientdata;
+    write(fd, flyClient->getBuf(), strlen(flyClient->getBuf()));
 }
 
 int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
