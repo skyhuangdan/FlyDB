@@ -36,10 +36,11 @@ public:
     char *getNeterr() const;
     FlyClient* createClient(int fd);
     int deleteClient(int fd);
-
     time_t getNowt() const;
-
     void setNowt(time_t nowt);
+    size_t getClientMaxQuerybufLen() const;
+    int64_t getStatNetInputBytes() const;
+    void addToStatNetInputBytes(int64_t size);
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
@@ -68,7 +69,9 @@ private:
     uint64_t statRejectedConn;                // 由于超过了maxclients而拒绝连接的次数
     uint64_t nextClientId;
     pthread_mutex_t nextClientIdMutex;
-    time_t nowt;                          // 系统当前时间
+    time_t nowt;                              // 系统当前时间
+    size_t clientMaxQuerybufLen;              // client buff最大长度
+    int64_t statNetInputBytes;                // 该server从网络获取的byte数量
 };
 
 #endif //FLYDB_FLYSERVER_H

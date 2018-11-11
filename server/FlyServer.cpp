@@ -9,6 +9,7 @@
 #include "utils/MiscTool.h"
 #include "net/NetHandler.h"
 #include "atomic/AtomicHandler.h"
+#include "net/NetDef.h"
 
 FlyServer::FlyServer() {
     // init db array
@@ -22,36 +23,29 @@ FlyServer::FlyServer() {
 
     // init command table
     this->commandTable = new CommandTable(this);
-
     // server端口
     this->port = CONFIG_DEFAULT_SERVER_PORT;
     // unix domain socket
     this->unixsocket = NULL;
     this->unixsocketperm = CONFIG_DEFAULT_UNIX_SOCKET_PERM;
-
     // 设置最大客户端数量
     setMaxClientLimit();
-
     // 时间循环处理器
     this->eventLoop = new EventLoop(this, this->maxClients + CONFIG_FDSET_INCR);
     this->eventLoop->createTimeEvent(1, serverCron, NULL, NULL);
-
     // serverCron运行频率
     this->hz = CONFIG_CRON_HZ;
     this->neterr = new char[NET_ERR_LEN];
-
     // keep alive
     this->tcpKeepAlive = CONFIG_DEFAULT_TCP_KEEPALIVE;
-
     // 拒绝连接次数设置为0
     this->statRejectedConn = 0;
-
     // next client id
     this->nextClientId = 1;
     pthread_mutex_init(&this->nextClientIdMutex, NULL);
-
     // 当前时间
     this->nowt = time(NULL);
+    this->clientMaxQuerybufLen = PROTO_MAX_QUERYBUF_LEN;
 }
 
 FlyServer::~FlyServer() {
@@ -351,6 +345,18 @@ time_t FlyServer::getNowt() const {
 
 void FlyServer::setNowt(time_t nowt) {
     FlyServer::nowt = nowt;
+}
+
+size_t FlyServer::getClientMaxQuerybufLen() const {
+    return clientMaxQuerybufLen;
+}
+
+int64_t FlyServer::getStatNetInputBytes() const {
+    return statNetInputBytes;
+}
+
+void FlyServer::addToStatNetInputBytes(int64_t size) {
+    this->clientMaxQuerybufLen += size;
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {

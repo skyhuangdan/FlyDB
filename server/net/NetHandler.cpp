@@ -492,14 +492,19 @@ void NetHandler::readQueryFromClient(EventLoop *eventLoop, int fd, void *clientd
         close(fd);
         return;
     }
-    flyClient->setQueryBuf(buf);
+    flyClient->addToQueryBuf(buf);
     flyClient->setLastInteractionTime(flyServer->getNowt());
 
-    // 处理命令
-    flyServer->dealWithCommand(flyClient);
+    // 统计flyServer接收到的byte数量
+    flyServer->addToStatNetInputBytes(strlen(buf));
+    if (flyClient->getQueryBufSize() > flyServer->getClientMaxQuerybufLen()) {
+        flyServer->deleteClient(fd);
+        close(fd);
+        std::cout << "Closing client that reached max query buffer length" << std::endl;
+        return;
+    }
 
-    // 创建返回结果的file event
-    eventLoop->createFileEvent(fd, ES_WRITABLE, sendReplyToClient, flyClient);
+    processInputBuffer(eventLoop, flyServer, flyClient);
 }
 
 void NetHandler::sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
@@ -524,4 +529,27 @@ int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_
 
         return fd;
     }
+}
+
+int NetHandler::processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient) {
+    while (flyClient->getQueryBufSize() > 0) {
+        if (flyClient->isMultiBulkType()) {
+            processMultiBulkBuffer(flyClient);
+        } else {
+            processInlineBuffer(flyClient);
+        }
+    }
+
+    // 处理命令
+    flyServer->dealWithCommand(flyClient);
+    // 创建返回结果的file event
+    eventLoop->createFileEvent(flyClient->getFd(), ES_WRITABLE, sendReplyToClient, flyClient);
+}
+
+int NetHandler::processInlineBuffer(FlyClient *flyClient) {
+
+}
+
+int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
+
 }

@@ -16,6 +16,7 @@ FlyClient::FlyClient(int fd) {
     this->createTime = this->lastInteractionTime = time(NULL);
     this->softLimitTime = 0;
     this->buf = new char[FLY_REPLY_CHUNK_BYTES];
+    this->reqType = 0;
 }
 
 FlyClient::~FlyClient() {
@@ -114,8 +115,15 @@ const std::string &FlyClient::getQueryBuf() const {
     return queryBuf;
 }
 
-void FlyClient::setQueryBuf(const std::string &queryBuf) {
-    this->queryBuf = queryBuf;
+void FlyClient::addToQueryBuf(const std::string &str) {
+    this->queryBuf += str;
+    if (0 == this->reqType) {
+        this->reqType = this->queryBuf[0] == '#' ? PROTO_REQ_MULTIBULK : PROTO_REQ_INLINE;
+    }
+}
+
+int FlyClient::getQueryBufSize() const {
+    return this->queryBuf.length();
 }
 
 uint64_t FlyClient::getId() const {
@@ -134,3 +142,6 @@ void FlyClient::setBuf(char *buf) {
     this->buf = buf;
 }
 
+bool FlyClient::isMultiBulkType() {
+    return this->reqType == PROTO_REQ_MULTIBULK;
+}

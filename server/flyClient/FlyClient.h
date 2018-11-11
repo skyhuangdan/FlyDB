@@ -26,7 +26,8 @@ public:
     int getFlags() const;
     void setFlags(int flags);
     const std::string &getQueryBuf() const;
-    void setQueryBuf(const std::string &queryBuf);
+    void addToQueryBuf(const std::string &str);             // 向输入缓冲中添加数据
+    int getQueryBufSize() const;
     FlyObj **getArgv() const;
     void setArgv(FlyObj **argv);
     int getArgc() const;
@@ -45,6 +46,7 @@ public:
     void setLastInteractionTime(time_t lastInteractionTime);
     time_t getSoftLimitTime() const;
     void setSoftLimitTime(time_t softLimitTime);
+    bool isMultiBulkType();
 
 private:
     uint64_t id;
@@ -73,6 +75,7 @@ private:
     time_t lastInteractionTime;
     // 软性限制时间
     time_t softLimitTime;
+    int reqType;
 };
 
 

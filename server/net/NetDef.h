@@ -16,6 +16,15 @@ enum NetConnectFlag {
 
 const int MAX_ACCEPTS_PER_CALL = 1000;
 const int NET_IP_STR_LEN = 46;
-const int PROTO_IOBUF_LEN = 1024 * 16;  // Generic I/O buffer size
+
+/**
+ * 协议相关
+ */
+const int PROTO_IOBUF_LEN = 1024 * 16;                  // Generic I/O buffer size
+const int PROTO_MAX_QUERYBUF_LEN = (1024*1024*1024);    // client query buf最大长度（1GB)
+
+// request type
+const int PROTO_REQ_INLINE = 1;
+const int PROTO_REQ_MULTIBULK = 2;
 
 #endif //FLYDB_NETDEF_H

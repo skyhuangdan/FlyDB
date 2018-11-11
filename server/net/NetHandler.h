@@ -44,6 +44,9 @@ private:
     static int tcpGenericServer(char *err, int port, const char *bindaddr, int af, int backlog);
     static int tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len);
     static void dealError(int fd, struct addrinfo *servinfo);
+    static int processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient);
+    static int processInlineBuffer(FlyClient *flyClient);
+    static int processMultiBulkBuffer(FlyClient *flyClient);
 };
 
 #endif //FLYDB_NETHANDLER_H
