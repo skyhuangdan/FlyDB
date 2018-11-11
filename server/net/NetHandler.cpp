@@ -493,7 +493,7 @@ void NetHandler::readQueryFromClient(EventLoop *eventLoop, int fd, void *clientd
         return;
     }
     flyClient->setQueryBuf(buf);
-    flyClient->setLastInteractionTime(time(NULL));
+    flyClient->setLastInteractionTime(flyServer->getNowt());
 
     // 处理命令
     flyServer->dealWithCommand(flyClient);

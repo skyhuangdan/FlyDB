@@ -37,6 +37,10 @@ public:
     FlyClient* createClient(int fd);
     int deleteClient(int fd);
 
+    time_t getNowt() const;
+
+    void setNowt(time_t nowt);
+
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
     void loadConfig(const std::string &fileName);
@@ -61,9 +65,10 @@ private:
     mode_t unixsocketperm;                    // UNIX socket permission
     int usfd;                                 // Unix socket file descriptor
     int tcpKeepAlive;
-    uint64_t statRejectedConn;               // 由于超过了maxclients而拒绝连接的次数
+    uint64_t statRejectedConn;                // 由于超过了maxclients而拒绝连接的次数
     uint64_t nextClientId;
     pthread_mutex_t nextClientIdMutex;
+    time_t nowt;                          // 系统当前时间
 };
 
 #endif //FLYDB_FLYSERVER_H

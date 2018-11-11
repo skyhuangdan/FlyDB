@@ -49,6 +49,9 @@ FlyServer::FlyServer() {
     // next client id
     this->nextClientId = 1;
     pthread_mutex_init(&this->nextClientIdMutex, NULL);
+
+    // 当前时间
+    this->nowt = time(NULL);
 }
 
 FlyServer::~FlyServer() {
@@ -342,13 +345,22 @@ int FlyServer::deleteClient(int fd) {
     return -1;
 }
 
+time_t FlyServer::getNowt() const {
+    return nowt;
+}
+
+void FlyServer::setNowt(time_t nowt) {
+    FlyServer::nowt = nowt;
+}
+
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
-    if (NULL == eventLoop || NULL == eventLoop->getFlyServer()) {
-        return 0;
-    }
+    FlyServer *flyServer = eventLoop->getFlyServer();
+
+    // 设置当前时间
+    flyServer->setNowt(time(NULL));
 
     static int times = 0;
     std::cout << "serverCron is running " << times++ << " times!" << std::endl;
 
-    return 1000 / eventLoop->getFlyServer()->getHz();
+    return 1000 / flyServer->getHz();
 }
