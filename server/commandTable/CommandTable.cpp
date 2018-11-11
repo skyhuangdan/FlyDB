@@ -23,7 +23,7 @@ int CommandTable::dealWithCommand(FlyClient* flyClient) {
 
     DictEntry* dictEntry = this->commands->findEntry(&words[0]);
     if (NULL == dictEntry) {
-        std::cout << "wrong command type!" << std::endl;
+        sprintf(flyClient->getBuf(), "wrong command type: %s", words[0].c_str());
         return -1;
     }
     reinterpret_cast<CommandEntry*>(dictEntry->getVal())->proc(this->flyServer, flyClient, words);
