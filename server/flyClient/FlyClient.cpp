@@ -51,8 +51,17 @@ FlyObj **FlyClient::getArgv() const {
     return argv;
 }
 
-void FlyClient::setArgv(FlyObj **argv) {
-    this->argv = argv;
+void FlyClient::freeArgv() const {
+    if (NULL != argv) {
+        delete[] argv;
+    }
+}
+
+void FlyClient::setArgv(int64_t multiBulkLen) {
+    FlyObj **objs = new FlyObj*[multiBulkLen];
+    for (int i = 0; i < multiBulkLen; i++) {
+        objs[i] = new FlyObj();
+    }
 }
 
 int FlyClient::getArgc() const {
@@ -148,5 +157,9 @@ int FlyClient::getMultiBulkLen() const {
 }
 
 void FlyClient::setMultiBulkLen(int multiBulkLen) {
-    FlyClient::multiBulkLen = multiBulkLen;
+    this->multiBulkLen = multiBulkLen;
+}
+
+void FlyClient::setQueryBuf(const std::string &queryBuf) {
+    this->queryBuf = queryBuf;
 }

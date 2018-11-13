@@ -82,11 +82,17 @@ public:
         return 1;
     }
 
-    static int64_t string2int64(std::string str) {
-        int64_t result;
+    static int64_t string2int64(std::string str, int64_t &num) {
+        for (auto item : str) {
+            if (item > '9' || item < '0') {
+                return 0;
+            }
+        }
+
         std::istringstream is(str);
-        is >> result;
-        return result;
+        is >> num;
+
+        return 1;
     }
 
 };

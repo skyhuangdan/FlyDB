@@ -26,10 +26,12 @@ public:
     int getFlags() const;
     void setFlags(int flags);
     const std::string &getQueryBuf() const;
+    void setQueryBuf(const std::string &queryBuf);
     void addToQueryBuf(const std::string &str);             // 向输入缓冲中添加数据
     int getQueryBufSize() const;
     FlyObj **getArgv() const;
-    void setArgv(FlyObj **argv);
+    void freeArgv() const;
+    void setArgv(int64_t multiBulkLen);
     int getArgc() const;
     void setArgc(int argc);
     CommandEntry *getCmd() const;

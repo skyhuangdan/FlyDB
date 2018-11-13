@@ -6,6 +6,7 @@
 #include "server/dataStructure/skiplist/SkipList.h"
 #include "server/dataStructure/skiplist/test/TestSkipListType.h"
 #include "server/dataStructure/intset/IntSet.h"
+#include "server/utils/MiscTool.h"
 
 /**
  * flyDB，取名fly有两层含义：

@@ -571,8 +571,30 @@ int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
         }
 
         std::string subStr = flyClient->getQueryBuf().substr(1, pos);
-        miscTool->string2int64(subStr);
+        int64_t multiBulkLen = 0;
+        int res = miscTool->string2int64(subStr, multiBulkLen);
 
+        // 如果获取multi bulk length失败，或者其太长，协议error
+        if (0 == res || multiBulkLen > PROTO_REQ_MULTIBULK_MAX_LEN) {
+            // protocol error
+            return -1;
+        }
+
+        // 如果multi bulk len < 0, 表示null, 该multi bulk命令读取完毕
+        if (multiBulkLen < 0) {
+            std::string sub = flyClient->getQueryBuf().substr(pos + 4, -1);
+            flyClient->setQueryBuf(sub);
+            return 1;
+        }
+
+        // 设置multi bulk len
+        flyClient->setMultiBulkLen(multiBulkLen);
+
+        // 如果参数列表不为空，先释放空间再重新分配
+        if (NULL != flyClient->getArgv()) {
+            flyClient->freeArgv();
+        }
+        flyClient->setArgv(multiBulkLen);
     }
 
 }
