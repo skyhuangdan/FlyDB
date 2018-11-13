@@ -8,9 +8,18 @@
 #include <string>
 #include <vector>
 #include <zconf.h>
+#include <sstream>
 
 class MiscTool {
 public:
+    static MiscTool* getInstance () {
+        static MiscTool *instance = NULL;
+        if (NULL == instance) {
+            instance = new MiscTool();
+        }
+        return instance;
+    }
+
     static void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res) {
         int pos = 0, findPos = 0;
         int len = str.length();
@@ -71,6 +80,13 @@ public:
         fclose(fp);
 
         return 1;
+    }
+
+    static int64_t string2int64(std::string str) {
+        int64_t result;
+        std::istringstream is(str);
+        is >> result;
+        return result;
     }
 
 };

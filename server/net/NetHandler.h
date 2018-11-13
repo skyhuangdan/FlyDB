@@ -7,6 +7,7 @@
 
 #include <sys/socket.h>
 #include "../event/EventLoop.h"
+#include "../utils/MiscTool.h"
 
 class NetHandler {
 public:
@@ -47,6 +48,8 @@ private:
     static int processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient);
     static int processInlineBuffer(FlyClient *flyClient);
     static int processMultiBulkBuffer(FlyClient *flyClient);
+
+    static MiscTool *miscTool;
 };
 
 #endif //FLYDB_NETHANDLER_H

@@ -6,12 +6,15 @@
 #include "FlyServer.h"
 #include "commandTable/CommandEntry.h"
 #include "config.h"
-#include "utils/MiscTool.h"
-#include "net/NetHandler.h"
 #include "atomic/AtomicHandler.h"
 #include "net/NetDef.h"
+#include "utils/MiscTool.h"
+#include "net/NetHandler.h"
 
 FlyServer::FlyServer() {
+    this->miscTool = MiscTool::getInstance();
+    this->netHandler = NetHandler::getInstance();
+
     // init db array
     for (int i = 0; i < DB_NUM; i++) {
         this->dbArray[i] = new FlyDB();
@@ -60,7 +63,7 @@ FlyServer::~FlyServer() {
 void FlyServer::init(int argc, char **argv) {
     // 加载配置文件中配置
     std::string fileName;
-    if (1 == MiscTool::getAbsolutePath("fly.conf", fileName)) {
+    if (1 == this->miscTool->getAbsolutePath("fly.conf", fileName)) {
         loadConfig(fileName);
     }
 
@@ -70,17 +73,17 @@ void FlyServer::init(int argc, char **argv) {
     // 打开Unix domain socket
     if (NULL != this->unixsocket) {
         unlink(this->unixsocket);       // 如果存在，则删除unixsocket文件
-        this->usfd = NetHandler::unixServer(this->neterr, this->unixsocket, this->unixsocketperm, this->tcpBacklog);
+        this->usfd = this->netHandler->unixServer(this->neterr, this->unixsocket, this->unixsocketperm, this->tcpBacklog);
         if (-1 == this->usfd) {
             std::cout << "Opening Unix Domain Socket: " << this->neterr << std::endl;
             exit(1);
         }
-        NetHandler::setBlock(NULL, this->usfd, 0);
+        this->netHandler->setBlock(NULL, this->usfd, 0);
     }
 
     // 创建定时任务，用于创建客户端连接
     for (auto fd : this->ipfd) {
-        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, NetHandler::acceptTcpHandler, NULL)) {
+        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, this->netHandler->acceptTcpHandler, NULL)) {
             exit(1);
         }
     }
@@ -186,7 +189,7 @@ void FlyServer::loadConfigFromString(const std::string& config) {
     // 将文件分隔成行
     std::string delim = "\n";
     std::vector<std::string> lines;
-    MiscTool::spiltString(config, delim, lines);
+    this->miscTool->spiltString(config, delim, lines);
 
     // 依次处理每行
     for (auto line : lines) {
@@ -200,7 +203,7 @@ void FlyServer::loadConfigFromString(const std::string& config) {
 void FlyServer::loadConfigFromLineString(const std::string &line) {
     // 截取words
     std::vector<std::string> words;
-    MiscTool::spiltString(line, " ", words);
+    this->miscTool->spiltString(line, " ", words);
     if (0 == words.size()) {
         return;
     }
@@ -242,19 +245,19 @@ int FlyServer::listenToPort() {
     if (0 == this->bindAddr.size()) {
         int success = 0;
         // try to set *(any address) to ipv6
-        fd = NetHandler::tcp6Server(this->neterr, this->port, NULL, this->tcpBacklog);
+        fd = this->netHandler->tcp6Server(this->neterr, this->port, NULL, this->tcpBacklog);
         if (fd != -1) {
             // set nonblock
-            NetHandler::setBlock(NULL, fd, 0);
+            this->netHandler->setBlock(NULL, fd, 0);
             this->ipfd.push_back(fd);
             success++;
         }
 
         // try to set *(any address) to ipv4
-        fd = NetHandler::tcpServer(this->neterr, this->port, NULL, this->tcpBacklog);
+        fd = this->netHandler->tcpServer(this->neterr, this->port, NULL, this->tcpBacklog);
         if (fd != -1) {
             // set nonblock
-            NetHandler::setBlock(NULL, fd, 0);
+            this->netHandler->setBlock(NULL, fd, 0);
             this->ipfd.push_back(fd);
             success++;
         }
@@ -266,14 +269,14 @@ int FlyServer::listenToPort() {
         for (auto addr : this->bindAddr) {
             // 如果是IPV6
             if (addr.find(":") != addr.npos) {
-                fd = NetHandler::tcp6Server(this->neterr, this->port, addr.c_str(), this->tcpBacklog);
+                fd = this->netHandler->tcp6Server(this->neterr, this->port, addr.c_str(), this->tcpBacklog);
             } else {
-                fd = NetHandler::tcpServer(this->neterr, this->port, addr.c_str(), this->tcpBacklog);
+                fd = this->netHandler->tcpServer(this->neterr, this->port, addr.c_str(), this->tcpBacklog);
             }
             if (-1 == fd) {
                 return -1;
             }
-            NetHandler::setBlock(NULL, fd, 0);
+            this->netHandler->setBlock(NULL, fd, 0);
             this->ipfd.push_back(fd);
         }
     }
@@ -303,13 +306,13 @@ FlyClient* FlyServer::createClient(int fd) {
     flyClient->setId(clientId);
 
     // 设置读socket，并为其创建相应的file event
-    NetHandler::setBlock(NULL, fd, 0);
-    NetHandler::setTcpNoDelay(NULL, fd, 1);
+    this->netHandler->setBlock(NULL, fd, 0);
+    this->netHandler->setTcpNoDelay(NULL, fd, 1);
     if (this->tcpKeepAlive > 0) {
-        NetHandler::keepAlive(NULL, fd, this->tcpKeepAlive);
+        this->netHandler->keepAlive(NULL, fd, this->tcpKeepAlive);
     }
     if (-1 == this->eventLoop->createFileEvent(
-            fd, ES_READABLE, NetHandler::readQueryFromClient, flyClient)) {
+            fd, ES_READABLE, this->netHandler->readQueryFromClient, flyClient)) {
         delete flyClient;
         return NULL;
     }

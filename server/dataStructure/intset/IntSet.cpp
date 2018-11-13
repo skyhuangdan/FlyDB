@@ -12,6 +12,7 @@ IntSet::IntSet() {
     this->encoding = INTSET_ENC_INT16;
     this->length = 0;
     this->contents = NULL;
+    this->endianConvTool = EndianConvTool::getInstance();
 }
 
 IntSet::~IntSet() {
@@ -145,17 +146,17 @@ int64_t IntSet::getEncoded(uint32_t pos, uint8_t encoding) {
     if (INTSET_ENC_INT64 == encoding) {
         int64_t res64;
         memcpy(&res64, reinterpret_cast<int64_t*>(this->contents) + pos, encoding);
-        EndianConvTool::memrev64ifbe(&res64);
+        this->endianConvTool->memrev64ifbe(&res64);
         return res64;
     } else if (INTSET_ENC_INT32 == encoding) {
         int32_t res32;
         memcpy(&res32, reinterpret_cast<int32_t*>(this->contents) + pos, encoding);
-        EndianConvTool::memrev32ifbe(&res32);
+        this->endianConvTool->memrev32ifbe(&res32);
         return res32;
     } else {
         int16_t res16;
         memcpy(&res16, reinterpret_cast<int16_t*>(this->contents) + pos, encoding);
-        EndianConvTool::memrev16ifbe(&res16);
+        this->endianConvTool->memrev16ifbe(&res16);
         return res16;
     }
 }
@@ -163,13 +164,13 @@ int64_t IntSet::getEncoded(uint32_t pos, uint8_t encoding) {
 void IntSet::set(uint32_t pos, int64_t value) {
     if (INTSET_ENC_INT64 == this->encoding) {
         reinterpret_cast<int64_t*>(this->contents)[pos] = value;
-        EndianConvTool::memrev64ifbe(reinterpret_cast<int64_t*>(this->contents) + pos);
+        this->endianConvTool->memrev64ifbe(reinterpret_cast<int64_t*>(this->contents) + pos);
     } else if (INTSET_ENC_INT32 == this->encoding) {
         reinterpret_cast<int32_t*>(this->contents)[pos] = (int32_t)value;
-        EndianConvTool::memrev32ifbe(reinterpret_cast<int32_t*>(this->contents) + pos);
+        this->endianConvTool->memrev32ifbe(reinterpret_cast<int32_t*>(this->contents) + pos);
     } else {
         reinterpret_cast<int16_t*>(this->contents)[pos] = (int16_t)value;
-        EndianConvTool::memrev16ifbe(reinterpret_cast<int16_t*>(this->contents) + pos);
+        this->endianConvTool->memrev16ifbe(reinterpret_cast<int16_t*>(this->contents) + pos);
     }
 }
 

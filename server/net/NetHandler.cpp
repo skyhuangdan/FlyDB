@@ -21,6 +21,9 @@
 #include "NetHandler.h"
 #include "NetDef.h"
 #include "../config.h"
+#include "../utils/MiscTool.h"
+
+MiscTool* NetHandler::miscTool = MiscTool::getInstance();
 
 NetHandler* NetHandler::getInstance() {
     static NetHandler* instance;
@@ -550,6 +553,26 @@ int NetHandler::processInlineBuffer(FlyClient *flyClient) {
 
 }
 
+/**
+ * 用于处理RESP协议的请求。将client的query buffer拆解到client的argv中。
+ * 如果成功，返回0；
+ * 否则返回-1，有如下两种情况：
+ *  1.当前的query buffer中还不足以解析出一个完整的command，需要等待下次读取完
+ *  2.当前协议解析失败，此时需要中断和客户端的连接
+ */
 int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
+    if (0 == flyClient->getMultiBulkLen()) {
+        size_t pos = flyClient->getQueryBuf().find("\r\n");
+        if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
+            if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
+                // protocol error
+            }
+            return -1;
+        }
+
+        std::string subStr = flyClient->getQueryBuf().substr(1, pos);
+        miscTool->string2int64(subStr);
+
+    }
 
 }

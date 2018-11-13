@@ -8,6 +8,8 @@
 #include <cstdint>
 #include "IntSetDef.h"
 
+class EndianConvTool;
+
 /**
  * 有序整数集合: 从小到大排列
  */
@@ -34,6 +36,8 @@ private:
     uint8_t encoding;
     uint32_t length;
     int8_t* contents;
+
+    EndianConvTool *endianConvTool;
 };
 
 

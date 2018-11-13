@@ -117,9 +117,6 @@ const std::string &FlyClient::getQueryBuf() const {
 
 void FlyClient::addToQueryBuf(const std::string &str) {
     this->queryBuf += str;
-    if (0 == this->reqType) {
-        this->reqType = this->queryBuf[0] == '#' ? PROTO_REQ_MULTIBULK : PROTO_REQ_INLINE;
-    }
 }
 
 int FlyClient::getQueryBufSize() const {
@@ -143,5 +140,13 @@ void FlyClient::setBuf(char *buf) {
 }
 
 bool FlyClient::isMultiBulkType() {
-    return this->reqType == PROTO_REQ_MULTIBULK;
+    return '#' == this->queryBuf[0];
+}
+
+int FlyClient::getMultiBulkLen() const {
+    return multiBulkLen;
+}
+
+void FlyClient::setMultiBulkLen(int multiBulkLen) {
+    FlyClient::multiBulkLen = multiBulkLen;
 }

@@ -16,6 +16,9 @@
 #include "event/EventLoop.h"
 #include "config.h"
 
+class NetHandler;
+class MiscTool;
+
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
 
@@ -72,6 +75,9 @@ private:
     time_t nowt;                              // 系统当前时间
     size_t clientMaxQuerybufLen;              // client buff最大长度
     int64_t statNetInputBytes;                // 该server从网络获取的byte数量
+
+    MiscTool *miscTool;
+    NetHandler* netHandler;
 };
 
 #endif //FLYDB_FLYSERVER_H

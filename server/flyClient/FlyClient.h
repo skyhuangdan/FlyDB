@@ -47,35 +47,26 @@ public:
     time_t getSoftLimitTime() const;
     void setSoftLimitTime(time_t softLimitTime);
     bool isMultiBulkType();
+    int getMultiBulkLen() const;
+    void setMultiBulkLen(int multiBulkLen);
 
 private:
     uint64_t id;
-    // 套接字
-    int fd;
-    // client名字
-    FlyObj* name;
-    // 标志
-    int flags;
-    // 输入缓冲区
-    std::string queryBuf;
-    // 命令参数
-    FlyObj **argv;
+    int fd;                             // 套接字
+    FlyObj* name;                       // client名字
+    int flags;                          // 标志
+    std::string queryBuf;               // 输入缓冲区
+    FlyObj **argv;                      // 命令参数
     int argc;
-    // 命令实现函数
-    CommandEntry* cmd;
-    // 固定大小输出缓冲区
-    char *buf;
-    // 可变长度输出缓冲区
-    std::list<std::string> reply;
-    // 是否通过了身份验证
-    int authentiated;
-    // 客户端创建事件
-    time_t createTime;
-    // 最后一次互动时间
-    time_t lastInteractionTime;
-    // 软性限制时间
-    time_t softLimitTime;
+    CommandEntry* cmd;                  // 命令实现函数
+    char *buf;                          // 固定大小输出缓冲区
+    std::list<std::string> reply;       // 可变长度输出缓冲区
+    int authentiated;                   // 是否通过了身份验证
+    time_t createTime;                  // 客户端创建事件
+    time_t lastInteractionTime;         // 最后一次互动时间
+    time_t softLimitTime;               // 软性限制时间
     int reqType;
+    int multiBulkLen;                   // 剩余可读的multi bulk参数数量
 };
 
 
