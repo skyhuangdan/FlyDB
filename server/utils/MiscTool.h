@@ -83,8 +83,12 @@ public:
     }
 
     static int64_t string2int64(std::string str, int64_t &num) {
-        for (auto item : str) {
-            if (item > '9' || item < '0') {
+        for (int i = 0; i < str.size(); i++) {
+            if (str[i] > '9' || str[i] < '0') {
+                // 对于非数字，如果是第一位并且符号是'-'，则是正常的
+                if (0 == i && ('-' == str[i] || '+' == str[i])) {
+                    continue;
+                }
                 return 0;
             }
         }

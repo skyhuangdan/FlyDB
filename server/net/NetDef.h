@@ -26,6 +26,7 @@ const int PROTO_MAX_QUERYBUF_LEN = 1024 * 1024 * 1024;      // client query buf�
 const int PROTO_REQ_INLINE = 1;
 const int PROTO_REQ_MULTIBULK = 2;
 const int PROTO_REQ_MULTIBULK_MAX_LEN = 1024 * 1024;
+const int PROTO_REQ_BULK_MAX_LEN = 512 * 1024 * 1024;
 const int PROTO_INLINE_MAX_SIZE = 1024 * 64;                // 每行的最大长度
 
 #endif //FLYDB_NETDEF_H

@@ -28,6 +28,7 @@ public:
     const std::string &getQueryBuf() const;
     void setQueryBuf(const std::string &queryBuf);
     void addToQueryBuf(const std::string &str);             // 向输入缓冲中添加数据
+    void trimQueryBuf(int begin, int end);
     int getQueryBufSize() const;
     FlyObj **getArgv() const;
     void freeArgv() const;
@@ -49,8 +50,10 @@ public:
     time_t getSoftLimitTime() const;
     void setSoftLimitTime(time_t softLimitTime);
     bool isMultiBulkType();
-    int getMultiBulkLen() const;
-    void setMultiBulkLen(int multiBulkLen);
+    int32_t getMultiBulkLen() const;
+    void setMultiBulkLen(int32_t multiBulkLen);
+    int64_t getBulkLen() const;
+    void setBulkLen(int64_t bulkLen);
 
 private:
     uint64_t id;
@@ -68,7 +71,8 @@ private:
     time_t lastInteractionTime;         // 最后一次互动时间
     time_t softLimitTime;               // 软性限制时间
     int reqType;
-    int multiBulkLen;                   // 剩余可读的multi bulk参数数量
+    int32_t multiBulkLen;                   // 剩余可读的multi bulk参数数量
+    int64_t bulkLen;
 };
 
 

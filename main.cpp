@@ -10,7 +10,7 @@
 
 /**
  * flyDB，取名fly有两层含义：
- *  第一："飞"谐音"菲"，以爱妻命名
+ *  第一："飞"谐音"菲"
  *  第二："飞"寓意飞快，代表其高性能
  * created by zlw, 20180918
  */
@@ -26,6 +26,10 @@ int main(int argc, char **argv) {
 
     // init flyServer
     flyServer->init(argc, argv);
+
+    int64_t num = 0;
+    MiscTool::string2int64("-123", num);
+    std::cout << "num is: " << num << std::endl;
 
     // 事件循环处理
     flyServer->eventMain();

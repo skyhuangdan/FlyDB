@@ -48,6 +48,9 @@ private:
     static int processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient);
     static int processInlineBuffer(FlyClient *flyClient);
     static int processMultiBulkBuffer(FlyClient *flyClient);
+    static int analyseMultiBulkLen(FlyClient *flyClient, size_t &pos);
+    static int analyseBulk(FlyClient *flyClient, size_t &pos);
+    static int analyseBulkLen(FlyClient *flyClient, size_t &pos);
 
     static MiscTool *miscTool;
 };

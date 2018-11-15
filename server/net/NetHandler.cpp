@@ -561,40 +561,89 @@ int NetHandler::processInlineBuffer(FlyClient *flyClient) {
  *  2.当前协议解析失败，此时需要中断和客户端的连接
  */
 int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
+    size_t pos = 0;
     if (0 == flyClient->getMultiBulkLen()) {
-        size_t pos = flyClient->getQueryBuf().find("\r\n");
-        if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
-            if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-                // protocol error
-            }
+        // 如果获取multi bulk len失败，返回-1
+        if (-1 == analyseMultiBulkLen(flyClient, pos)) {
             return -1;
         }
-
-        std::string subStr = flyClient->getQueryBuf().substr(1, pos);
-        int64_t multiBulkLen = 0;
-        int res = miscTool->string2int64(subStr, multiBulkLen);
-
-        // 如果获取multi bulk length失败，或者其太长，协议error
-        if (0 == res || multiBulkLen > PROTO_REQ_MULTIBULK_MAX_LEN) {
-            // protocol error
-            return -1;
-        }
-
-        // 如果multi bulk len < 0, 表示null, 该multi bulk命令读取完毕
-        if (multiBulkLen < 0) {
-            std::string sub = flyClient->getQueryBuf().substr(pos + 4, -1);
-            flyClient->setQueryBuf(sub);
-            return 1;
-        }
-
-        // 设置multi bulk len
-        flyClient->setMultiBulkLen(multiBulkLen);
-
-        // 如果参数列表不为空，先释放空间再重新分配
-        if (NULL != flyClient->getArgv()) {
-            flyClient->freeArgv();
-        }
-        flyClient->setArgv(multiBulkLen);
     }
 
+    int64_t multiBulkLen = flyClient->getMultiBulkLen();
+    for (int i = 0; i < multiBulkLen; i++) {
+        analyseBulk(flyClient, pos);
+    }
+
+    flyClient->setMultiBulkLen(0);
+    return 1;
 }
+
+int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
+    if ('*' != flyClient->getQueryBuf()[0]) {
+        // protocol error todo: need to trim string
+        return -1;
+    }
+
+    pos = flyClient->getQueryBuf().find("\r\n");
+    if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
+        if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
+            // protocol error todo: need to trim string
+        }
+        return -1;
+    }
+
+    int64_t multiBulkLen = 0;
+    std::string subStr = flyClient->getQueryBuf().substr(1, pos);
+    int res = miscTool->string2int64(subStr, multiBulkLen);
+
+    // 如果获取multi bulk length失败，或者其太长，协议error
+    if (0 == res || multiBulkLen > PROTO_REQ_MULTIBULK_MAX_LEN) {
+        // protocol error todo: need to trim string
+        return -1;
+    }
+
+    pos += 4;
+    /**
+     * 如果multi bulk len < 0, 表示null, 该multi bulk命令读取完毕
+     * 此时由于client->multiBulkLen = 0, 不会执行外围函数的后续bulk解析
+     */
+    if (multiBulkLen < 0) {
+        flyClient->trimQueryBuf(pos, -1);
+        return 1;
+    }
+
+    // 设置multi bulk len
+    flyClient->setMultiBulkLen(multiBulkLen);
+
+    // 如果参数列表不为空，先释放空间再重新分配
+    if (NULL != flyClient->getArgv()) {
+        flyClient->freeArgv();
+    }
+    flyClient->setArgv(multiBulkLen);
+
+    return 1;
+}
+
+int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
+    if ('$' != flyClient->getQueryBuf()[pos]) {
+        // protocol error todo: need to trim string
+        return -1;
+    }
+
+    size_t begin = pos + 1;
+    pos = flyClient->getQueryBuf().find("\r\n", pos);
+    if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
+        if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
+            // protocol error todo: need to trim string
+        }
+        return -1;
+    }
+
+    int64_t bulkLen = 0;
+    std::string subStr = flyClient->getQueryBuf().substr(begin, pos);
+    int res = miscTool->string2int64(subStr, bulkLen);
+    if (0 == res || bulkLen < 0 || bulkLen > PROTO_REQ_BULK_MAX_LEN) {
+        // protocol error todo: need to trim string
+    }
+}
+

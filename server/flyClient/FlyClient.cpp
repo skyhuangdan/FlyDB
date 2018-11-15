@@ -152,14 +152,27 @@ bool FlyClient::isMultiBulkType() {
     return '#' == this->queryBuf[0];
 }
 
-int FlyClient::getMultiBulkLen() const {
+int32_t FlyClient::getMultiBulkLen() const {
     return multiBulkLen;
 }
 
-void FlyClient::setMultiBulkLen(int multiBulkLen) {
+void FlyClient::setMultiBulkLen(int32_t multiBulkLen) {
     this->multiBulkLen = multiBulkLen;
 }
 
 void FlyClient::setQueryBuf(const std::string &queryBuf) {
     this->queryBuf = queryBuf;
+}
+
+void FlyClient::trimQueryBuf(int begin, int end) {
+    std::string sub = queryBuf.substr(begin, end);
+    setQueryBuf(sub);
+}
+
+int64_t FlyClient::getBulkLen() const {
+    return bulkLen;
+}
+
+void FlyClient::setBulkLen(int64_t bulkLen) {
+    FlyClient::bulkLen = bulkLen;
 }
