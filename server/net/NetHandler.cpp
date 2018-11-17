@@ -571,7 +571,9 @@ int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
 
     int64_t multiBulkLen = flyClient->getMultiBulkLen();
     for (int i = 0; i < multiBulkLen; i++) {
-        analyseBulk(flyClient, pos);
+        if(-1 == analyseBulk(flyClient, pos)) {
+            return -1;
+        }
     }
 
     flyClient->setMultiBulkLen(0);
@@ -619,7 +621,7 @@ int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
     if (NULL != flyClient->getArgv()) {
         flyClient->freeArgv();
     }
-    flyClient->setArgv(multiBulkLen);
+    flyClient->allocArgv(multiBulkLen);
 
     return 1;
 }
@@ -630,6 +632,7 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
         return -1;
     }
 
+    // 获取到"\r\n"的位置
     size_t begin = pos + 1;
     pos = flyClient->getQueryBuf().find("\r\n", pos);
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
@@ -639,11 +642,29 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
         return -1;
     }
 
+    // 从client->querybuf里截取该bulk，并
     int64_t bulkLen = 0;
     std::string subStr = flyClient->getQueryBuf().substr(begin, pos);
     int res = miscTool->string2int64(subStr, bulkLen);
     if (0 == res || bulkLen < 0 || bulkLen > PROTO_REQ_BULK_MAX_LEN) {
         // protocol error todo: need to trim string
+    }
+
+    pos += 4;
+    flyClient->setBulkLen(bulkLen);
+
+    if (flyClient->getQueryBuf().length() - pos < flyClient->getBulkLen() + 2) {
+        // todo: protocol error
+        return -1;
+    } else {
+        size_t endpos = flyClient->getQueryBuf().find("\r\n", pos);
+        if (endpos - pos != bulkLen) {
+            // todo : protocol error
+            return -1;
+        }
+        flyClient->addArgv(new FlyObj(
+                new std::string(flyClient->getQueryBuf().substr(pos, endpos)), FLY_TYPE_STRING));
+        pos = endpos + 4;
     }
 }
 

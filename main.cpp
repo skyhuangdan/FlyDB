@@ -27,10 +27,6 @@ int main(int argc, char **argv) {
     // init flyServer
     flyServer->init(argc, argv);
 
-    int64_t num = 0;
-    MiscTool::string2int64("-123", num);
-    std::cout << "num is: " << num << std::endl;
-
     // 事件循环处理
     flyServer->eventMain();
 

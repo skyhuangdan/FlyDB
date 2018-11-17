@@ -32,8 +32,9 @@ public:
     int getQueryBufSize() const;
     FlyObj **getArgv() const;
     void freeArgv() const;
-    void setArgv(int64_t multiBulkLen);
+    void allocArgv(int64_t multiBulkLen);
     int getArgc() const;
+    void addArgv(FlyObj *obj);
     void setArgc(int argc);
     CommandEntry *getCmd() const;
     void setCmd(CommandEntry *cmd);

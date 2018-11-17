@@ -57,11 +57,12 @@ void FlyClient::freeArgv() const {
     }
 }
 
-void FlyClient::setArgv(int64_t multiBulkLen) {
-    FlyObj **objs = new FlyObj*[multiBulkLen];
-    for (int i = 0; i < multiBulkLen; i++) {
-        objs[i] = new FlyObj();
-    }
+void FlyClient::allocArgv(int64_t multiBulkLen) {
+    this->argv = new FlyObj*[multiBulkLen];
+}
+
+void FlyClient::addArgv(FlyObj *obj) {
+    this->argv[this->argc++] = obj;
 }
 
 int FlyClient::getArgc() const {

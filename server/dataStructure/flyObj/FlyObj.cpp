@@ -10,6 +10,13 @@
 #include "../intset/IntSet.h"
 #include "../skiplist/SkipList.h"
 
+FlyObj::FlyObj(void *ptr, FlyObjType type) {
+    this->ptr = ptr;
+    this->type = type;
+    this->refCount = 1;
+    // todo encoding / lru
+}
+
 void FlyObj::incrRefCount() {
     this->refCount++;
 }

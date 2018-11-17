@@ -12,6 +12,7 @@
 
 class FlyObj {
 public:
+    FlyObj(void *ptr, FlyObjType type);
     void incrRefCount();
     void decrRefCount();
     void resetRefCount();
