@@ -49,6 +49,10 @@ FlyServer::FlyServer() {
     // 当前时间
     this->nowt = time(NULL);
     this->clientMaxQuerybufLen = PROTO_MAX_QUERYBUF_LEN;
+
+    this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
+    this->syslogEnabled = CONFIG_DEFAULT_SYSLOG_ENABLED;
+    this->syslogIdent = strdup(CONFIG_DEFAULT_SYSLOG_IDENT.c_str());
 }
 
 FlyServer::~FlyServer() {
@@ -236,6 +240,28 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
             std::cout << "Invalid tcp-keepalive value" << std::endl;
             exit(1);
         }
+    } else if (0 == words[0].compare("logfile") && 2 == words.size()) {
+        FILE *logfd;
+        free(this->logfile);
+        this->logfile = strdup(words[1].c_str());
+        if ('\0' != this->logfile[0]) {
+            logfd = fopen(this->logfile, "a");
+            if (NULL == logfd) {
+                std::cout << "Can not open log file: " << this->logfile << std::endl;
+                exit(1);
+            }
+            fclose(logfd);
+        }
+    } else if (0 == words[0].compare("syslog-enabled") && 2 == words.size()) {
+        if (-1 == (this->syslogEnabled = yesnotoi(words[1].c_str()))) {
+            std::cout << "syslog-enabled must be 'yes(YES)' or 'no(NO)'" << std::endl;
+            exit(1);
+        }
+    } else if (0 == words[0].compare("syslog-ident") && 2 == words.size()) {
+        if (this->syslogIdent) {
+            free(this->syslogIdent);
+        }
+        this->syslogIdent = strdup(words[1].c_str());
     }
 }
 

@@ -5,6 +5,8 @@
 #ifndef FLYDB_CONFIG_H
 #define FLYDB_CONFIG_H
 
+#include <string>
+
 #ifndef BYTE_ORDER
 #if (BSD >= 199103)
 # include <machine/endian.h>
@@ -42,8 +44,13 @@ const int CONFIG_MIN_RESERVED_FDS = 32;                         // 保留文件�
 const int CONFIG_FDSET_INCR = (CONFIG_MIN_RESERVED_FDS + 96);   // eventloop可以处理的文件事件数量
 const int CONFIG_BINDADDR_MAX = 16;
 const int CONFIG_MAX_LINE = 1024;
-const int NET_ERR_LEN = 256;                                    // 网络error信息buffer
 const int CONFIG_DEFAULT_UNIX_SOCKET_PERM = 0;
 const int CONFIG_DEFAULT_TCP_KEEPALIVE = 300;
+
+const std::string CONFIG_DEFAULT_LOGFILE = "";
+const int CONFIG_DEFAULT_SYSLOG_ENABLED = 0;
+const std::string CONFIG_DEFAULT_SYSLOG_IDENT = "redis";
+
+int yesnotoi(const char *s);
 
 #endif //FLYDB_CONFIG_H

@@ -75,6 +75,12 @@ private:
     time_t nowt;                              // 系统当前时间
     size_t clientMaxQuerybufLen;              // client buff最大长度
     int64_t statNetInputBytes;                // 该server从网络获取的byte数量
+    uint32_t lruclock;                        // LRU
+
+    int verbosity;                            // log level in log file
+    char *logfile;                            // log file
+    int syslogEnabled;                        // 是否开启log
+    char *syslogIdent;                        // log标记
 
     MiscTool *miscTool;
     NetHandler* netHandler;
