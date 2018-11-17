@@ -6,6 +6,7 @@
 #define FLYDB_CONFIG_H
 
 #include <string>
+#include <syslog.h>
 
 #ifndef BYTE_ORDER
 #if (BSD >= 199103)
@@ -37,6 +38,11 @@
 #endif /* BSD */
 #endif /* BYTE_ORDER */
 
+struct configMap {
+    const char *name;
+    const int value;
+};
+
 const int CONFIG_CRON_HZ = 1;
 const int CONFIG_DEFAULT_SERVER_PORT = 6379;                    // TCP port
 const int CONFIG_DEFAULT_MAX_CLIENTS = 10000;                   // 最多同时连接client数量
@@ -47,10 +53,17 @@ const int CONFIG_MAX_LINE = 1024;
 const int CONFIG_DEFAULT_UNIX_SOCKET_PERM = 0;
 const int CONFIG_DEFAULT_TCP_KEEPALIVE = 300;
 
-const std::string CONFIG_DEFAULT_LOGFILE = "";
+// log相关
 const int CONFIG_DEFAULT_SYSLOG_ENABLED = 0;
+const std::string CONFIG_DEFAULT_LOGFILE = "";
 const std::string CONFIG_DEFAULT_SYSLOG_IDENT = "redis";
-
-int yesnotoi(const char *s);
+enum logLevel {
+    LL_DEBUG,
+    LL_VERBOSE,
+    LL_NOTICE,
+    LL_WARNING,
+    LL_RAW = (1 << 10)
+};
+const int CONFIG_DEFAULT_VERBOSITY = LL_NOTICE;
 
 #endif //FLYDB_CONFIG_H

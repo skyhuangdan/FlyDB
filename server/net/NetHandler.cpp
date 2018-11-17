@@ -20,7 +20,7 @@
 #include <iostream>
 #include "NetHandler.h"
 #include "NetDef.h"
-#include "../config.h"
+#include "../config/config.h"
 #include "../utils/MiscTool.h"
 
 MiscTool* NetHandler::miscTool = MiscTool::getInstance();

@@ -11,6 +11,7 @@
 CommandTable::CommandTable(FlyServer* flyServer) : flyServer(flyServer) {
     this->commands = new Dict(CommandDictType::getInstance());
     this->commands->addEntry(new std::string("version"), new CommandEntry(versionProc, 0));
+    miscTool = MiscTool::getInstance();
 }
 
 CommandTable::~CommandTable() {
@@ -19,7 +20,7 @@ CommandTable::~CommandTable() {
 
 int CommandTable::dealWithCommand(FlyClient* flyClient) {
     std::vector<std::string> words;
-    MiscTool::spiltString(flyClient->getQueryBuf(), " ", words);
+    this->miscTool->spiltString(flyClient->getQueryBuf(), " ", words);
 
     DictEntry* dictEntry = this->commands->findEntry(&words[0]);
     if (NULL == dictEntry) {

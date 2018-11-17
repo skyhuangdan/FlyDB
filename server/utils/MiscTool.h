@@ -20,7 +20,7 @@ public:
         return instance;
     }
 
-    static void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res) {
+    void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res) {
         int pos = 0, findPos = 0;
         int len = str.length();
         int delimLen = delim.length();
@@ -46,7 +46,7 @@ public:
         }
     }
 
-    static int getAbsolutePath(const std::string &fileName, std::string &absPath) {
+    int getAbsolutePath(const std::string &fileName, std::string &absPath) {
         if (0 == fileName.size()) {
             return -1;
         }
@@ -82,7 +82,7 @@ public:
         return 1;
     }
 
-    static int64_t string2int64(std::string str, int64_t &num) {
+    int64_t string2int64(std::string str, int64_t &num) {
         for (int i = 0; i < str.size(); i++) {
             if (str[i] > '9' || str[i] < '0') {
                 // 对于非数字，如果是第一位并且符号是'-'，则是正常的
@@ -97,6 +97,14 @@ public:
         is >> num;
 
         return 1;
+    }
+
+    int yesnotoi(const char *s) {
+        if (!strcasecmp(s, "yes")) {
+            return 1;
+        } else if (!strcasecmp(s, "no")) {
+            return 0;
+        } else return -1;
     }
 
 };

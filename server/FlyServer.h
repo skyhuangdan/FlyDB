@@ -14,7 +14,7 @@
 #include "commandTable/CommandTable.h"
 #include "flyClient/FlyClient.h"
 #include "event/EventLoop.h"
-#include "config.h"
+#include "config/config.h"
 
 class NetHandler;
 class MiscTool;
@@ -51,6 +51,8 @@ private:
     void loadConfigFromString(const std::string& config);
     void loadConfigFromLineString(const std::string &line);
     int listenToPort();                       // 打开监听socket，用于监听用户命令
+    void logRaw(int level, const char *msg);
+    int configMapGetValue(configMap *config, const char *name);
 
     int pid;                                  // 运行server的线程标识
     std::array<FlyDB*, DB_NUM> dbArray;       // db列表
@@ -81,6 +83,7 @@ private:
     char *logfile;                            // log file
     int syslogEnabled;                        // 是否开启log
     char *syslogIdent;                        // log标记
+    int syslogFacility;
 
     MiscTool *miscTool;
     NetHandler* netHandler;

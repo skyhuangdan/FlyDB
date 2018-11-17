@@ -6,7 +6,7 @@
 #define FLYDB_ENDIANCONVTOOL_H
 
 #include <cstdint>
-#include "../config.h"
+#include "../config/config.h"
 
 class EndianConvTool {
 public:
@@ -18,44 +18,44 @@ public:
         return instance;
     }
 
-    static void memrev16ifbe(void* p) {
+    void memrev16ifbe(void* p) {
         if (BYTE_ORDER == BIG_ENDIAN) {
             memrev16(p);
         }
         return;
     }
 
-    static void memrev32ifbe(void* p) {
+    void memrev32ifbe(void* p) {
         if (BYTE_ORDER == BIG_ENDIAN) {
             memrev32(p);
         }
         return;
     }
 
-    static void memrev64ifbe(void* p) {
+    void memrev64ifbe(void* p) {
         if (BYTE_ORDER == BIG_ENDIAN) {
             memrev64(p);
         }
         return;
     }
 
-    static uint16_t intrev16ifbe(uint16_t v) {
+    uint16_t intrev16ifbe(uint16_t v) {
         memrev16ifbe(&v);
         return v;
     }
 
-    static uint32_t intrev32ifbe(uint32_t v) {
+    uint32_t intrev32ifbe(uint32_t v) {
         memrev32ifbe(&v);
         return v;
     }
 
-    static uint64_t intrev64ifbe(uint64_t v) {
+    uint64_t intrev64ifbe(uint64_t v) {
         memrev64ifbe(&v);
         return v;
     }
 
 private:
-    static void memrev16(void *p) {
+    void memrev16(void *p) {
         unsigned char *x = (unsigned char*)p, t;
 
         t = x[0];
@@ -63,7 +63,7 @@ private:
         x[1] = t;
     }
 
-    static void memrev32(void *p) {
+    void memrev32(void *p) {
         unsigned char *x = (unsigned char*)p, t;
 
         t = x[0];
@@ -74,7 +74,7 @@ private:
         x[2] = t;
     }
 
-    static void memrev64(void *p) {
+    void memrev64(void *p) {
         unsigned char *x = (unsigned char*)p, t;
 
         t = x[0];
@@ -90,7 +90,6 @@ private:
         x[3] = x[4];
         x[4] = t;
     }
-
 };
 
 

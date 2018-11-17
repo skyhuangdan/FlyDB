@@ -10,6 +10,7 @@
 #include "../flyClient/FlyClient.h"
 
 class FlyServer;
+class MiscTool;
 class CommandTable {
 public:
     CommandTable(FlyServer* flyServer);
@@ -19,7 +20,7 @@ public:
 private:
     FlyServer* flyServer;
     Dict* commands;
-
+    MiscTool *miscTool;
 };
 
 

@@ -3,13 +3,36 @@
 //
 
 #include <iostream>
+#include <syslog.h>
 #include "FlyServer.h"
 #include "commandTable/CommandEntry.h"
-#include "config.h"
+#include "config/config.h"
 #include "atomic/AtomicHandler.h"
 #include "net/NetDef.h"
 #include "utils/MiscTool.h"
 #include "net/NetHandler.h"
+
+configMap loglevelMap[] = {
+        {"debug",   LL_DEBUG},
+        {"verbose", LL_VERBOSE},
+        {"notice",  LL_NOTICE},
+        {"warning", LL_WARNING},
+        {NULL, 0}
+};
+
+configMap syslogFacilityMap[] = {
+        {"user",    LOG_USER},
+        {"local0",  LOG_LOCAL0},
+        {"local1",  LOG_LOCAL1},
+        {"local2",  LOG_LOCAL2},
+        {"local3",  LOG_LOCAL3},
+        {"local4",  LOG_LOCAL4},
+        {"local5",  LOG_LOCAL5},
+        {"local6",  LOG_LOCAL6},
+        {"local7",  LOG_LOCAL7},
+        {NULL, 0}
+};
+
 
 FlyServer::FlyServer() {
     this->miscTool = MiscTool::getInstance();
@@ -49,9 +72,10 @@ FlyServer::FlyServer() {
     // 当前时间
     this->nowt = time(NULL);
     this->clientMaxQuerybufLen = PROTO_MAX_QUERYBUF_LEN;
-
-    this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
+    // log相关
+    this->verbosity = CONFIG_DEFAULT_VERBOSITY;
     this->syslogEnabled = CONFIG_DEFAULT_SYSLOG_ENABLED;
+    this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
     this->syslogIdent = strdup(CONFIG_DEFAULT_SYSLOG_IDENT.c_str());
 }
 
@@ -111,6 +135,96 @@ int FlyServer::dealWithCommand(FlyClient *flyclient) {
     return this->commandTable->dealWithCommand(flyclient);
 }
 
+void FlyServer::eventMain() {
+    this->eventLoop->eventMain();
+}
+
+int FlyServer::getHz() const {
+    return hz;
+}
+
+void FlyServer::setHz(int hz) {
+    FlyServer::hz = hz;
+}
+
+char *FlyServer::getNeterr() const {
+    return neterr;
+}
+
+FlyClient* FlyServer::createClient(int fd) {
+    if (fd <= 0) {
+        return NULL;
+    }
+
+    // 超过了客户端最大数量
+    if (this->clients.size() >= this->maxClients) {
+        this->statRejectedConn++;
+        return NULL;
+    }
+
+    // create FlyClient
+    FlyClient *flyClient = new FlyClient(fd);
+    uint64_t clientId = 0;
+    atomicGetIncr(this->nextClientId, clientId, 1);
+    flyClient->setId(clientId);
+
+    // 设置读socket，并为其创建相应的file event
+    this->netHandler->setBlock(NULL, fd, 0);
+    this->netHandler->setTcpNoDelay(NULL, fd, 1);
+    if (this->tcpKeepAlive > 0) {
+        this->netHandler->keepAlive(NULL, fd, this->tcpKeepAlive);
+    }
+    if (-1 == this->eventLoop->createFileEvent(
+            fd, ES_READABLE, this->netHandler->readQueryFromClient, flyClient)) {
+        delete flyClient;
+        return NULL;
+    }
+
+    // 加入到clients队列中
+    this->clients.push_back(flyClient);
+
+    return flyClient;
+}
+
+int FlyServer::deleteClient(int fd) {
+    std::list<FlyClient *>::iterator iter = this->clients.begin();
+    for (iter; iter != this->clients.end(); iter++) {
+        if (fd == (*iter)->getFd()) {
+            // 删除file event
+            this->eventLoop->deleteFileEvent(fd, ES_READABLE | ES_WRITABLE);
+
+            // 删除FlyClient
+            delete (*iter);
+            this->clients.erase(iter);
+
+            return 1;
+        }
+    }
+
+    //没有找到对应的FlyClient
+    return -1;
+}
+
+time_t FlyServer::getNowt() const {
+    return nowt;
+}
+
+void FlyServer::setNowt(time_t nowt) {
+    FlyServer::nowt = nowt;
+}
+
+size_t FlyServer::getClientMaxQuerybufLen() const {
+    return clientMaxQuerybufLen;
+}
+
+int64_t FlyServer::getStatNetInputBytes() const {
+    return statNetInputBytes;
+}
+
+void FlyServer::addToStatNetInputBytes(int64_t size) {
+    this->clientMaxQuerybufLen += size;
+}
+
 void FlyServer::setMaxClientLimit() {
     this->maxClients = CONFIG_DEFAULT_MAX_CLIENTS;
     int maxFiles = this->maxClients + CONFIG_MIN_RESERVED_FDS;
@@ -147,18 +261,6 @@ void FlyServer::setMaxClientLimit() {
             this->maxClients = curLimit - CONFIG_MIN_RESERVED_FDS;
         }
     }
-}
-
-void FlyServer::eventMain() {
-    this->eventLoop->eventMain();
-}
-
-int FlyServer::getHz() const {
-    return hz;
-}
-
-void FlyServer::setHz(int hz) {
-    FlyServer::hz = hz;
 }
 
 void FlyServer::loadConfig(const std::string& fileName) {
@@ -245,6 +347,7 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
         free(this->logfile);
         this->logfile = strdup(words[1].c_str());
         if ('\0' != this->logfile[0]) {
+            // 尝试打开一次，查看是否可以正常打开
             logfd = fopen(this->logfile, "a");
             if (NULL == logfd) {
                 std::cout << "Can not open log file: " << this->logfile << std::endl;
@@ -253,7 +356,7 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
             fclose(logfd);
         }
     } else if (0 == words[0].compare("syslog-enabled") && 2 == words.size()) {
-        if (-1 == (this->syslogEnabled = yesnotoi(words[1].c_str()))) {
+        if (-1 == (this->syslogEnabled = this->miscTool->yesnotoi(words[1].c_str()))) {
             std::cout << "syslog-enabled must be 'yes(YES)' or 'no(NO)'" << std::endl;
             exit(1);
         }
@@ -262,6 +365,20 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
             free(this->syslogIdent);
         }
         this->syslogIdent = strdup(words[1].c_str());
+    } else if (0 == words[0].compare("loglevel") && 2 == words.size()) {
+        this->verbosity = configMapGetValue(loglevelMap, words[1].c_str());
+        if (INT_MIN == this->verbosity) {
+            std::cout << "Invalid log level. "
+                         "Must be one of debug, verbose, notice, warning" << std::endl;
+            exit(1);
+        }
+    } else if (0 == words[0].compare("syslog-facility") && 2 == words.size()) {
+        this->syslogFacility = configMapGetValue(syslogFacilityMap, words[1].c_str());
+        if (INT_MIN == this->syslogFacility) {
+            std::cout << "Invalid log facility. "
+                         "Must be one of USER or between LOCAL0-LOCAL7" << std::endl;
+            exit(1);
+        }
     }
 }
 
@@ -310,82 +427,46 @@ int FlyServer::listenToPort() {
     return 1;
 }
 
-char *FlyServer::getNeterr() const {
-    return neterr;
+void FlyServer::logRaw(int level, const char *msg) {
+    const int syslogLevelMap[] = { LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARNING };
+    FILE *fp = '\0' == this->logfile[0] ? stdout : fopen(this->logfile, "a");
+    if (NULL == fp) {
+        return;
+    }
+
+    if (level & LL_RAW) {
+        fprintf(fp, "%s", msg);
+    } else {
+        char buf[64];
+        struct timeval tv;
+        int role;
+        const char *c = ".-*#";
+
+        gettimeofday(&tv, NULL);
+        int off = strftime(buf, sizeof(buf), "%d %b %H:%M:%S.", localtime(&tv.tv_sec));
+        snprintf(buf + off, sizeof(buf) - off, "%03d", (int) tv.tv_usec / 1000);
+        role = 'S';
+        // 日志格式： pid:role time ./-/*/# msg
+        fprintf(fp, "%d:%c %s %c %s\n", (int) getpid(), role, buf, c[level], msg);
+    }
+
+    fflush(fp);
+    if (fp != stdout) {
+        fclose(fp);
+    }
+    if (this->syslogEnabled) {
+        syslog(syslogLevelMap[level], "%s", msg);
+    }
 }
 
-FlyClient* FlyServer::createClient(int fd) {
-    if (fd <= 0) {
-        return NULL;
-    }
-
-    // 超过了客户端最大数量
-    if (this->clients.size() >= this->maxClients) {
-        this->statRejectedConn++;
-        return NULL;
-    }
-
-    // create FlyClient
-    FlyClient *flyClient = new FlyClient(fd);
-    uint64_t clientId = 0;
-    atomicGetIncr(this->nextClientId, clientId, 1);
-    flyClient->setId(clientId);
-
-    // 设置读socket，并为其创建相应的file event
-    this->netHandler->setBlock(NULL, fd, 0);
-    this->netHandler->setTcpNoDelay(NULL, fd, 1);
-    if (this->tcpKeepAlive > 0) {
-        this->netHandler->keepAlive(NULL, fd, this->tcpKeepAlive);
-    }
-    if (-1 == this->eventLoop->createFileEvent(
-            fd, ES_READABLE, this->netHandler->readQueryFromClient, flyClient)) {
-        delete flyClient;
-        return NULL;
-    }
-
-    // 加入到clients队列中
-    this->clients.push_back(flyClient);
-
-    return flyClient;
-}
-
-int FlyServer::deleteClient(int fd) {
-    std::list<FlyClient *>::iterator iter = this->clients.begin();
-    for (iter; iter != this->clients.end(); iter++) {
-        if (fd == (*iter)->getFd()) {
-            // 删除file event
-            this->eventLoop->deleteFileEvent(fd, ES_READABLE | ES_WRITABLE);
-
-            // 删除FlyClient
-            delete (*iter);
-            this->clients.erase(iter);
-
-            return 1;
+int FlyServer::configMapGetValue(configMap *config, const char *name) {
+    while (config->name != NULL) {
+        if (!strcasecmp(config->name, name)) {
+            return config->value;
         }
+        config++;
     }
-
-    //没有找到对应的FlyClient
-    return -1;
-}
-
-time_t FlyServer::getNowt() const {
-    return nowt;
-}
-
-void FlyServer::setNowt(time_t nowt) {
-    FlyServer::nowt = nowt;
-}
-
-size_t FlyServer::getClientMaxQuerybufLen() const {
-    return clientMaxQuerybufLen;
-}
-
-int64_t FlyServer::getStatNetInputBytes() const {
-    return statNetInputBytes;
-}
-
-void FlyServer::addToStatNetInputBytes(int64_t size) {
-    this->clientMaxQuerybufLen += size;
+    return INT_MIN;
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
