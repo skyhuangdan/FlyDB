@@ -515,15 +515,11 @@ int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
 }
 
 int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
-    if ('*' != flyClient->getQueryBuf()[0]) {
-        // protocol error todo: need to trim string
-        return -1;
-    }
-
     pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-            // protocol error todo: need to trim string
+            addReplyError(flyClient, "Protocol error: too big mbulk count string");
+            setProtocolError("too big mbulk count string", flyClient, 0);
         }
         return -1;
     }
@@ -534,11 +530,12 @@ int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
 
     // 如果获取multi bulk length失败，或者其太长，协议error
     if (0 == res || multiBulkLen > PROTO_REQ_MULTIBULK_MAX_LEN) {
-        // protocol error todo: need to trim string
+        addReplyError(flyClient, "Protocol error: invalid multibulk length");
+        setProtocolError("invalid mbulk count", flyClient, pos);
         return -1;
     }
 
-    pos += 4;
+    pos += 2;
     /**
      * 如果multi bulk len < 0, 表示null, 该multi bulk命令读取完毕
      * 此时由于client->multiBulkLen = 0, 不会执行外围函数的后续bulk解析
@@ -574,7 +571,9 @@ int NetHandler::analyseMultiBulk(FlyClient *flyClient, size_t &pos) {
 
 int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
     if ('$' != flyClient->getQueryBuf()[pos]) {
-        // protocol error todo: need to trim string
+        addReplyErrorFormat(flyClient, "Protocol error: expected '$', got '%c'",
+                            flyClient->getQueryBuf()[pos]);
+        setProtocolError("expected $ but got something else", flyClient, pos);
         return -1;
     }
 
@@ -583,7 +582,8 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
     pos = flyClient->getQueryBuf().find("\r\n", begin);
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-            // protocol error todo: need to trim string
+            addReplyError(flyClient, "Protocol error: too big bulk count string");
+            setProtocolError("too big bulk count string", flyClient, 0);
         }
         return -1;
     }
@@ -593,20 +593,22 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
     std::string subStr = flyClient->getQueryBuf().substr(begin, pos);
     int res = miscTool->string2int64(subStr, bulkLen);
     if (0 == res || bulkLen < 0 || bulkLen > PROTO_REQ_BULK_MAX_LEN) {
-        // protocol error todo: need to trim string
+        addReplyError(flyClient, "Protocol error: invalid bulk length");
+        setProtocolError("invalid bulk length", flyClient, pos);
     }
 
-    begin = pos += 4;
+    begin = pos += 2;
     flyClient->setBulkLen(bulkLen);
 
     pos = flyClient->getQueryBuf().find("\r\n", begin);
     if (pos - begin + 1 != bulkLen) {
-        // todo : protocol error
+        addReplyError(flyClient, "Protocol error: not enough bulk space");
+        setProtocolError("not enough bulk space", flyClient, pos);
         return -1;
     }
     flyClient->addArgv(new FlyObj(
             new std::string(flyClient->getQueryBuf().substr(begin, pos)), FLY_TYPE_STRING));
-    pos = pos + 4;
+    pos = pos + 2;
 }
 
 int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
@@ -619,6 +621,34 @@ int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
     flyClient->addFlag(CLIENT_CLOSE_AFTER_REPLY);
     // 截断query buf
     flyClient->trimQueryBuf(pos, -1);
+}
+
+void NetHandler::addReplyErrorFormat(FlyClient *flyClient, const char *fmt, ...) {
+    va_list ap;
+    char msg[1024];
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+
+    int len = strlen(msg);
+    // 保证msg中没有换行符, 使msg在一行内
+    for (int i = 0; i < len; i++) {
+        if ('\r' == msg[i] || '\n' == msg[i]) {
+            msg[i] = ' ';
+        }
+    }
+
+    addReplyError(flyClient, msg);
+}
+
+int NetHandler::addReplyError(FlyClient *flyClient, const char *err) {
+    addReplyString(flyClient, "-ERR ", 5);
+    addReplyString(flyClient, err, strlen(err));
+    addReplyString(flyClient, "\r\n", 2);
+}
+
+void NetHandler::addReplyString(FlyClient *flyClient, const char *s, size_t len) {
+
 }
 
 void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) {

@@ -154,7 +154,7 @@ void FlyClient::setBuf(char *buf) {
 }
 
 bool FlyClient::isMultiBulkType() {
-    return '#' == this->queryBuf[0];
+    return '*' == this->queryBuf[0];
 }
 
 int32_t FlyClient::getMultiBulkLen() const {
