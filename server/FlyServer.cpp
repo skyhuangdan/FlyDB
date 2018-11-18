@@ -11,6 +11,7 @@
 #include "net/NetDef.h"
 #include "utils/MiscTool.h"
 #include "net/NetHandler.h"
+#include "log/LogHandler.h"
 
 configMap loglevelMap[] = {
         {"debug",   LL_DEBUG},
@@ -35,9 +36,6 @@ configMap syslogFacilityMap[] = {
 
 
 FlyServer::FlyServer() {
-    this->miscTool = MiscTool::getInstance();
-    this->netHandler = NetHandler::getInstance();
-
     // init db array
     for (int i = 0; i < DB_NUM; i++) {
         this->dbArray[i] = new FlyDB();
@@ -77,6 +75,7 @@ FlyServer::FlyServer() {
     this->syslogEnabled = CONFIG_DEFAULT_SYSLOG_ENABLED;
     this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
     this->syslogIdent = strdup(CONFIG_DEFAULT_SYSLOG_IDENT.c_str());
+
 }
 
 FlyServer::~FlyServer() {
@@ -86,6 +85,7 @@ FlyServer::~FlyServer() {
     delete this->commandTable;
     delete this->eventLoop;
     delete[] this->neterr;
+    closelog();
 }
 
 void FlyServer::init(int argc, char **argv) {
@@ -115,6 +115,15 @@ void FlyServer::init(int argc, char **argv) {
             exit(1);
         }
     }
+
+    if (this->syslogEnabled) {
+        openlog(this->syslogIdent, LOG_PID | LOG_NDELAY | LOG_NOWAIT, this->syslogFacility);
+    }
+
+    // 各类tool放在最后，因为可能会用到flyServer, 最好等其初始化完毕
+    this->miscTool = MiscTool::getInstance();
+    this->netHandler = NetHandler::getInstance();
+    this->logHandler = LogHandler::getInstance(this->logfile, this->syslogEnabled);
 
     return;
 }
@@ -223,6 +232,26 @@ int64_t FlyServer::getStatNetInputBytes() const {
 
 void FlyServer::addToStatNetInputBytes(int64_t size) {
     this->clientMaxQuerybufLen += size;
+}
+
+int FlyServer::getVerbosity() const {
+    return verbosity;
+}
+
+char *FlyServer::getLogfile() const {
+    return logfile;
+}
+
+int FlyServer::getSyslogEnabled() const {
+    return syslogEnabled;
+}
+
+char *FlyServer::getSyslogIdent() const {
+    return syslogIdent;
+}
+
+int FlyServer::getSyslogFacility() const {
+    return syslogFacility;
 }
 
 void FlyServer::setMaxClientLimit() {
@@ -425,38 +454,6 @@ int FlyServer::listenToPort() {
     }
 
     return 1;
-}
-
-void FlyServer::logRaw(int level, const char *msg) {
-    const int syslogLevelMap[] = { LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARNING };
-    FILE *fp = '\0' == this->logfile[0] ? stdout : fopen(this->logfile, "a");
-    if (NULL == fp) {
-        return;
-    }
-
-    if (level & LL_RAW) {
-        fprintf(fp, "%s", msg);
-    } else {
-        char buf[64];
-        struct timeval tv;
-        int role;
-        const char *c = ".-*#";
-
-        gettimeofday(&tv, NULL);
-        int off = strftime(buf, sizeof(buf), "%d %b %H:%M:%S.", localtime(&tv.tv_sec));
-        snprintf(buf + off, sizeof(buf) - off, "%03d", (int) tv.tv_usec / 1000);
-        role = 'S';
-        // 日志格式： pid:role time ./-/*/# msg
-        fprintf(fp, "%d:%c %s %c %s\n", (int) getpid(), role, buf, c[level], msg);
-    }
-
-    fflush(fp);
-    if (fp != stdout) {
-        fclose(fp);
-    }
-    if (this->syslogEnabled) {
-        syslog(syslogLevelMap[level], "%s", msg);
-    }
 }
 
 int FlyServer::configMapGetValue(configMap *config, const char *name) {

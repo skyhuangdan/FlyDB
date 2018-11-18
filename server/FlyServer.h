@@ -15,9 +15,11 @@
 #include "flyClient/FlyClient.h"
 #include "event/EventLoop.h"
 #include "config/config.h"
+#include "log/LogHandler.h"
 
 class NetHandler;
 class MiscTool;
+class LogHandler;
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -44,6 +46,11 @@ public:
     size_t getClientMaxQuerybufLen() const;
     int64_t getStatNetInputBytes() const;
     void addToStatNetInputBytes(int64_t size);
+    int getVerbosity() const;
+    char *getLogfile() const;
+    int getSyslogEnabled() const;
+    char *getSyslogIdent() const;
+    int getSyslogFacility() const;
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
@@ -86,7 +93,8 @@ private:
     int syslogFacility;
 
     MiscTool *miscTool;
-    NetHandler* netHandler;
+    NetHandler  *netHandler;
+    LogHandler *logHandler;
 };
 
 #endif //FLYDB_FLYSERVER_H
