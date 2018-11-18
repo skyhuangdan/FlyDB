@@ -272,4 +272,3 @@ FlyServer *EventLoop::getFlyServer() const {
 void EventLoop::setFlyServer(FlyServer *flyServer) {
     EventLoop::flyServer = flyServer;
 }
-

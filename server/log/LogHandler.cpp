@@ -10,23 +10,27 @@
 #include "../config/config.h"
 #include "LogDef.h"
 
-LogHandler* LogHandler::getInstance(char *logfile, int syslogEnabled, int verbosity) {
+char* LogHandler::logfile = NULL;
+int LogHandler::syslogEnabled = 0;
+int LogHandler::verbosity = 0;
+
+LogHandler* LogHandler::getInstance() {
     static LogHandler *log = NULL;
     if (NULL == log) {
-        log = new LogHandler(logfile, syslogEnabled, verbosity);
+        log = new LogHandler();
     }
     return log;
 }
 
-LogHandler::LogHandler(char *logfile, int syslogEnabled, int verbosity) {
-    this->logfile = logfile;
-    this->syslogEnabled = syslogEnabled;
-    this->verbosity = verbosity;
+void LogHandler::init(char *logfile, int syslogEnabled, int verbosity) {
+    LogHandler::logfile = logfile;
+    LogHandler::syslogEnabled = syslogEnabled;
+    LogHandler::verbosity = verbosity;
 }
 
 void LogHandler::logRaw(int level, const char *msg) {
     const int syslogLevelMap[] = { LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARNING };
-    FILE *fp = '\0' == this->logfile[0] ? stdout : fopen(this->logfile, "a");
+    FILE *fp = '\0' == logfile[0] ? stdout : fopen(logfile, "a");
     if (NULL == fp) {
         return;
     }
@@ -51,13 +55,13 @@ void LogHandler::logRaw(int level, const char *msg) {
     if (fp != stdout) {
         fclose(fp);
     }
-    if (this->syslogEnabled) {
+    if (syslogEnabled) {
         syslog(syslogLevelMap[level], "%s", msg);
     }
 }
 
 void LogHandler::log(int level, const char *fmt, ...) {
-    if (level & 0xff < this->verbosity) {
+    if (level & 0xff < verbosity) {
         return;
     }
 
@@ -100,7 +104,7 @@ void LogHandler::logWarning(const char *fmt, ...) {
 
 void LogHandler::log(int level, const char *fmt, va_list ap) {
     char msg[LOG_MAX_LEN];
-    if (level & 0xff < this->verbosity) {
+    if (level & 0xff < verbosity) {
         return;
     }
 

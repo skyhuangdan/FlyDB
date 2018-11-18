@@ -47,6 +47,10 @@ void FlyClient::setFlags(int flags) {
     this->flags = flags;
 }
 
+void FlyClient::addFlag(int flag) {
+    this->flags |= flag;
+}
+
 FlyObj **FlyClient::getArgv() const {
     return argv;
 }

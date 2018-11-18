@@ -25,6 +25,7 @@ public:
     void setName(FlyObj *name);
     int getFlags() const;
     void setFlags(int flags);
+    void addFlag(int flag);
     const std::string &getQueryBuf() const;
     void setQueryBuf(const std::string &queryBuf);
     void addToQueryBuf(const std::string &str);             // 向输入缓冲中添加数据

@@ -9,8 +9,8 @@
 
 class LogHandler {
 public:
-    static LogHandler* getInstance(char *logfile, int syslogEnabled, int verbosity);
-    LogHandler(char *logfile, int syslogEnabled, int verbosity);
+    static LogHandler* getInstance();
+    static void init(char *logfile, int syslogEnabled, int verbosity);
     void logDebug(const char *fmt, ...);
     void logVerbose(const char *fmt, ...);
     void logNotice(const char *fmt, ...);
@@ -20,10 +20,9 @@ public:
 
 private:
     void log(int level, const char *fmt, va_list ap);
-
-    char *logfile;
-    int syslogEnabled;
-    int verbosity;
+    static char *logfile;
+    static int syslogEnabled;
+    static int verbosity;
 };
 
 

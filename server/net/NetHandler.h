@@ -54,6 +54,7 @@ private:
     static int setProtocolError(char *err, FlyClient *flyClient, size_t pos);
 
     static MiscTool *miscTool;
+    static LogHandler *logHandler;
 };
 
 #endif //FLYDB_NETHANDLER_H

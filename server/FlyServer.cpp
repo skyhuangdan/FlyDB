@@ -34,7 +34,6 @@ configMap syslogFacilityMap[] = {
         {NULL, 0}
 };
 
-
 FlyServer::FlyServer() {
     // init db array
     for (int i = 0; i < DB_NUM; i++) {
@@ -116,6 +115,7 @@ void FlyServer::init(int argc, char **argv) {
         }
     }
 
+    // syslog
     if (this->syslogEnabled) {
         openlog(this->syslogIdent, LOG_PID | LOG_NDELAY | LOG_NOWAIT, this->syslogFacility);
     }
@@ -123,7 +123,8 @@ void FlyServer::init(int argc, char **argv) {
     // 各类tool放在最后，因为可能会用到flyServer, 最好等其初始化完毕
     this->miscTool = MiscTool::getInstance();
     this->netHandler = NetHandler::getInstance();
-    this->logHandler = LogHandler::getInstance(this->logfile, this->syslogEnabled, this->verbosity);
+    LogHandler::init(this->logfile, this->syslogEnabled, this->verbosity);
+    this->logHandler = LogHandler::getInstance();
 
     return;
 }
@@ -210,7 +211,7 @@ int FlyServer::deleteClient(int fd) {
         }
     }
 
-    //没有找到对应的FlyClient
+    // 没有找到对应的FlyClient
     return -1;
 }
 
@@ -235,23 +236,23 @@ void FlyServer::addToStatNetInputBytes(int64_t size) {
 }
 
 int FlyServer::getVerbosity() const {
-    return verbosity;
+    return this->verbosity;
 }
 
 char *FlyServer::getLogfile() const {
-    return logfile;
+    return this->logfile;
 }
 
 int FlyServer::getSyslogEnabled() const {
-    return syslogEnabled;
+    return this->syslogEnabled;
 }
 
 char *FlyServer::getSyslogIdent() const {
-    return syslogIdent;
+    return this->syslogIdent;
 }
 
 int FlyServer::getSyslogFacility() const {
-    return syslogFacility;
+    return this->syslogFacility;
 }
 
 void FlyServer::setMaxClientLimit() {

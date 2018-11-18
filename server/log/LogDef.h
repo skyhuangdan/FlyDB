@@ -7,10 +7,10 @@
 
 #define LOG_MAX_LEN    1024             // log最大长度
 enum logLevel {
-    LL_DEBUG,
-    LL_VERBOSE,
-    LL_NOTICE,
-    LL_WARNING,
+    LL_DEBUG,           // 会打印出很多信息，适用于开发和测试阶段
+    LL_VERBOSE,         // 冗长的：包含很多不太有用的信息，但是比debug要清爽一些
+    LL_NOTICE,          // 适用于生产模式
+    LL_WARNING,         // 警告信息
     LL_RAW = (1 << 10)
 };
 

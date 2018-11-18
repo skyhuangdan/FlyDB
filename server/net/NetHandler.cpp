@@ -22,8 +22,10 @@
 #include "NetDef.h"
 #include "../config/config.h"
 #include "../utils/MiscTool.h"
+#include "../flyClient/ClientDef.h"
 
 MiscTool* NetHandler::miscTool = MiscTool::getInstance();
+LogHandler* NetHandler::logHandler = LogHandler::getInstance();
 
 NetHandler* NetHandler::getInstance() {
     static NetHandler* instance;
@@ -668,5 +670,13 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
 }
 
 int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
+    // 打印log
+    char buf[256];
+    snprintf(buf, sizeof(buf), "Query buffer during protocol error: '%s'", flyClient->getQueryBuf().c_str());
+    logHandler->logVerbose("Protocol error (%s) from client: %s. %s", err, flyClient->getId(), buf);
 
+    // 设置回复后关闭
+    flyClient->addFlag(CLIENT_CLOSE_AFTER_REPLY);
+    // 截断query buf
+    flyClient->trimQueryBuf(pos, -1);
 }
