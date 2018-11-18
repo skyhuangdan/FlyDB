@@ -7,6 +7,7 @@
 
 #include <string>
 #include <syslog.h>
+#include "../log/LogDef.h"
 
 #ifndef BYTE_ORDER
 #if (BSD >= 199103)
@@ -57,13 +58,6 @@ const int CONFIG_DEFAULT_TCP_KEEPALIVE = 300;
 const int CONFIG_DEFAULT_SYSLOG_ENABLED = 0;
 const std::string CONFIG_DEFAULT_LOGFILE = "";
 const std::string CONFIG_DEFAULT_SYSLOG_IDENT = "redis";
-enum logLevel {
-    LL_DEBUG,
-    LL_VERBOSE,
-    LL_NOTICE,
-    LL_WARNING,
-    LL_RAW = (1 << 10)
-};
 const int CONFIG_DEFAULT_VERBOSITY = LL_NOTICE;
 
 #endif //FLYDB_CONFIG_H

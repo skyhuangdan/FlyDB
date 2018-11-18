@@ -8,18 +8,34 @@
 #include <zconf.h>
 #include "LogHandler.h"
 #include "../config/config.h"
+#include "LogDef.h"
 
-LogHandler* LogHandler::getInstance(char *logfile, int syslogEnabled) {
+LogHandler* LogHandler::getInstance(char *logfile, int syslogEnabled, int verbosity) {
     static LogHandler *log = NULL;
     if (NULL == log) {
-        log = new LogHandler(logfile, syslogEnabled);
+        log = new LogHandler(logfile, syslogEnabled, verbosity);
     }
     return log;
 }
 
-LogHandler::LogHandler(char *logfile, int syslogEnabled) {
+LogHandler::LogHandler(char *logfile, int syslogEnabled, int verbosity) {
     this->logfile = logfile;
     this->syslogEnabled = syslogEnabled;
+    this->verbosity = verbosity;
+}
+
+void LogHandler::log(int level, const char *fmt, ...) {
+    char msg[LOG_MAX_LEN];
+    if (level < this->verbosity) {
+        return;
+    }
+
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+
+    logRaw(level, msg);
 }
 
 void LogHandler::logRaw(int level, const char *msg) {

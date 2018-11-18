@@ -10,13 +10,15 @@
 
 class LogHandler {
 public:
-    static LogHandler* getInstance(char *logfile, int syslogEnabled);
-    LogHandler(char *logfile, int syslogEnabled);
+    static LogHandler* getInstance(char *logfile, int syslogEnabled, int verbosity);
+    LogHandler(char *logfile, int syslogEnabled, int verbosity);
+    void log(int level, const char *fmt, ...);
     void logRaw(int level, const char *msg);
 
 private:
     char *logfile;
     int syslogEnabled;
+    int verbosity;
 };
 
 

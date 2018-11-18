@@ -123,7 +123,7 @@ void FlyServer::init(int argc, char **argv) {
     // 各类tool放在最后，因为可能会用到flyServer, 最好等其初始化完毕
     this->miscTool = MiscTool::getInstance();
     this->netHandler = NetHandler::getInstance();
-    this->logHandler = LogHandler::getInstance(this->logfile, this->syslogEnabled);
+    this->logHandler = LogHandler::getInstance(this->logfile, this->syslogEnabled, this->verbosity);
 
     return;
 }
