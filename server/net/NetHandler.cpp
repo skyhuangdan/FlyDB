@@ -24,8 +24,10 @@
 #include "../utils/MiscTool.h"
 #include "../flyClient/ClientDef.h"
 
-MiscTool* NetHandler::miscTool = MiscTool::getInstance();
-LogHandler* NetHandler::logHandler = LogHandler::getInstance();
+NetHandler::NetHandler() {
+    this->miscTool = MiscTool::getInstance();
+    this->logHandler = LogHandler::getInstance();
+}
 
 NetHandler* NetHandler::getInstance() {
     static NetHandler* instance;
@@ -458,68 +460,6 @@ void NetHandler::dealError(int fd, struct addrinfo *servinfo) {
     freeaddrinfo(servinfo);
 }
 
-void NetHandler::acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
-    FlyServer *flyServer = eventLoop->getFlyServer();
-    int cfd, cport;
-    char cip[NET_IP_STR_LEN];
-
-    for (int i = 0; i < MAX_ACCEPTS_PER_CALL; i++) {
-        cfd = tcpAccept(NULL, fd, cip, sizeof(cip), &cport);
-        if (-1 == cfd) {
-            return;
-        }
-
-        FlyClient* flyClient = flyServer->createClient(cfd);
-        if (NULL == flyClient) {
-            std::cout<< "error to create fly client" << std::endl;
-            close(cfd);
-        }
-    }
-}
-
-void NetHandler::readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
-    FlyServer *flyServer = eventLoop->getFlyServer();
-    FlyClient *flyClient = (FlyClient *) clientdata;
-
-    char buf[PROTO_IOBUF_LEN];
-    int readCnt = read(fd, buf, sizeof(buf));
-    // 读取失败, 如果错误码是EAGAIN说明本次读取没数据, 则直接返回，否则需要删除client
-    if (-1 == readCnt) {
-        if (EAGAIN == errno) {
-            return;
-        } else {                                // 连接异常
-            flyServer->deleteClient(fd);
-            close(fd);
-            return;
-        }
-    } else if (0 == readCnt) {                  // 关闭连接
-        flyServer->deleteClient(fd);
-        close(fd);
-        return;
-    }
-    flyClient->addToQueryBuf(buf);
-    flyClient->setLastInteractionTime(flyServer->getNowt());
-
-    // 统计flyServer接收到的byte数量
-    flyServer->addToStatNetInputBytes(strlen(buf));
-    if (flyClient->getQueryBufSize() > flyServer->getClientMaxQuerybufLen()) {
-        flyServer->deleteClient(fd);
-        close(fd);
-        std::cout << "Closing client that reached max query buffer length" << std::endl;
-        return;
-    }
-
-    processInputBuffer(eventLoop, flyServer, flyClient);
-}
-
-void NetHandler::sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
-    eventLoop->deleteFileEvent(fd, ES_WRITABLE);
-
-    // 回复命令
-    FlyClient *flyClient = (FlyClient *) clientdata;
-    write(fd, flyClient->getBuf(), strlen(flyClient->getBuf()));
-}
-
 int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
     while (1) {
         int fd = accept(s, sa, len);
@@ -680,3 +620,69 @@ int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
     // 截断query buf
     flyClient->trimQueryBuf(pos, -1);
 }
+
+void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+    FlyServer *flyServer = eventLoop->getFlyServer();
+    NetHandler *netHandler = flyServer->getNetHandler();
+
+    int cfd, cport;
+    char cip[NET_IP_STR_LEN];
+
+    for (int i = 0; i < MAX_ACCEPTS_PER_CALL; i++) {
+        cfd = netHandler->tcpAccept(NULL, fd, cip, sizeof(cip), &cport);
+        if (-1 == cfd) {
+            return;
+        }
+
+        FlyClient* flyClient = flyServer->createClient(cfd);
+        if (NULL == flyClient) {
+            std::cout<< "error to create fly client" << std::endl;
+            close(cfd);
+        }
+    }
+}
+
+void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+    FlyServer *flyServer = eventLoop->getFlyServer();
+    NetHandler *netHandler = flyServer->getNetHandler();
+    FlyClient *flyClient = (FlyClient *) clientdata;
+
+    char buf[PROTO_IOBUF_LEN];
+    int readCnt = read(fd, buf, sizeof(buf));
+    // 读取失败, 如果错误码是EAGAIN说明本次读取没数据, 则直接返回，否则需要删除client
+    if (-1 == readCnt) {
+        if (EAGAIN == errno) {
+            return;
+        } else {                                // 连接异常
+            flyServer->deleteClient(fd);
+            close(fd);
+            return;
+        }
+    } else if (0 == readCnt) {                  // 关闭连接
+        flyServer->deleteClient(fd);
+        close(fd);
+        return;
+    }
+    flyClient->addToQueryBuf(buf);
+    flyClient->setLastInteractionTime(flyServer->getNowt());
+
+    // 统计flyServer接收到的byte数量
+    flyServer->addToStatNetInputBytes(strlen(buf));
+    if (flyClient->getQueryBufSize() > flyServer->getClientMaxQuerybufLen()) {
+        flyServer->deleteClient(fd);
+        close(fd);
+        std::cout << "Closing client that reached max query buffer length" << std::endl;
+        return;
+    }
+
+    netHandler->processInputBuffer(eventLoop, flyServer, flyClient);
+}
+
+void sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+    eventLoop->deleteFileEvent(fd, ES_WRITABLE);
+
+    // 回复命令
+    FlyClient *flyClient = (FlyClient *) clientdata;
+    write(fd, flyClient->getBuf(), strlen(flyClient->getBuf()));
+}
+

@@ -9,52 +9,55 @@
 #include "../event/EventLoop.h"
 #include "../utils/MiscTool.h"
 
+// 对应socket的绑定接口
+void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
+void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
+void sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
+
 class NetHandler {
 public:
+    NetHandler();
     static NetHandler* getInstance();
-    static int setV6Only(char *err, int fd);
-    static int setSendTimeout(char *err, int fd, long long ms);
-    static int setTcpNoDelay(char *err, int fd, int val);               // val: 1-enbale no delay, 0-disable
-    static int setSendBuffer(char *err, int fd, int buffsize);
-    static int setTcpKeepAlive(char *err, int fd);
-    static int resolve(char *err, char *host, char *ipbuf, size_t ipbuf_len);
-    static int resolveIP(char *err, char *host, char *ipbuf, size_t ipbuf_len);
-    static int createSocket(char *err, int domain);
-    static int keepAlive(char *err, int fd, int interval);
-    static int tcpConnect(char *err, char *addr, int port);
-    static int tcpNonBlockConnect(char *err, char *addr, int port);
-    static int tcpNonBlockBindConnect(char *err, char *addr, int port, char *source_addr);
-    static int tcpNonBlockBestEffortBindConnect(char *err, char *addr, int port, char *source_addr);
-    static int setListen(char *err, int s, struct sockaddr *sa, socklen_t len, int backlog);
-    static int unixServer(char *err, const char *path, mode_t perm, int backlog);
-    static int tcpServer(char *err, int port, const char *bindaddr, int backlog);
-    static int tcp6Server(char *err, int port, const char *bindaddr, int backlog);
-    static int setBlock(char *err, int fd, int block);
-    static int tcpAccept(char *err, int s, char *ip, size_t iplen, int *port);
-    static int unixAccept(char *err, int s);
+    int setV6Only(char *err, int fd);
+    int setSendTimeout(char *err, int fd, long long ms);
+    int setTcpNoDelay(char *err, int fd, int val);               // val: 1-enbale no delay, 0-disable
+    int setSendBuffer(char *err, int fd, int buffsize);
+    int setTcpKeepAlive(char *err, int fd);
+    int resolve(char *err, char *host, char *ipbuf, size_t ipbuf_len);
+    int resolveIP(char *err, char *host, char *ipbuf, size_t ipbuf_len);
+    int createSocket(char *err, int domain);
+    int keepAlive(char *err, int fd, int interval);
+    int tcpConnect(char *err, char *addr, int port);
+    int tcpNonBlockConnect(char *err, char *addr, int port);
+    int tcpNonBlockBindConnect(char *err, char *addr, int port, char *source_addr);
+    int tcpNonBlockBestEffortBindConnect(char *err, char *addr, int port, char *source_addr);
+    int setListen(char *err, int s, struct sockaddr *sa, socklen_t len, int backlog);
+    int unixServer(char *err, const char *path, mode_t perm, int backlog);
+    int tcpServer(char *err, int port, const char *bindaddr, int backlog);
+    int tcp6Server(char *err, int port, const char *bindaddr, int backlog);
+    int setBlock(char *err, int fd, int block);
+    int tcpAccept(char *err, int s, char *ip, size_t iplen, int *port);
+    int unixAccept(char *err, int s);
+    int processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient);
 
-    // 对应socket的绑定接口
-    static void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
-    static void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
-    static void sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 private:
-    static void setError(char *err, const char *fmt, ...);
-    static int genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags);
-    static int setReuseAddr(char *err, int fd);
-    static int tcpGenericConnect(char *err, char *addr, int port, char *source_addr, int flags);
-    static int tcpGenericServer(char *err, int port, const char *bindaddr, int af, int backlog);
-    static int tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len);
-    static void dealError(int fd, struct addrinfo *servinfo);
-    static int processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient);
-    static int processInlineBuffer(FlyClient *flyClient);
-    static int processMultiBulkBuffer(FlyClient *flyClient);
-    static int analyseMultiBulkLen(FlyClient *flyClient, size_t &pos);
-    static int analyseMultiBulk(FlyClient *flyClient, size_t &pos);
-    static int analyseBulk(FlyClient *flyClient, size_t &pos);
-    static int setProtocolError(char *err, FlyClient *flyClient, size_t pos);
+    void setError(char *err, const char *fmt, ...);
+    int genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags);
+    int setReuseAddr(char *err, int fd);
+    int tcpGenericConnect(char *err, char *addr, int port, char *source_addr, int flags);
+    int tcpGenericServer(char *err, int port, const char *bindaddr, int af, int backlog);
+    int tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len);
+    void dealError(int fd, struct addrinfo *servinfo);
+    int processInlineBuffer(FlyClient *flyClient);
+    int processMultiBulkBuffer(FlyClient *flyClient);
+    int analyseMultiBulkLen(FlyClient *flyClient, size_t &pos);
+    int analyseMultiBulk(FlyClient *flyClient, size_t &pos);
+    int analyseBulk(FlyClient *flyClient, size_t &pos);
+    int setProtocolError(char *err, FlyClient *flyClient, size_t pos);
+    int addReplyError(FlyClient *flyClient, const char *err);
 
-    static MiscTool *miscTool;
-    static LogHandler *logHandler;
+    MiscTool *miscTool;
+    LogHandler *logHandler;
 };
 
 #endif //FLYDB_NETHANDLER_H

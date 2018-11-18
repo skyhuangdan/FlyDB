@@ -110,7 +110,7 @@ void FlyServer::init(int argc, char **argv) {
 
     // 创建定时任务，用于创建客户端连接
     for (auto fd : this->ipfd) {
-        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, this->netHandler->acceptTcpHandler, NULL)) {
+        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, acceptTcpHandler, NULL)) {
             exit(1);
         }
     }
@@ -185,7 +185,7 @@ FlyClient* FlyServer::createClient(int fd) {
         this->netHandler->keepAlive(NULL, fd, this->tcpKeepAlive);
     }
     if (-1 == this->eventLoop->createFileEvent(
-            fd, ES_READABLE, this->netHandler->readQueryFromClient, flyClient)) {
+            fd, ES_READABLE, readQueryFromClient, flyClient)) {
         delete flyClient;
         return NULL;
     }
@@ -253,6 +253,10 @@ char *FlyServer::getSyslogIdent() const {
 
 int FlyServer::getSyslogFacility() const {
     return this->syslogFacility;
+}
+
+NetHandler *FlyServer::getNetHandler() const {
+    return netHandler;
 }
 
 void FlyServer::setMaxClientLimit() {
