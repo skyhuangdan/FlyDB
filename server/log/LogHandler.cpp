@@ -24,20 +24,6 @@ LogHandler::LogHandler(char *logfile, int syslogEnabled, int verbosity) {
     this->verbosity = verbosity;
 }
 
-void LogHandler::log(int level, const char *fmt, ...) {
-    char msg[LOG_MAX_LEN];
-    if (level < this->verbosity) {
-        return;
-    }
-
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(msg, sizeof(msg), fmt, ap);
-    va_end(ap);
-
-    logRaw(level, msg);
-}
-
 void LogHandler::logRaw(int level, const char *msg) {
     const int syslogLevelMap[] = { LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARNING };
     FILE *fp = '\0' == this->logfile[0] ? stdout : fopen(this->logfile, "a");
@@ -69,3 +55,56 @@ void LogHandler::logRaw(int level, const char *msg) {
         syslog(syslogLevelMap[level], "%s", msg);
     }
 }
+
+void LogHandler::log(int level, const char *fmt, ...) {
+    if (level & 0xff < this->verbosity) {
+        return;
+    }
+
+    char msg[LOG_MAX_LEN];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+
+    logRaw(level, msg);
+}
+
+void LogHandler::logDebug(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    log(LL_DEBUG, fmt, ap);
+    va_end(ap);
+}
+
+void LogHandler::logVerbose(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    log(LL_VERBOSE, fmt, ap);
+    va_end(ap);
+}
+
+void LogHandler::logNotice(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    log(LL_NOTICE, fmt, ap);
+    va_end(ap);
+}
+
+void LogHandler::logWarning(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    log(LL_WARNING, fmt, ap);
+    va_end(ap);
+}
+
+void LogHandler::log(int level, const char *fmt, va_list ap) {
+    char msg[LOG_MAX_LEN];
+    if (level & 0xff < this->verbosity) {
+        return;
+    }
+
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    logRaw(level, msg);
+}
+
