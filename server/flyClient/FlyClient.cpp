@@ -4,8 +4,11 @@
 
 #include "FlyClient.h"
 #include "../net/NetDef.h"
+#include "ClientDef.h"
+#include "../FlyServer.h"
 
-FlyClient::FlyClient(int fd) {
+FlyClient::FlyClient(int fd, FlyServer *flyServer) {
+    this->flyServer = flyServer;
     this->fd = fd;
     this->name = NULL;
     this->flags = 0;
@@ -16,6 +19,7 @@ FlyClient::FlyClient(int fd) {
     this->createTime = this->lastInteractionTime = time(NULL);
     this->softLimitTime = 0;
     this->buf = new char[FLY_REPLY_CHUNK_BYTES];
+    this->bufpos = 0;
     this->reqType = 0;
 }
 
@@ -180,4 +184,61 @@ int64_t FlyClient::getBulkLen() const {
 
 void FlyClient::setBulkLen(int64_t bulkLen) {
     FlyClient::bulkLen = bulkLen;
+}
+
+bool FlyClient::hasNoPending() {
+    return !(this->bufpos > 0 || this->reply.size() > 0) && !(this->flags & CLIENT_PENDING_WRITE);
+}
+
+int FlyClient::prepareClientToWrite() {
+    if (this->fd < 0) {
+        return -1;
+    }
+
+    // 如果之前没有写入，说明write handler不存在，需要先将其标记并放入flyserver的pending client list中
+    if (hasNoPending()) {
+        this->addFlag(CLIENT_PENDING_WRITE);
+        this->flyServer->addToClientsPendingToWrite(this);
+    }
+
+    return 1;
+}
+
+void FlyClient::addReply(const char *s, size_t len) {
+    // 查看client状态是否可以写入
+    if (-1 == prepareClientToWrite()) {
+        return;
+    }
+
+    // 如果写入固定缓冲区失败，则向可变缓冲区写入
+    if (-1 == addReplyToBuffer(s, len)) {
+        addReplyToReplyList(s, len);
+    }
+}
+
+int FlyClient::addReplyToBuffer(const char *s, size_t len) {
+    // 无需写入
+    if (this->flags & CLIENT_CLOSE_AFTER_REPLY) {
+        return 1;
+    }
+
+    // 如果可变缓冲区中有数据，则继续往可变缓冲区写入
+    if (this->reply.size() > 0) {
+        return -1;
+    }
+
+    // 空间不足，无法写入
+    if (sizeof(this->buf) - this->bufpos < len) {
+        return -1;
+    }
+
+    // 写入固定缓冲区
+    memcpy(this->buf + this->bufpos, s, len);
+    this->bufpos += len;
+
+    return 1;
+}
+
+int FlyClient::addReplyToReplyList(const char *s, size_t len) {
+
 }

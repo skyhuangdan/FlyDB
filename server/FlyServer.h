@@ -52,6 +52,7 @@ public:
     char *getSyslogIdent() const;
     int getSyslogFacility() const;
     NetHandler *getNetHandler() const;
+    void addToClientsPendingToWrite(FlyClient *flyClient);
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
@@ -82,10 +83,11 @@ private:
     uint64_t statRejectedConn;                // 由于超过了maxclients而拒绝连接的次数
     uint64_t nextClientId;
     pthread_mutex_t nextClientIdMutex;
-    time_t nowt;                              // 系统当前时间
-    size_t clientMaxQuerybufLen;              // client buff最大长度
-    int64_t statNetInputBytes;                // 该server从网络获取的byte数量
-    uint32_t lruclock;                        // LRU
+    time_t nowt;                                    // 系统当前时间
+    size_t clientMaxQuerybufLen;                    // client buff最大长度
+    int64_t statNetInputBytes;                      // 该server从网络获取的byte数量
+    uint32_t lruclock;                              // LRU
+    std::list<FlyClient*> clientsPendingWrite;      // 需要install write handler
 
     int verbosity;                            // log level in log file
     char *logfile;                            // log file

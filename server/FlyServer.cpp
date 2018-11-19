@@ -173,7 +173,7 @@ FlyClient* FlyServer::createClient(int fd) {
     }
 
     // create FlyClient
-    FlyClient *flyClient = new FlyClient(fd);
+    FlyClient *flyClient = new FlyClient(fd, this);
     uint64_t clientId = 0;
     atomicGetIncr(this->nextClientId, clientId, 1);
     flyClient->setId(clientId);
@@ -257,6 +257,10 @@ int FlyServer::getSyslogFacility() const {
 
 NetHandler *FlyServer::getNetHandler() const {
     return netHandler;
+}
+
+void FlyServer::addToClientsPendingToWrite(FlyClient *flyClient) {
+    this->clientsPendingWrite.push_back(flyClient);
 }
 
 void FlyServer::setMaxClientLimit() {

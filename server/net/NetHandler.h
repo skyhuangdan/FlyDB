@@ -56,7 +56,6 @@ private:
     int setProtocolError(char *err, FlyClient *flyClient, size_t pos);
     void addReplyErrorFormat(FlyClient *flyClient, const char *fmt, ...);
     int addReplyError(FlyClient *flyClient, const char *err);
-    void addReplyString(FlyClient *flyClient, const char *s, size_t len);
 
     MiscTool *miscTool;
     LogHandler *logHandler;

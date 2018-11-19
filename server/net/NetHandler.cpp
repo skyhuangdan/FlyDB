@@ -642,13 +642,9 @@ void NetHandler::addReplyErrorFormat(FlyClient *flyClient, const char *fmt, ...)
 }
 
 int NetHandler::addReplyError(FlyClient *flyClient, const char *err) {
-    addReplyString(flyClient, "-ERR ", 5);
-    addReplyString(flyClient, err, strlen(err));
-    addReplyString(flyClient, "\r\n", 2);
-}
-
-void NetHandler::addReplyString(FlyClient *flyClient, const char *s, size_t len) {
-
+    flyClient->addReply("-ERR ", 5);
+    flyClient->addReply(err, strlen(err));
+    flyClient->addReply("\r\n", 2);
 }
 
 void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) {

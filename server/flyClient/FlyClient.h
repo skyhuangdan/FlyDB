@@ -5,17 +5,18 @@
 #ifndef FLYDB_FLYCLIENT_H
 #define FLYDB_FLYCLIENT_H
 
-
 #include <string>
 #include <list>
 #include "../dataStructure/flyObj/FlyObj.h"
 #include "../commandTable/CommandEntry.h"
 
+class FlyServer;
+
 const int FLY_REPLY_CHUNK_BYTES = 16 * 1024;
 
 class FlyClient {
 public:
-    FlyClient(int fd);
+    FlyClient(int fd, FlyServer *flyServer);
     ~FlyClient();
     uint64_t getId() const;
     void setId(uint64_t id);
@@ -56,8 +57,15 @@ public:
     void setMultiBulkLen(int32_t multiBulkLen);
     int64_t getBulkLen() const;
     void setBulkLen(int64_t bulkLen);
+    int prepareClientToWrite();
+    bool hasNoPending();
+    void addReply(const char *s, size_t len);
 
 private:
+    int addReplyToBuffer(const char *s, size_t len);
+    int addReplyToReplyList(const char *s, size_t len);
+
+    FlyServer *flyServer;
     uint64_t id;
     int fd;                             // 套接字
     FlyObj* name;                       // client名字
@@ -67,6 +75,7 @@ private:
     int argc;
     CommandEntry* cmd;                  // 命令实现函数
     char *buf;                          // 固定大小输出缓冲区
+    int bufpos;
     std::list<std::string> reply;       // 可变长度输出缓冲区
     int authentiated;                   // 是否通过了身份验证
     time_t createTime;                  // 客户端创建事件
