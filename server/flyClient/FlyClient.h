@@ -42,8 +42,8 @@ public:
     void setCmd(CommandEntry *cmd);
     char *getBuf() const;
     void setBuf(char *buf);
-    const std::list<std::string> &getReply() const;
-    void setReply(const std::list<std::string> &reply);
+    const std::list<std::string*> &getReply() const;
+    void setReply(const std::list<std::string*> &reply);
     int getAuthentiated() const;
     void setAuthentiated(int authentiated);
     time_t getCreateTime() const;
@@ -76,7 +76,8 @@ private:
     CommandEntry* cmd;                  // 命令实现函数
     char *buf;                          // 固定大小输出缓冲区
     int bufpos;
-    std::list<std::string> reply;       // 可变长度输出缓冲区
+    std::list<std::string *> replies;   // 可变长度输出缓冲区
+    uint64_t replyBytes;
     int authentiated;                   // 是否通过了身份验证
     time_t createTime;                  // 客户端创建事件
     time_t lastInteractionTime;         // 最后一次互动时间

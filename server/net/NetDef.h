@@ -29,5 +29,6 @@ const int PROTO_REQ_MULTIBULK = 2;
 const int PROTO_REQ_MULTIBULK_MAX_LEN = 1024 * 1024;
 const int PROTO_REQ_BULK_MAX_LEN = 512 * 1024 * 1024;
 const int PROTO_INLINE_MAX_SIZE = 1024 * 64;                // 每行的最大长度
+const int PROTO_REPLY_CHUNK_BYTES = 16 * 1024;              // flyclient每个reply最大长度
 
 #endif //FLYDB_NETDEF_H

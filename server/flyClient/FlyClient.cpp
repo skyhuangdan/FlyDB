@@ -21,6 +21,7 @@ FlyClient::FlyClient(int fd, FlyServer *flyServer) {
     this->buf = new char[FLY_REPLY_CHUNK_BYTES];
     this->bufpos = 0;
     this->reqType = 0;
+    this->replyBytes = 0;
 }
 
 FlyClient::~FlyClient() {
@@ -121,12 +122,12 @@ void FlyClient::setSoftLimitTime(time_t softLimitTime) {
     this->softLimitTime = softLimitTime;
 }
 
-const std::list<std::string> &FlyClient::getReply() const {
-    return reply;
+const std::list<std::string*> &FlyClient::getReply() const {
+    return replies;
 }
 
-void FlyClient::setReply(const std::list<std::string> &reply) {
-    this->reply = reply;
+void FlyClient::setReply(const std::list<std::string*> &reply) {
+    this->replies = reply;
 }
 
 const std::string &FlyClient::getQueryBuf() const {
@@ -187,7 +188,7 @@ void FlyClient::setBulkLen(int64_t bulkLen) {
 }
 
 bool FlyClient::hasNoPending() {
-    return !(this->bufpos > 0 || this->reply.size() > 0) && !(this->flags & CLIENT_PENDING_WRITE);
+    return !(this->bufpos > 0 || this->replies.size() > 0) && !(this->flags & CLIENT_PENDING_WRITE);
 }
 
 int FlyClient::prepareClientToWrite() {
@@ -223,7 +224,7 @@ int FlyClient::addReplyToBuffer(const char *s, size_t len) {
     }
 
     // 如果可变缓冲区中有数据，则继续往可变缓冲区写入
-    if (this->reply.size() > 0) {
+    if (this->replies.size() > 0) {
         return -1;
     }
 
@@ -240,5 +241,18 @@ int FlyClient::addReplyToBuffer(const char *s, size_t len) {
 }
 
 int FlyClient::addReplyToReplyList(const char *s, size_t len) {
+    // 无需写入
+    if (this->flags & CLIENT_CLOSE_AFTER_REPLY) {
+        return 1;
+    }
 
+    std::string *reply = this->replies.back();
+    if (NULL != reply && strlen((*reply).c_str()) + len <= PROTO_REPLY_CHUNK_BYTES) {
+        (*reply) += s;
+    } else {
+        reply = new std::string(s);
+        this->replies.push_back(reply);
+    }
+    this->replyBytes += len;
 }
+

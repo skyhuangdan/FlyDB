@@ -7,5 +7,6 @@
 
 const int CLIENT_CLOSE_AFTER_REPLY = 1 << 6;     // 回复后关闭(即处理完该请求后关闭)
 const int CLIENT_PENDING_WRITE = 1 << 21;        // client中有需要发送的数据，但是write handler还没有install
+const int CLIENT_CLOSE_ASAP = 1 << 10;           // 异步地关闭该client
 
 #endif //FLYDB_CLIENTDEF_H
