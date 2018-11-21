@@ -40,8 +40,7 @@ public:
     void setArgc(int argc);
     CommandEntry *getCmd() const;
     void setCmd(CommandEntry *cmd);
-    char *getBuf() const;
-    void setBuf(char *buf);
+    const char *getBuf() const;
     const std::list<std::string*> &getReply() const;
     void setReply(const std::list<std::string*> &reply);
     int getAuthentiated() const;
@@ -74,7 +73,7 @@ private:
     FlyObj **argv;                      // 命令参数
     int argc;
     CommandEntry* cmd;                  // 命令实现函数
-    char *buf;                          // 固定大小输出缓冲区
+    char buf[FLY_REPLY_CHUNK_BYTES];    // 固定大小输出缓冲区
     int bufpos;
     std::list<std::string *> replies;   // 可变长度输出缓冲区
     uint64_t replyBytes;
@@ -83,7 +82,7 @@ private:
     time_t lastInteractionTime;         // 最后一次互动时间
     time_t softLimitTime;               // 软性限制时间
     int reqType;
-    int32_t multiBulkLen;                   // 剩余可读的multi bulk参数数量
+    int32_t multiBulkLen;               // 剩余可读的multi bulk参数数量
     int64_t bulkLen;
 };
 

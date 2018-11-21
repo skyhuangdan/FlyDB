@@ -9,6 +9,7 @@
 
 FlyClient::FlyClient(int fd, FlyServer *flyServer) {
     this->flyServer = flyServer;
+    this->id = 0;
     this->fd = fd;
     this->name = NULL;
     this->flags = 0;
@@ -18,14 +19,14 @@ FlyClient::FlyClient(int fd, FlyServer *flyServer) {
     this->authentiated = 0;
     this->createTime = this->lastInteractionTime = time(NULL);
     this->softLimitTime = 0;
-    this->buf = new char[FLY_REPLY_CHUNK_BYTES];
     this->bufpos = 0;
-    this->reqType = 0;
     this->replyBytes = 0;
+    this->reqType = 0;
+    this->multiBulkLen = 0;
+    this->bulkLen = 0;
 }
 
 FlyClient::~FlyClient() {
-    delete[] this->buf;
 }
 
 int FlyClient::getFd() const {
@@ -146,16 +147,12 @@ uint64_t FlyClient::getId() const {
     return id;
 }
 
-void FlyClient::setId(uint64_t id) {
-    this->id = id;
-}
-
-char *FlyClient::getBuf() const {
+const char *FlyClient::getBuf() const {
     return buf;
 }
 
-void FlyClient::setBuf(char *buf) {
-    this->buf = buf;
+void FlyClient::setId(uint64_t id) {
+    this->id = id;
 }
 
 bool FlyClient::isMultiBulkType() {
@@ -163,7 +160,7 @@ bool FlyClient::isMultiBulkType() {
 }
 
 int32_t FlyClient::getMultiBulkLen() const {
-    return multiBulkLen;
+    return this->multiBulkLen;
 }
 
 void FlyClient::setMultiBulkLen(int32_t multiBulkLen) {
@@ -175,7 +172,13 @@ void FlyClient::setQueryBuf(const std::string &queryBuf) {
 }
 
 void FlyClient::trimQueryBuf(int begin, int end) {
-    std::string sub = queryBuf.substr(begin, end);
+    std::string sub;
+    if (-1 == end) {
+        sub = queryBuf.substr(begin);
+    } else {
+        sub = queryBuf.substr(begin, end);
+    }
+
     setQueryBuf(sub);
 }
 
@@ -254,5 +257,7 @@ int FlyClient::addReplyToReplyList(const char *s, size_t len) {
         this->replies.push_back(reply);
     }
     this->replyBytes += len;
+
+    // todo: 检查是否达到soft limit和hard limit
 }
 

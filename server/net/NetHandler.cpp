@@ -525,7 +525,7 @@ int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
     }
 
     int64_t multiBulkLen = 0;
-    std::string subStr = flyClient->getQueryBuf().substr(1, pos);
+    std::string subStr = flyClient->getQueryBuf().substr(1, pos - 1);
     int res = miscTool->string2int64(subStr, multiBulkLen);
 
     // 如果获取multi bulk length失败，或者其太长，协议error
@@ -590,7 +590,7 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
 
     // 从client->querybuf里截取该bulk，并
     int64_t bulkLen = 0;
-    std::string subStr = flyClient->getQueryBuf().substr(begin, pos);
+    std::string subStr = flyClient->getQueryBuf().substr(begin, pos - begin);
     int res = miscTool->string2int64(subStr, bulkLen);
     if (0 == res || bulkLen < 0 || bulkLen > PROTO_REQ_BULK_MAX_LEN) {
         addReplyError(flyClient, "Protocol error: invalid bulk length");
@@ -601,21 +601,21 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
     flyClient->setBulkLen(bulkLen);
 
     pos = flyClient->getQueryBuf().find("\r\n", begin);
-    if (pos - begin + 1 != bulkLen) {
+    if (pos - begin != bulkLen) {
         addReplyError(flyClient, "Protocol error: not enough bulk space");
         setProtocolError("not enough bulk space", flyClient, pos);
         return -1;
     }
     flyClient->addArgv(new FlyObj(
-            new std::string(flyClient->getQueryBuf().substr(begin, pos)), FLY_TYPE_STRING));
-    pos = pos + 2;
+            new std::string(flyClient->getQueryBuf().substr(begin, pos - begin)), FLY_TYPE_STRING));
+    pos += 2;
 }
 
 int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
     // 打印log
     char buf[256];
     snprintf(buf, sizeof(buf), "Query buffer during protocol error: '%s'", flyClient->getQueryBuf().c_str());
-    logHandler->logVerbose("Protocol error (%s) from client: %s. %s", err, flyClient->getId(), buf);
+    logHandler->logVerbose("Protocol error (%s) from client: %ld. %s", err, flyClient->getId(), buf);
 
     // 设置回复后关闭
     flyClient->addFlag(CLIENT_CLOSE_AFTER_REPLY);

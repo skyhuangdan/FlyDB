@@ -14,7 +14,7 @@ void versionProc(FlyServer* server, FlyClient *client, std::vector<std::string> 
         return;
     }
 
-    sprintf(client->getBuf(), "FlyDB version: %s", server->getVersion().c_str());
+    //sprintf(client->getBuf(), "FlyDB version: %s", server->getVersion().c_str());
 
     std::cout << "FlyDB version: " << server->getVersion() << std::endl;
 }

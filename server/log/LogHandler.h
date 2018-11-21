@@ -19,7 +19,7 @@ public:
     void log(int level, const char *fmt, ...);
 
 private:
-    void log(int level, const char *fmt, va_list ap);
+    void log(int level, const char *fmt, va_list &ap);
     static char *logfile;
     static int syslogEnabled;
     static int verbosity;

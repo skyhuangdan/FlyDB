@@ -102,7 +102,7 @@ void LogHandler::logWarning(const char *fmt, ...) {
     va_end(ap);
 }
 
-void LogHandler::log(int level, const char *fmt, va_list ap) {
+void LogHandler::log(int level, const char *fmt, va_list &ap) {
     char msg[LOG_MAX_LEN];
     if (level & 0xff < verbosity) {
         return;
