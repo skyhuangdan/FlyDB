@@ -58,17 +58,23 @@ void FlyClient::addFlag(int flag) {
 }
 
 FlyObj **FlyClient::getArgv() const {
-    return argv;
+    return this->argv;
 }
 
-void FlyClient::freeArgv() const {
-    if (NULL != argv) {
-        delete[] argv;
+void FlyClient::freeArgv() {
+    if (NULL != this->argv) {
+        for (int i = 0; i < this->argc; i++) {
+            delete this->argv[i];
+            this->argv[i] = NULL;
+        }
+        delete[] this->argv;
+        this->argv = NULL;
     }
+    this->argc = 0;
 }
 
-void FlyClient::allocArgv(int64_t multiBulkLen) {
-    this->argv = new FlyObj*[multiBulkLen];
+void FlyClient::allocArgv(int64_t count) {
+    this->argv = new FlyObj*[count];
 }
 
 void FlyClient::addArgv(FlyObj *obj) {

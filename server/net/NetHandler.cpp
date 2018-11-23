@@ -492,7 +492,36 @@ int NetHandler::processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, F
 }
 
 int NetHandler::processInlineBuffer(FlyClient *flyClient) {
+    size_t pos = flyClient->getQueryBuf().find("\r\n");
+    if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
+        if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
+            addReplyError(flyClient, "Protocol error: too big mbulk count string");
+            setProtocolError("too big mbulk count string", flyClient, 0);
+        }
+        return -1;
+    }
 
+    std::vector<std::string> words;
+    std::string subStr = flyClient->getQueryBuf().substr(0, pos);
+    miscTool->spiltString(subStr, " ", words);
+    if (0 == words.size()) {
+        return 1;
+    }
+
+    // 如果参数列表不为空，先释放空间再重新分配
+    if (NULL != flyClient->getArgv()) {
+        flyClient->freeArgv();
+    }
+    flyClient->allocArgv(words.size());
+
+    // 设置参数列表
+    for (auto item : words) {
+        flyClient->addArgv(new FlyObj(
+                new std::string(item), FLY_TYPE_STRING));
+    }
+
+    // 裁剪输入缓冲区
+    flyClient->trimQueryBuf(pos + 2, -1);
 }
 
 /**
