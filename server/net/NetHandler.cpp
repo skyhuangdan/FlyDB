@@ -620,7 +620,7 @@ int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
     // 设置回复后关闭
     flyClient->addFlag(CLIENT_CLOSE_AFTER_REPLY);
     // 截断query buf
-    flyClient->trimQueryBuf(pos, -1);
+    flyClient->trimQueryBuf(pos + 2, -1);
 }
 
 void NetHandler::addReplyErrorFormat(FlyClient *flyClient, const char *fmt, ...) {

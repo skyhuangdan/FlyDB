@@ -156,6 +156,7 @@ void FlyClient::setId(uint64_t id) {
 }
 
 bool FlyClient::isMultiBulkType() {
+    // todo: 当因为协议错误而截断querybuf时，可能会有问题
     return '*' == this->queryBuf[0];
 }
 
