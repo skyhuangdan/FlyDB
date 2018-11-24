@@ -480,6 +480,7 @@ int NetHandler::processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, F
     while (flyClient->getQueryBufSize() > 0) {
         // 第一个字符是'*'代表是整体multibulk串; reqtype=multibulk代表是上次读取已经处理了部分的multibulk
         if ('*' == flyClient->getFirstQueryChar() || flyClient->isMultiBulkType()) {
+            // 读取失败，直接返回，不做命令处理, inline buffer同理
             if(-1 == processMultiBulkBuffer(flyClient)) {
                 return -1;
             }
@@ -494,6 +495,7 @@ int NetHandler::processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, F
     flyServer->dealWithCommand(flyClient);
     // 创建返回结果的file event
     eventLoop->createFileEvent(flyClient->getFd(), ES_WRITABLE, sendReplyToClient, flyClient);
+    return 1;
 }
 
 int NetHandler::processInlineBuffer(FlyClient *flyClient) {
@@ -510,7 +512,7 @@ int NetHandler::processInlineBuffer(FlyClient *flyClient) {
     std::string subStr = flyClient->getQueryBuf().substr(0, pos);
     miscTool->spiltString(subStr, " ", words);
     if (0 == words.size()) {
-        return 1;
+        return -1;
     }
 
     // 如果参数列表不为空，先释放空间再重新分配
