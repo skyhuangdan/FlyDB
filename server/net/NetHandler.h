@@ -52,7 +52,7 @@ private:
     int processMultiBulkBuffer(FlyClient *flyClient);
     int analyseMultiBulkLen(FlyClient *flyClient, size_t &pos);
     int analyseMultiBulk(FlyClient *flyClient, size_t &pos);
-    int analyseBulk(FlyClient *flyClient, size_t &pos);
+    int analyseBulk(FlyClient *flyClient);
     int setProtocolError(char *err, FlyClient *flyClient, size_t pos);
     void addReplyErrorFormat(FlyClient *flyClient, const char *fmt, ...);
     int addReplyError(FlyClient *flyClient, const char *err);

@@ -51,6 +51,7 @@ public:
     void setLastInteractionTime(time_t lastInteractionTime);
     time_t getSoftLimitTime() const;
     void setSoftLimitTime(time_t softLimitTime);
+    char getFirstQueryChar();
     bool isMultiBulkType();
     int32_t getMultiBulkLen() const;
     void setMultiBulkLen(int32_t multiBulkLen);
@@ -59,6 +60,8 @@ public:
     int prepareClientToWrite();
     bool hasNoPending();
     void addReply(const char *s, size_t len);
+    int getReqType() const;
+    void setReqType(int reqType);
 
 private:
     int addReplyToBuffer(const char *s, size_t len);

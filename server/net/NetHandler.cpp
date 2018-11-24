@@ -478,10 +478,15 @@ int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_
 
 int NetHandler::processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient) {
     while (flyClient->getQueryBufSize() > 0) {
-        if (flyClient->isMultiBulkType()) {
-            processMultiBulkBuffer(flyClient);
+        // 第一个字符是'*'代表是整体multibulk串; reqtype=multibulk代表是上次读取已经处理了部分的multibulk
+        if ('*' == flyClient->getFirstQueryChar() || flyClient->isMultiBulkType()) {
+            if(-1 == processMultiBulkBuffer(flyClient)) {
+                return -1;
+            }
         } else {
-            processInlineBuffer(flyClient);
+            if(-1 == processInlineBuffer(flyClient)) {
+                return -1;
+            }
         }
     }
 
@@ -522,6 +527,7 @@ int NetHandler::processInlineBuffer(FlyClient *flyClient) {
 
     // 裁剪输入缓冲区
     flyClient->trimQueryBuf(pos + 2, -1);
+    return 1;
 }
 
 /**
@@ -533,6 +539,9 @@ int NetHandler::processInlineBuffer(FlyClient *flyClient) {
  */
 int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
     size_t pos = 0;
+    flyClient->setReqType(PROTO_REQ_MULTIBULK);
+
+    // multi bulk等于0，代表是新的multibulk字符串，否则就是未读完的部分(未读完的部分不用重新读取multi bulk len)
     if (0 == flyClient->getMultiBulkLen()) {
         // 如果获取multi bulk len失败，返回-1
         if (-1 == analyseMultiBulkLen(flyClient, pos)) {
@@ -540,7 +549,15 @@ int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
         }
     }
 
-    return analyseMultiBulk(flyClient, pos);
+    // 解析multi bulk
+    if (-1 == analyseMultiBulk(flyClient, pos)) {
+        return -1;
+    }
+
+    // 所有bulk读取完，重置如下字段，表示这次multi bulk处理完
+    flyClient->setMultiBulkLen(0);
+    flyClient->setReqType(0);
+    return 1;
 }
 
 int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
@@ -583,22 +600,27 @@ int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
     }
     flyClient->allocArgv(multiBulkLen);
 
+    // 截取输入字符串
+    flyClient->trimQueryBuf(pos, -1);
     return 1;
 }
 
 int NetHandler::analyseMultiBulk(FlyClient *flyClient, size_t &pos) {
     int64_t multiBulkLen = flyClient->getMultiBulkLen();
-    for (int i = 0; i < multiBulkLen; i++) {
-        if(-1 == analyseBulk(flyClient, pos)) {
+    for (int i = flyClient->getArgc(); i < multiBulkLen; i++) {
+        if(-1 == analyseBulk(flyClient)) {
             return -1;
         }
     }
-
-    flyClient->setMultiBulkLen(0);
-    flyClient->trimQueryBuf(pos, -1);
 }
 
-int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
+int NetHandler::analyseBulk(FlyClient *flyClient) {
+    // 如果字符串为空，说明需要通过下次来读取，直接返回(但并不是协议错误)
+    if (0 == flyClient->getQueryBuf().size()) {
+        return -1;
+    }
+
+    size_t pos = 0;
     if ('$' != flyClient->getQueryBuf()[pos]) {
         addReplyErrorFormat(flyClient, "Protocol error: expected '$', got '%c'",
                             flyClient->getQueryBuf()[pos]);
@@ -617,7 +639,7 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
         return -1;
     }
 
-    // 从client->querybuf里截取该bulk，并
+    // 从client->querybuf里截取该bulk
     int64_t bulkLen = 0;
     std::string subStr = flyClient->getQueryBuf().substr(begin, pos - begin);
     int res = miscTool->string2int64(subStr, bulkLen);
@@ -625,19 +647,28 @@ int NetHandler::analyseBulk(FlyClient *flyClient, size_t &pos) {
         addReplyError(flyClient, "Protocol error: invalid bulk length");
         setProtocolError("invalid bulk length", flyClient, pos);
     }
+    begin = pos + 2;
 
-    begin = pos += 2;
-    flyClient->setBulkLen(bulkLen);
-
+    // 如果读取不全（找不到\r\n），返回-1，等待下次读取
     pos = flyClient->getQueryBuf().find("\r\n", begin);
+    if (pos == flyClient->getQueryBuf().npos) {
+        return -1;
+    }
+
+    // 如果读取全了，并且长度不对，说明是协议问题
     if (pos - begin != bulkLen) {
         addReplyError(flyClient, "Protocol error: not enough bulk space");
         setProtocolError("not enough bulk space", flyClient, pos);
         return -1;
     }
+
+    // 设置flyClient argv参数
     flyClient->addArgv(new FlyObj(
             new std::string(flyClient->getQueryBuf().substr(begin, pos - begin)), FLY_TYPE_STRING));
-    pos += 2;
+
+    // 截取此次读取
+    flyClient->trimQueryBuf(pos + 2, -1);
+    return 1;
 }
 
 int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {

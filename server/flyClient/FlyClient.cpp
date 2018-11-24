@@ -161,9 +161,12 @@ void FlyClient::setId(uint64_t id) {
     this->id = id;
 }
 
+char FlyClient::getFirstQueryChar() {
+    return this->queryBuf[0];
+}
+
 bool FlyClient::isMultiBulkType() {
-    // todo: 当因为协议错误而截断querybuf时，可能会有问题
-    return '*' == this->queryBuf[0];
+    return PROTO_REQ_MULTIBULK == this->reqType;
 }
 
 int32_t FlyClient::getMultiBulkLen() const {
@@ -266,5 +269,13 @@ int FlyClient::addReplyToReplyList(const char *s, size_t len) {
     this->replyBytes += len;
 
     // todo: 检查是否达到soft limit和hard limit
+}
+
+int FlyClient::getReqType() const {
+    return this->reqType;
+}
+
+void FlyClient::setReqType(int reqType) {
+    this->reqType = reqType;
 }
 
