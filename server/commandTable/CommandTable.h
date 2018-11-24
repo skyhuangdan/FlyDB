@@ -8,9 +8,11 @@
 
 #include "../dataStructure/dict/Dict.h"
 #include "../flyClient/FlyClient.h"
+#include "../log/LogHandler.h"
 
 class FlyServer;
 class MiscTool;
+class LogHandler;
 class CommandTable {
 public:
     CommandTable(FlyServer* flyServer);
@@ -20,7 +22,7 @@ public:
 private:
     FlyServer* flyServer;
     Dict* commands;
-    MiscTool *miscTool;
+    LogHandler *logHandler;
 };
 
 

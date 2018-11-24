@@ -7,7 +7,7 @@
 
 class FlyServer;
 class FlyClient;
-typedef void (*commandProc)(FlyServer*, FlyClient*, std::vector<std::string> &words);
+typedef void (*commandProc)(FlyServer*, FlyClient*);
 
 struct CommandEntry {
     CommandEntry(commandProc proc, int flag);
@@ -16,6 +16,6 @@ struct CommandEntry {
     int flag;
 };
 
-void versionProc(FlyServer*, FlyClient*, std::vector<std::string> &words);
+void versionProc(FlyServer*, FlyClient*);
 
 #endif //FLYDB_COMMANDENTRY_H

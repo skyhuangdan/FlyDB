@@ -11,7 +11,6 @@
 #include <list>
 #include <pthread.h>
 #include "db/FlyDB.h"
-#include "commandTable/CommandTable.h"
 #include "flyClient/FlyClient.h"
 #include "event/EventLoop.h"
 #include "config/config.h"
@@ -20,6 +19,7 @@
 class NetHandler;
 class MiscTool;
 class LogHandler;
+class CommandTable;
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -60,7 +60,6 @@ private:
     void loadConfigFromString(const std::string& config);
     void loadConfigFromLineString(const std::string &line);
     int listenToPort();                       // 打开监听socket，用于监听用户命令
-    void logRaw(int level, const char *msg);
     int configMapGetValue(configMap *config, const char *name);
 
     int pid;                                  // 运行server的线程标识

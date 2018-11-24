@@ -5,7 +5,7 @@
 #include <iostream>
 #include <syslog.h>
 #include "FlyServer.h"
-#include "commandTable/CommandEntry.h"
+#include "commandTable/commandTable.h"
 #include "config/config.h"
 #include "atomic/AtomicHandler.h"
 #include "net/NetDef.h"

@@ -9,12 +9,10 @@
 CommandEntry::CommandEntry(commandProc proc, int flag) :
         proc(proc), flag(flag) {}
 
-void versionProc(FlyServer* server, FlyClient *client, std::vector<std::string> &words) {
+void versionProc(FlyServer* server, FlyClient *client) {
     if (NULL == server || NULL == client) {
         return;
     }
 
-    //sprintf(client->getBuf(), "FlyDB version: %s", server->getVersion().c_str());
-
-    std::cout << "FlyDB version: " << server->getVersion() << std::endl;
+    sprintf((char*)client->getBuf(), "FlyDB version: %s", server->getVersion().c_str());
 }

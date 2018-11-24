@@ -11,7 +11,6 @@
 #include "../commandTable/CommandEntry.h"
 
 class FlyServer;
-
 const int FLY_REPLY_CHUNK_BYTES = 16 * 1024;
 
 class FlyClient {

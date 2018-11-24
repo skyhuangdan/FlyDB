@@ -11,7 +11,7 @@
 CommandTable::CommandTable(FlyServer* flyServer) : flyServer(flyServer) {
     this->commands = new Dict(CommandDictType::getInstance());
     this->commands->addEntry(new std::string("version"), new CommandEntry(versionProc, 0));
-    miscTool = MiscTool::getInstance();
+    this->logHandler = LogHandler::getInstance();
 }
 
 CommandTable::~CommandTable() {
@@ -19,15 +19,13 @@ CommandTable::~CommandTable() {
 }
 
 int CommandTable::dealWithCommand(FlyClient* flyClient) {
-    std::vector<std::string> words;
-    this->miscTool->spiltString(flyClient->getQueryBuf(), " ", words);
-
-    DictEntry* dictEntry = this->commands->findEntry(&words[0]);
+    char *command = (char*) flyClient->getArgv()[0]->getPtr();
+    DictEntry* dictEntry = this->commands->findEntry(flyClient->getArgv()[0]->getPtr());
     if (NULL == dictEntry) {
-        //sprintf(flyClient->getBuf(), "wrong command type: %s", words[0].c_str());
+        this->logHandler->logDebug("wrong command type: %s", command);
         return -1;
     }
-    reinterpret_cast<CommandEntry*>(dictEntry->getVal())->proc(this->flyServer, flyClient, words);
+    reinterpret_cast<CommandEntry*>(dictEntry->getVal())->proc(this->flyServer, flyClient);
 
     return 1;
 }

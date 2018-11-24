@@ -269,6 +269,8 @@ int FlyClient::addReplyToReplyList(const char *s, size_t len) {
     this->replyBytes += len;
 
     // todo: 检查是否达到soft limit和hard limit
+
+    return 1;
 }
 
 int FlyClient::getReqType() const {
