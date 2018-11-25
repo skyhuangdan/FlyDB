@@ -36,7 +36,8 @@ int PollState::poll(EventLoop *eventLoop, struct timeval *tvp) {
 
     // select并遍历获取事件
     int numEvents = 0;
-    int retval = select(eventLoop->getMaxfd() + 1, &this->_rfds, &this->_wfds, NULL, tvp);
+    int retval = select(eventLoop->getMaxfd() + 1,
+            &this->_rfds, &this->_wfds, NULL, tvp);
     if (retval > 0) {
         for (int i = 0; i <= eventLoop->getMaxfd(); i++) {
             int eventMask = eventLoop->getFileEvents(i);

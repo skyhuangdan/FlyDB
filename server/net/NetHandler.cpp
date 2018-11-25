@@ -48,7 +48,9 @@ int NetHandler::setV6Only(char *err, int fd) {
     return 1;
 }
 
-int NetHandler::setSendTimeout(char *err, int fd, long long ms) {
+int NetHandler::setSendTimeout(char *err,
+                               int fd,
+                               long long ms) {
     struct timeval tv;
     tv.tv_sec = ms / 1000;
     tv.tv_usec = ms % 1000;
@@ -69,7 +71,8 @@ int NetHandler::setTcpNoDelay(char *err, int fd, int val) {
 }
 
 int NetHandler::setSendBuffer(char *err, int fd, int buffsize) {
-    if (-1 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffsize, sizeof(buffsize))) {
+    if (-1 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF,
+                         &buffsize, sizeof(buffsize))) {
         setError(err, "setsockopt SO_SNDBUF: %s", strerror(errno));
         return -1;
     }
@@ -85,11 +88,17 @@ int NetHandler::setTcpKeepAlive(char *err, int fd) {
     return 1;
 }
 
-int NetHandler::resolve(char *err, char *host, char *ipbuf, size_t ipbuf_len) {
+int NetHandler::resolve(char *err,
+                        char *host,
+                        char *ipbuf,
+                        size_t ipbuf_len) {
     return genericResolve(err, host, ipbuf, ipbuf_len, NET_NONE);
 }
 
-int NetHandler::resolveIP(char *err, char *host, char *ipbuf, size_t ipbuf_len) {
+int NetHandler::resolveIP(char *err,
+                          char *host,
+                          char *ipbuf,
+                          size_t ipbuf_len) {
     return genericResolve(err, host, ipbuf, ipbuf_len, NET_IP_ONLY);
 }
 
@@ -155,15 +164,27 @@ int NetHandler::tcpNonBlockConnect(char *err, char *addr, int port) {
     return tcpGenericConnect(err, addr, port, NULL, NET_CONNECT_NONBLOCK);
 }
 
-int NetHandler::tcpNonBlockBindConnect(char *err, char *addr, int port, char *source_addr) {
-    return tcpGenericConnect(err, addr, port, source_addr, NET_CONNECT_NONBLOCK);
+int NetHandler::tcpNonBlockBindConnect(char *err,
+                                       char *addr,
+                                       int port,
+                                       char *source_addr) {
+    return tcpGenericConnect(err, addr, port, source_addr,
+                             NET_CONNECT_NONBLOCK);
 }
 
-int NetHandler::tcpNonBlockBestEffortBindConnect(char *err, char *addr, int port, char *source_addr) {
-    return tcpGenericConnect(err, addr, port, source_addr, NET_CONNECT_NONBLOCK | NET_CONNECT_BE_BINDING);
+int NetHandler::tcpNonBlockBestEffortBindConnect(char *err,
+                                                 char *addr,
+                                                 int port,
+                                                 char *source_addr) {
+    return tcpGenericConnect(err, addr, port, source_addr,
+                             NET_CONNECT_NONBLOCK | NET_CONNECT_BE_BINDING);
 }
 
-int NetHandler::tcpAccept(char *err, int s, char *ip, size_t iplen, int *port) {
+int NetHandler::tcpAccept(char *err,
+                          int s,
+                          char *ip,
+                          size_t iplen,
+                          int *port) {
     struct sockaddr sa;
     socklen_t salen = sizeof(sa);
 
@@ -201,7 +222,11 @@ int NetHandler::unixAccept(char *err, int s) {
     return tcpGenericAccept(err, s, &sa, &salen);
 }
 
-int NetHandler::genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags) {
+int NetHandler::genericResolve(char *err,
+                               char *host,
+                               char *ipbuf,
+                               size_t ipbuf_len,
+                               int flags) {
     struct addrinfo hints, *info;
     int rv;
 
@@ -236,7 +261,11 @@ int NetHandler::setReuseAddr(char *err, int fd) {
     return 1;
 }
 
-int NetHandler::setListen(char *err, int s, struct sockaddr *sa, socklen_t len, int backlog) {
+int NetHandler::setListen(char *err,
+                          int s,
+                          struct sockaddr *sa,
+                          socklen_t len,
+                          int backlog) {
     if (bind(s, sa, len) == -1) {
         setError(err, "bind: %s", strerror(errno));
         close(s);
@@ -251,7 +280,11 @@ int NetHandler::setListen(char *err, int s, struct sockaddr *sa, socklen_t len, 
     return 1;
 }
 
-int NetHandler::tcpGenericConnect(char *err, char *addr, int port, char *source_addr, int flags) {
+int NetHandler::tcpGenericConnect(char *err,
+                                  char *addr,
+                                  int port,
+                                  char *source_addr,
+                                  int flags) {
     int s = -1, rv;
     char portstr[6];  /* strlen("65535") + 1; */
     struct addrinfo hints, *servinfo, *bservinfo, *p, *b;
@@ -340,15 +373,25 @@ int NetHandler::tcpGenericConnect(char *err, char *addr, int port, char *source_
     }
 }
 
-int NetHandler::tcpServer(char *err, int port, const char *bindaddr, int backlog) {
+int NetHandler::tcpServer(char *err,
+                          int port,
+                          const char *bindaddr,
+                          int backlog) {
     return tcpGenericServer(err, port, bindaddr, AF_INET, backlog);
 }
 
-int NetHandler::tcp6Server(char *err, int port, const char *bindaddr, int backlog) {
+int NetHandler::tcp6Server(char *err,
+                           int port,
+                           const char *bindaddr,
+                           int backlog) {
     return tcpGenericServer(err, port, bindaddr, AF_INET6, backlog);
 }
 
-int NetHandler::tcpGenericServer(char *err, int port, const char *bindaddr, int af, int backlog) {
+int NetHandler::tcpGenericServer(char *err,
+                                 int port,
+                                 const char *bindaddr,
+                                 int af,
+                                 int backlog) {
     int s = -1, rv;
     char _port[6];  /* strlen("65535") */
     struct addrinfo hints, *servinfo, *p;
@@ -398,7 +441,10 @@ int NetHandler::tcpGenericServer(char *err, int port, const char *bindaddr, int 
     }
 }
 
-int NetHandler::unixServer(char *err, const char *path, mode_t perm, int backlog) {
+int NetHandler::unixServer(char *err,
+                           const char *path,
+                           mode_t perm,
+                           int backlog) {
     int s;
     struct sockaddr_un sa;
 
@@ -460,7 +506,8 @@ void NetHandler::dealError(int fd, struct addrinfo *servinfo) {
     freeaddrinfo(servinfo);
 }
 
-int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len) {
+int NetHandler::tcpGenericAccept(char *err, int s,
+                                 struct sockaddr *sa, socklen_t *len) {
     while (1) {
         int fd = accept(s, sa, len);
         if (-1 == fd) {
@@ -476,16 +523,20 @@ int NetHandler::tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_
     }
 }
 
-int NetHandler::processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient) {
+int NetHandler::processInputBuffer(EventLoop *eventLoop,
+                                   FlyServer* flyServer,
+                                   FlyClient *flyClient) {
     while (flyClient->getQueryBufSize() > 0) {
-        // 第一个字符是'*'代表是整体multibulk串; reqtype=multibulk代表是上次读取已经处理了部分的multibulk
-        if ('*' == flyClient->getFirstQueryChar() || flyClient->isMultiBulkType()) {
+        // 第一个字符是'*'代表是整体multibulk串;
+        // reqtype=multibulk代表是上次读取已经处理了部分的multibulk
+        if ('*' == flyClient->getFirstQueryChar()
+            || flyClient->isMultiBulkType()) {
             // 读取失败，直接返回，不做命令处理, inline buffer同理
-            if(-1 == processMultiBulkBuffer(flyClient)) {
+            if (-1 == processMultiBulkBuffer(flyClient)) {
                 return -1;
             }
         } else {
-            if(-1 == processInlineBuffer(flyClient)) {
+            if (-1 == processInlineBuffer(flyClient)) {
                 return -1;
             }
         }
@@ -494,15 +545,98 @@ int NetHandler::processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, F
     // 处理命令
     flyServer->dealWithCommand(flyClient);
     // 创建返回结果的file event
-    eventLoop->createFileEvent(flyClient->getFd(), ES_WRITABLE, sendReplyToClient, flyClient);
+    eventLoop->createFileEvent(flyClient->getFd(), ES_WRITABLE,
+                               sendReplyToClient, flyClient);
     return 1;
 }
+
+int NetHandler::writeToClient(EventLoop *eventLoop,
+                              FlyServer *flyServer,
+                              FlyClient *flyClient,
+                              int handlerInstalled) {
+    ssize_t onceCount = 0, totalCount;
+    int fd = flyClient->getFd();
+
+    // 循环写入
+    while (!flyClient->hasNoPending()) {
+        if (0 != flyClient->getBufpos()) {
+            // 通过网络发送出去
+            onceCount = write(flyClient->getFd(),
+                    flyClient->getBuf() + flyClient->getSentLen(),
+                  flyClient->getBufpos() - flyClient->getSentLen());
+            if (onceCount <= 0) {
+                break;
+            }
+            flyClient->addSentLen(onceCount);
+            totalCount += onceCount;
+
+            // 固定buf全部发送完
+            if (flyClient->bufSendOver()) {
+                flyClient->setBufpos(0);
+                flyClient->setSentLen(0);
+            }
+        } else {
+            std::string* reply = flyClient->getReply().front();
+            int replyLen = reply->size();
+            int sentLen = flyClient->getSentLen();
+
+            onceCount = write(fd, reply->c_str() + sentLen, replyLen - sentLen);
+            if (onceCount <= 0) {
+                break;
+            }
+            flyClient->addSentLen(onceCount);
+            totalCount += onceCount;
+
+            // 该reply发送完毕
+            if (flyClient->getSentLen() == replyLen) {
+                flyClient->setSentLen(0);
+                flyClient->replyPopFront();
+            }
+        }
+
+        // 达到最大发送长度
+        if (totalCount > NET_MAX_WRITES_PER_EVENT) {
+            break;
+        }
+    }
+
+    // 如果写入过程出错，删除flyClient
+    if (onceCount <= 0 && EAGAIN != errno) {
+        logHandler->logVerbose("Error writing to client: %s", strerror(errno));
+        flyServer->freeClientAsync(flyClient);
+        close(fd);
+        return -1;
+    }
+
+    // 统计服务端总共发送的字节数
+    flyServer->addToStatNetInputBytes(totalCount);
+
+    // 如果全部发送完
+    if (flyClient->hasNoPending()) {
+        // 删除hanlder
+        flyClient->setSentLen(0);
+        if (handlerInstalled) {
+            eventLoop->deleteFileEvent(fd, ES_WRITABLE);
+        }
+
+        if (flyClient->getFlags() & CLIENT_CLOSE_AFTER_REPLY) {
+            flyServer->freeClientAsync(flyClient);
+            close(fd);
+            return -1;
+        }
+    }
+
+    // 不管是否发送完，都返回1
+    return 1;
+}
+
 
 int NetHandler::processInlineBuffer(FlyClient *flyClient) {
     size_t pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-            addReplyError(flyClient, "Protocol error: too big mbulk count string");
+            addReplyError(flyClient,
+                          "Protocol error: too big mbulk count string");
             setProtocolError("too big mbulk count string", flyClient, 0);
         }
         return -1;
@@ -543,7 +677,8 @@ int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
     size_t pos = 0;
     flyClient->setReqType(PROTO_REQ_MULTIBULK);
 
-    // multi bulk等于0，代表是新的multibulk字符串，否则就是未读完的部分(未读完的部分不用重新读取multi bulk len)
+    // multi bulk等于0，代表是新的multibulk字符串，
+    // 否则就是未读完的部分(未读完的部分不用重新读取multi bulk len)
     if (0 == flyClient->getMultiBulkLen()) {
         // 如果获取multi bulk len失败，返回-1
         if (-1 == analyseMultiBulkLen(flyClient, pos)) {
@@ -566,7 +701,8 @@ int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
     pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-            addReplyError(flyClient, "Protocol error: too big mbulk count string");
+            addReplyError(flyClient,
+                          "Protocol error: too big mbulk count string");
             setProtocolError("too big mbulk count string", flyClient, 0);
         }
         return -1;
@@ -635,7 +771,8 @@ int NetHandler::analyseBulk(FlyClient *flyClient) {
     pos = flyClient->getQueryBuf().find("\r\n", begin);
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-            addReplyError(flyClient, "Protocol error: too big bulk count string");
+            addReplyError(flyClient,
+                          "Protocol error: too big bulk count string");
             setProtocolError("too big bulk count string", flyClient, 0);
         }
         return -1;
@@ -665,8 +802,8 @@ int NetHandler::analyseBulk(FlyClient *flyClient) {
     }
 
     // 设置flyClient argv参数
-    flyClient->addArgv(new FlyObj(
-            new std::string(flyClient->getQueryBuf().substr(begin, pos - begin)), FLY_TYPE_STRING));
+    flyClient->addArgv(new FlyObj(new std::string(
+            flyClient->getQueryBuf().substr(begin, pos - begin)), FLY_TYPE_STRING));
 
     // 截取此次读取
     flyClient->trimQueryBuf(pos + 2, -1);
@@ -676,8 +813,10 @@ int NetHandler::analyseBulk(FlyClient *flyClient) {
 int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
     // 打印log
     char buf[256];
-    snprintf(buf, sizeof(buf), "Query buffer during protocol error: '%s'", flyClient->getQueryBuf().c_str());
-    logHandler->logVerbose("Protocol error (%s) from client: %ld. %s", err, flyClient->getId(), buf);
+    snprintf(buf, sizeof(buf), "Query buffer during protocol error: '%s'",
+             flyClient->getQueryBuf().c_str());
+    logHandler->logVerbose("Protocol error (%s) from client: %ld. %s",
+                           err, flyClient->getId(), buf);
 
     // 设置回复后关闭
     flyClient->addFlag(CLIENT_CLOSE_AFTER_REPLY);
@@ -685,7 +824,8 @@ int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
     flyClient->trimQueryBuf(pos + 2, -1);
 }
 
-void NetHandler::addReplyErrorFormat(FlyClient *flyClient, const char *fmt, ...) {
+void NetHandler::addReplyErrorFormat(FlyClient *flyClient,
+                                     const char *fmt, ...) {
     va_list ap;
     char msg[1024];
     va_start(ap, fmt);
@@ -709,7 +849,10 @@ int NetHandler::addReplyError(FlyClient *flyClient, const char *err) {
     flyClient->addReply("\r\n", 2);
 }
 
-void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+void acceptTcpHandler(EventLoop *eventLoop,
+                      int fd,
+                      void *clientdata,
+                      int mask) {
     FlyServer *flyServer = eventLoop->getFlyServer();
     NetHandler *netHandler = flyServer->getNetHandler();
 
@@ -730,14 +873,18 @@ void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask) 
     }
 }
 
-void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
+void readQueryFromClient(EventLoop *eventLoop,
+                         int fd,
+                         void *clientdata,
+                         int mask) {
     FlyServer *flyServer = eventLoop->getFlyServer();
     NetHandler *netHandler = flyServer->getNetHandler();
-    FlyClient *flyClient = (FlyClient *) clientdata;
+    FlyClient *flyClient = reinterpret_cast<FlyClient *>(clientdata);
 
     char buf[PROTO_IOBUF_LEN];
     int readCnt = read(fd, buf, sizeof(buf));
-    // 读取失败, 如果错误码是EAGAIN说明本次读取没数据, 则直接返回，否则需要删除client
+    // 读取失败, 如果错误码是EAGAIN说明本次读取没数据, 则直接返回
+    // 否则需要删除client
     if (-1 == readCnt) {
         if (EAGAIN == errno) {
             return;
@@ -759,18 +906,22 @@ void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mas
     if (flyClient->getQueryBufSize() > flyServer->getClientMaxQuerybufLen()) {
         flyServer->deleteClient(fd);
         close(fd);
-        std::cout << "Closing client that reached max query buffer length" << std::endl;
+        std::cout << "Closing client that reached max query buffer length"
+                     << std::endl;
         return;
     }
 
     netHandler->processInputBuffer(eventLoop, flyServer, flyClient);
 }
 
-void sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask) {
-    eventLoop->deleteFileEvent(fd, ES_WRITABLE);
+void sendReplyToClient(EventLoop *eventLoop,
+                       int fd,
+                       void *clientdata,
+                       int mask) {
+    FlyServer *flyServer = eventLoop->getFlyServer();
+    NetHandler *netHandler = flyServer->getNetHandler();
 
-    // 回复命令
-    FlyClient *flyClient = (FlyClient *) clientdata;
-    write(fd, flyClient->getBuf(), strlen(flyClient->getBuf()));
+    FlyClient *flyClient = reinterpret_cast<FlyClient *>(clientdata);
+    netHandler->writeToClient(eventLoop, flyServer, flyClient, 1);
 }
 

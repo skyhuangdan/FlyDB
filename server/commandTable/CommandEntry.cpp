@@ -14,5 +14,7 @@ void versionProc(FlyServer* server, FlyClient *client) {
         return;
     }
 
-    sprintf((char*)client->getBuf(), "FlyDB version: %s", server->getVersion().c_str());
+    char buf[1024];
+    sprintf(buf, "FlyDB version: %s", server->getVersion().c_str());
+    client->addReply(buf, strlen(buf));
 }

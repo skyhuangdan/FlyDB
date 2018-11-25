@@ -20,7 +20,7 @@ EventLoop::EventLoop(FlyServer *flyServer, int setSize) {
         this->fileEvents[i].setEventLoop(this);
     }
     this->flyServer = flyServer;
-    this->beforeSleepProc = NULL;
+    this->beforeSleepProc = beforeSleep;
     this->afterSleepProc = NULL;
 }
 
@@ -53,7 +53,10 @@ void EventLoop::stop() {
     this->stopFlag = true;
 }
 
-int EventLoop::createFileEvent(int fd, int mask, fileEventProc* proc, void *clientdata) {
+int EventLoop::createFileEvent(int fd,
+                               int mask,
+                               fileEventProc* proc,
+                               void *clientdata) {
     if (fd >= this->setSize) {
         return -1;
     }
@@ -63,7 +66,7 @@ int EventLoop::createFileEvent(int fd, int mask, fileEventProc* proc, void *clie
     fileEvent.addFileProc(mask, proc, clientdata);
 
     // 设置监听fd
-    PollState* eventState = (PollState*) this->apiData;
+    PollState* eventState = reinterpret_cast<PollState*>(this->apiData);
     eventState->add(fd, mask);
 
     if (this->maxfd < fd) {
@@ -147,8 +150,10 @@ int EventLoop::processEvents(int flags) {
         return 0;
     }
 
-    // 系统中存在文件事件描述符 或者 时间事件需要等待, 则执行poll操作（延时时间通过计算获得）
-    if (this->maxfd != -1 || ((flags & EVENT_TIME_EVENTS) && !(flags & EVENT_DONT_WAIT))) {
+    // 系统中存在文件事件描述符 或者 时间事件需要等待,
+    // 则执行poll操作（延时时间通过计算获得）
+    if (this->maxfd != -1 ||
+        ((flags & EVENT_TIME_EVENTS) && !(flags & EVENT_DONT_WAIT))) {
         struct timeval tv, *tvp;
 
         // 获取最新时间事件
@@ -170,7 +175,9 @@ int EventLoop::processEvents(int flags) {
                 tv.tv_usec = 0;
             }
             tvp = &tv;
-        } else { // 如果未获取到(说明已经不存在时间事件了)，则看是否需要等待，如果无需等待，则等待时间为0; 否则一直等待
+        } else {
+            // 如果未获取到(说明已经不存在时间事件了)，
+            // 则看是否需要等待，如果无需等待，则等待时间为0; 否则一直等待
             if (flags & EVENT_DONT_WAIT) {
                 tv.tv_sec = tv.tv_usec = 0;
                 tvp = &tv;
@@ -180,7 +187,8 @@ int EventLoop::processEvents(int flags) {
         }
 
         // 获取文件事件（及网络io）
-        int numEvents = reinterpret_cast<PollState*>(this->apiData)->poll(this, tvp);
+        int numEvents =
+                reinterpret_cast<PollState*>(this->apiData)->poll(this, tvp);
         if (afterSleepProc != NULL && flags & EVENT_CALL_AFTER_SLEEP) {
             this->afterSleepProc(this);
         }
@@ -223,7 +231,8 @@ int EventLoop::processTimeEvents() {
     while (iter != this->timeEvents.end()) {
         if (iter->getWhen() < nowt) {
             processed++;
-            int ret = iter->getTimeProc()(this, iter->getId(), iter->getClientData());
+            int ret = iter->getTimeProc()(
+                    this, iter->getId(), iter->getClientData());
             if (ret > 0) {
                 iter->setWhen(nowt + ret);
                 needSort = true;
@@ -257,7 +266,8 @@ int EventLoop::deleteTimeEvent(uint64_t id) {
 
 void EventLoop::createTimeEvent(uint64_t milliseconds, timeEventProc *proc,
                     void *clientData, eventFinalizerProc *finalizerProc) {
-    this->timeEvents.push_front(TimeEvent(this->timeEventNextId++, milliseconds, proc, clientData, finalizerProc));
+    this->timeEvents.push_front(TimeEvent(this->timeEventNextId++, milliseconds,
+                      proc, clientData, finalizerProc));
     this->timeEvents.sort();
 }
 
@@ -271,4 +281,11 @@ FlyServer *EventLoop::getFlyServer() const {
 
 void EventLoop::setFlyServer(FlyServer *flyServer) {
     EventLoop::flyServer = flyServer;
+}
+
+void beforeSleep(EventLoop *eventLoop) {
+    FlyServer *flyServer = eventLoop->getFlyServer();
+
+    // 处理命令回复
+    flyServer->handleClientsWithPendingWrites();
 }

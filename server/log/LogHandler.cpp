@@ -29,7 +29,12 @@ void LogHandler::init(char *logfile, int syslogEnabled, int verbosity) {
 }
 
 void LogHandler::logRaw(int level, const char *msg) {
-    const int syslogLevelMap[] = { LOG_DEBUG, LOG_INFO, LOG_NOTICE, LOG_WARNING };
+    const int syslogLevelMap[] = {
+            LOG_DEBUG,
+            LOG_INFO,
+            LOG_NOTICE,
+            LOG_WARNING
+    };
     FILE *fp = '\0' == logfile[0] ? stdout : fopen(logfile, "a");
     if (NULL == fp) {
         return;
@@ -44,11 +49,13 @@ void LogHandler::logRaw(int level, const char *msg) {
         const char *c = ".-*#";
 
         gettimeofday(&tv, NULL);
-        int off = strftime(buf, sizeof(buf), "%d %b %H:%M:%S.", localtime(&tv.tv_sec));
+        int off = strftime(buf, sizeof(buf),
+                "%d %b %H:%M:%S.", localtime(&tv.tv_sec));
         snprintf(buf + off, sizeof(buf) - off, "%03d", (int) tv.tv_usec / 1000);
         role = 'S';
         // 日志格式： pid:role time ./-/*/# msg
-        fprintf(fp, "%d:%c %s %c %s\n", (int) getpid(), role, buf, c[level], msg);
+        fprintf(fp, "%d:%c %s %c %s\n",
+                (int) getpid(), role, buf, c[level], msg);
     }
 
     fflush(fp);

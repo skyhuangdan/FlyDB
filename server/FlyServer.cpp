@@ -12,6 +12,7 @@
 #include "utils/MiscTool.h"
 #include "net/NetHandler.h"
 #include "log/LogHandler.h"
+#include "flyClient/ClientDef.h"
 
 configMap loglevelMap[] = {
         {"debug",   LL_DEBUG},
@@ -90,7 +91,7 @@ FlyServer::~FlyServer() {
 void FlyServer::init(int argc, char **argv) {
     // 加载配置文件中配置
     std::string fileName;
-    if (1 == this->miscTool->getAbsolutePath("fly.conf", fileName)) {
+    if (1 == this->miscTool->getAbsolutePath(this->configfile, fileName)) {
         loadConfig(fileName);
     }
 
@@ -100,9 +101,11 @@ void FlyServer::init(int argc, char **argv) {
     // 打开Unix domain socket
     if (NULL != this->unixsocket) {
         unlink(this->unixsocket);       // 如果存在，则删除unixsocket文件
-        this->usfd = this->netHandler->unixServer(this->neterr, this->unixsocket, this->unixsocketperm, this->tcpBacklog);
+        this->usfd = this->netHandler->unixServer(this->neterr,
+                this->unixsocket, this->unixsocketperm, this->tcpBacklog);
         if (-1 == this->usfd) {
-            std::cout << "Opening Unix Domain Socket: " << this->neterr << std::endl;
+            std::cout << "Opening Unix Domain Socket: "
+                         << this->neterr << std::endl;
             exit(1);
         }
         this->netHandler->setBlock(NULL, this->usfd, 0);
@@ -110,14 +113,16 @@ void FlyServer::init(int argc, char **argv) {
 
     // 创建定时任务，用于创建客户端连接
     for (auto fd : this->ipfd) {
-        if (-1 == this->eventLoop->createFileEvent(fd, ES_READABLE, acceptTcpHandler, NULL)) {
+        if (-1 == this->eventLoop->createFileEvent(
+                fd, ES_READABLE, acceptTcpHandler, NULL)) {
             exit(1);
         }
     }
 
     // syslog
     if (this->syslogEnabled) {
-        openlog(this->syslogIdent, LOG_PID | LOG_NDELAY | LOG_NOWAIT, this->syslogFacility);
+        openlog(this->syslogIdent, LOG_PID | LOG_NDELAY | LOG_NOWAIT,
+                this->syslogFacility);
     }
 
     // 各类tool放在最后，因为可能会用到flyServer, 最好等其初始化完毕
@@ -203,6 +208,10 @@ int FlyServer::deleteClient(int fd) {
             // 删除file event
             this->eventLoop->deleteFileEvent(fd, ES_READABLE | ES_WRITABLE);
 
+            // 在相应列表中删除
+            this->deleteFromAsyncClose(fd);
+            this->deleteFromPending(fd);
+
             // 删除FlyClient
             delete (*iter);
             this->clients.erase(iter);
@@ -261,6 +270,45 @@ NetHandler *FlyServer::getNetHandler() const {
 
 void FlyServer::addToClientsPendingToWrite(FlyClient *flyClient) {
     this->clientsPendingWrite.push_back(flyClient);
+}
+
+int FlyServer::handleClientsWithPendingWrites() {
+    if (0 == this->clientsPendingWrite.size()) {
+        return 0;
+    }
+
+    std::list<FlyClient*>::iterator iter = this->clientsPendingWrite.begin();
+    for (iter; iter != this->clientsPendingWrite.end(); iter++) {
+        // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
+        // 否则无法加入。也就无法处理其输出
+        (*iter)->delFlag(~CLIENT_PENDING_WRITE);
+
+        // 先直接发送，如果发送不完，再创建文件事件异步发送
+        if (-1 == this->netHandler->writeToClient(
+                this->eventLoop, this, *iter, 0)) {
+            continue;
+        }
+
+        // 异步发送
+        if (!(*iter)->hasNoPending()
+            && -1 == eventLoop->createFileEvent((*iter)->getFd(), ES_WRITABLE,
+                                                sendReplyToClient, *iter)) {
+            freeClientAsync(*iter);
+        }
+    }
+
+    int pendingCount = this->clientsPendingWrite.size();
+    this->clientsPendingWrite.clear();
+    return pendingCount;
+}
+
+void FlyServer::freeClientAsync(FlyClient *flyClient) {
+    if (flyClient->getFlags() & CLIENT_CLOSE_ASAP) {
+        return;
+    }
+
+    flyClient->setFlags(CLIENT_CLOSE_ASAP);
+    this->clientsToClose.push_back(flyClient);
 }
 
 void FlyServer::setMaxClientLimit() {
@@ -388,14 +436,17 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
             // 尝试打开一次，查看是否可以正常打开
             logfd = fopen(this->logfile, "a");
             if (NULL == logfd) {
-                std::cout << "Can not open log file: " << this->logfile << std::endl;
+                std::cout << "Can not open log file: "
+                             << this->logfile << std::endl;
                 exit(1);
             }
             fclose(logfd);
         }
     } else if (0 == words[0].compare("syslog-enabled") && 2 == words.size()) {
-        if (-1 == (this->syslogEnabled = this->miscTool->yesnotoi(words[1].c_str()))) {
-            std::cout << "syslog-enabled must be 'yes(YES)' or 'no(NO)'" << std::endl;
+        if (-1 == (this->syslogEnabled =
+                this->miscTool->yesnotoi(words[1].c_str()))) {
+            std::cout << "syslog-enabled must be 'yes(YES)' or 'no(NO)'"
+                         << std::endl;
             exit(1);
         }
     } else if (0 == words[0].compare("syslog-ident") && 2 == words.size()) {
@@ -407,14 +458,17 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
         this->verbosity = configMapGetValue(loglevelMap, words[1].c_str());
         if (INT_MIN == this->verbosity) {
             std::cout << "Invalid log level. "
-                         "Must be one of debug, verbose, notice, warning" << std::endl;
+                         "Must be one of debug, verbose, notice, warning"
+                         << std::endl;
             exit(1);
         }
     } else if (0 == words[0].compare("syslog-facility") && 2 == words.size()) {
-        this->syslogFacility = configMapGetValue(syslogFacilityMap, words[1].c_str());
+        this->syslogFacility =
+                configMapGetValue(syslogFacilityMap, words[1].c_str());
         if (INT_MIN == this->syslogFacility) {
             std::cout << "Invalid log facility. "
-                         "Must be one of USER or between LOCAL0-LOCAL7" << std::endl;
+                         "Must be one of USER or between LOCAL0-LOCAL7"
+                         << std::endl;
             exit(1);
         }
     }
@@ -426,7 +480,8 @@ int FlyServer::listenToPort() {
     if (0 == this->bindAddr.size()) {
         int success = 0;
         // try to set *(any address) to ipv6
-        fd = this->netHandler->tcp6Server(this->neterr, this->port, NULL, this->tcpBacklog);
+        fd = this->netHandler->tcp6Server(this->neterr,
+                this->port, NULL, this->tcpBacklog);
         if (fd != -1) {
             // set nonblock
             this->netHandler->setBlock(NULL, fd, 0);
@@ -435,7 +490,8 @@ int FlyServer::listenToPort() {
         }
 
         // try to set *(any address) to ipv4
-        fd = this->netHandler->tcpServer(this->neterr, this->port, NULL, this->tcpBacklog);
+        fd = this->netHandler->tcpServer(this->neterr,
+                this->port, NULL, this->tcpBacklog);
         if (fd != -1) {
             // set nonblock
             this->netHandler->setBlock(NULL, fd, 0);
@@ -450,9 +506,11 @@ int FlyServer::listenToPort() {
         for (auto addr : this->bindAddr) {
             // 如果是IPV6
             if (addr.find(":") != addr.npos) {
-                fd = this->netHandler->tcp6Server(this->neterr, this->port, addr.c_str(), this->tcpBacklog);
+                fd = this->netHandler->tcp6Server(this->neterr,
+                        this->port, addr.c_str(), this->tcpBacklog);
             } else {
-                fd = this->netHandler->tcpServer(this->neterr, this->port, addr.c_str(), this->tcpBacklog);
+                fd = this->netHandler->tcpServer(this->neterr,
+                        this->port, addr.c_str(), this->tcpBacklog);
             }
             if (-1 == fd) {
                 return -1;
@@ -475,11 +533,42 @@ int FlyServer::configMapGetValue(configMap *config, const char *name) {
     return INT_MIN;
 }
 
+void FlyServer::deleteFromPending(int fd) {
+    std::list<FlyClient*>::iterator iter = this->clientsPendingWrite.begin();
+    for (iter; iter != this->clientsPendingWrite.end(); iter++) {
+        if ((*iter)->getFd() == fd) {
+            this->clientsPendingWrite.erase(iter);
+            return;
+        }
+    }
+}
+
+void FlyServer::deleteFromAsyncClose(int fd) {
+    std::list<FlyClient*>::iterator iter = this->clientsToClose.begin();
+    for (iter; iter != this->clientsToClose.end(); iter++) {
+        if ((*iter)->getFd() == fd) {
+            this->clientsToClose.erase(iter);
+            return;
+        }
+    }
+}
+
+void FlyServer::freeClientsInAsyncFreeList() {
+    for (auto client : this->clientsToClose) {
+        deleteClient(client->getFd());
+    }
+
+    this->clientsToClose.clear();
+}
+
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
     FlyServer *flyServer = eventLoop->getFlyServer();
 
     // 设置当前时间
     flyServer->setNowt(time(NULL));
+
+    // 释放所有异步删除的clients
+    flyServer->freeClientsInAsyncFreeList();
 
     static int times = 0;
     std::cout << "serverCron is running " << times++ << " times!" << std::endl;

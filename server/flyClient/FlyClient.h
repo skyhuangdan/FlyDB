@@ -9,9 +9,10 @@
 #include <list>
 #include "../dataStructure/flyObj/FlyObj.h"
 #include "../commandTable/CommandEntry.h"
+#include "ClientDef.h"
 
 class FlyServer;
-const int FLY_REPLY_CHUNK_BYTES = 16 * 1024;
+class LogHandler;
 
 class FlyClient {
 public:
@@ -26,6 +27,7 @@ public:
     int getFlags() const;
     void setFlags(int flags);
     void addFlag(int flag);
+    void delFlag(int flag);
     const std::string &getQueryBuf() const;
     void setQueryBuf(const std::string &queryBuf);
     void addToQueryBuf(const std::string &str);             // 向输入缓冲中添加数据
@@ -40,7 +42,11 @@ public:
     CommandEntry *getCmd() const;
     void setCmd(CommandEntry *cmd);
     const char *getBuf() const;
+    bool bufSendOver();
+    int getBufpos() const;
+    void setBufpos(int bufpos);
     const std::list<std::string*> &getReply() const;
+    void replyPopFront();
     void setReply(const std::list<std::string*> &reply);
     int getAuthentiated() const;
     void setAuthentiated(int authentiated);
@@ -61,6 +67,9 @@ public:
     void addReply(const char *s, size_t len);
     int getReqType() const;
     void setReqType(int reqType);
+    size_t getSentLen() const;
+    void setSentLen(size_t sentLen);
+    void addSentLen(size_t sentLen);
 
 private:
     int addReplyToBuffer(const char *s, size_t len);
@@ -86,6 +95,9 @@ private:
     int reqType;
     int32_t multiBulkLen;               // 剩余可读的multi bulk参数数量
     int64_t bulkLen;
+    size_t sentLen;                     // 记录发送长度，用于处理一次没有发送完的情况
+
+    LogHandler *logHandler;
 };
 
 

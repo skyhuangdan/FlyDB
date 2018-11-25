@@ -39,6 +39,7 @@ public:
     int tcpAccept(char *err, int s, char *ip, size_t iplen, int *port);
     int unixAccept(char *err, int s);
     int processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient);
+    int writeToClient(EventLoop *eventLoop, FlyServer *flyServer, FlyClient *flyClient, int handlerInstalled);
 
 private:
     void setError(char *err, const char *fmt, ...);

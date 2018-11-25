@@ -57,6 +57,10 @@ void FlyClient::addFlag(int flag) {
     this->flags |= flag;
 }
 
+void FlyClient::delFlag(int flag) {
+    this->flags &= ~flag;
+}
+
 FlyObj **FlyClient::getArgv() const {
     return this->argv;
 }
@@ -130,7 +134,18 @@ void FlyClient::setSoftLimitTime(time_t softLimitTime) {
 }
 
 const std::list<std::string*> &FlyClient::getReply() const {
-    return replies;
+    return this->replies;
+}
+
+void FlyClient::replyPopFront() {
+    this->replyBytes -= this->replies.front()->size();
+    this->replies.pop_front();
+    if (0 == this->replies.size() && 0 != this->replyBytes) {
+        this->logHandler->logVerbose("The reply size is zero, "
+                                     "but replyBytes is not: %d",
+                                     this->replyBytes);
+        this->replyBytes = 0;
+    }
 }
 
 void FlyClient::setReply(const std::list<std::string*> &reply) {
@@ -150,11 +165,15 @@ int FlyClient::getQueryBufSize() const {
 }
 
 uint64_t FlyClient::getId() const {
-    return id;
+    return this->id;
 }
 
 const char *FlyClient::getBuf() const {
-    return buf;
+    return this->buf;
+}
+
+bool FlyClient::bufSendOver() {
+    return this->sentLen == this->bufpos;
 }
 
 void FlyClient::setId(uint64_t id) {
@@ -201,7 +220,7 @@ void FlyClient::setBulkLen(int64_t bulkLen) {
 }
 
 bool FlyClient::hasNoPending() {
-    return !(this->bufpos > 0 || this->replies.size() > 0) && !(this->flags & CLIENT_PENDING_WRITE);
+    return 0 == this->bufpos && 0 == this->replies.size();
 }
 
 int FlyClient::prepareClientToWrite() {
@@ -209,13 +228,22 @@ int FlyClient::prepareClientToWrite() {
         return -1;
     }
 
-    // 如果之前没有写入，说明write handler不存在，需要先将其标记并放入flyserver的pending client list中
-    if (hasNoPending()) {
+    // 如果之前没有写入，说明write handler不存在，
+    // 需要先将其标记并放入flyserver的pending client list中
+    if (hasNoPending() && !(this->flags & CLIENT_PENDING_WRITE)) {
         this->addFlag(CLIENT_PENDING_WRITE);
         this->flyServer->addToClientsPendingToWrite(this);
     }
 
     return 1;
+}
+
+int FlyClient::getBufpos() const {
+    return bufpos;
+}
+
+void FlyClient::setBufpos(int bufpos) {
+    FlyClient::bufpos = bufpos;
 }
 
 void FlyClient::addReply(const char *s, size_t len) {
@@ -279,5 +307,17 @@ int FlyClient::getReqType() const {
 
 void FlyClient::setReqType(int reqType) {
     this->reqType = reqType;
+}
+
+size_t FlyClient::getSentLen() const {
+    return this->sentLen;
+}
+
+void FlyClient::setSentLen(size_t sentLen) {
+    this->sentLen = sentLen;
+}
+
+void FlyClient::addSentLen(size_t sentLen) {
+    this->sentLen += sentLen;
 }
 

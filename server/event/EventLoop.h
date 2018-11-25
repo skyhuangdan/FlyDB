@@ -14,9 +14,9 @@
 #include "../FlyServer.h"
 
 class EventLoop;
-
 typedef void beforeAndAfterSleepProc(EventLoop *eventLoop);
 
+void beforeSleep(EventLoop *eventLoop);
 class EventLoop {
 public:
     EventLoop(FlyServer *flyserver, int setSize);

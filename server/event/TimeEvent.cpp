@@ -4,7 +4,11 @@
 
 #include "TimeEvent.h"
 
-TimeEvent::TimeEvent(int64_t id, int64_t milliseconds, timeEventProc *proc, void *clientData, eventFinalizerProc *finalizerProc) {
+TimeEvent::TimeEvent(int64_t id,
+                     int64_t milliseconds,
+                     timeEventProc *proc,
+                     void *clientData,
+                     eventFinalizerProc *finalizerProc) {
     this->id = id;
     this->timeProc = proc;
     this->clientData = clientData;

@@ -53,6 +53,9 @@ public:
     int getSyslogFacility() const;
     NetHandler *getNetHandler() const;
     void addToClientsPendingToWrite(FlyClient *flyClient);
+    int handleClientsWithPendingWrites();
+    void freeClientAsync(FlyClient *flyClient);
+    void freeClientsInAsyncFreeList();
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
@@ -61,6 +64,8 @@ private:
     void loadConfigFromLineString(const std::string &line);
     int listenToPort();                       // 打开监听socket，用于监听用户命令
     int configMapGetValue(configMap *config, const char *name);
+    void deleteFromPending(int fd);
+    void deleteFromAsyncClose(int fd);
 
     int pid;                                  // 运行server的线程标识
     std::array<FlyDB*, DB_NUM> dbArray;       // db列表
@@ -87,12 +92,15 @@ private:
     int64_t statNetInputBytes;                      // 该server从网络获取的byte数量
     uint32_t lruclock;                              // LRU
     std::list<FlyClient*> clientsPendingWrite;      // 需要install write handler
+    std::list<FlyClient*> clientsToClose;           // 异步关闭的client链表
 
-    int verbosity;                            // log level in log file
-    char *logfile;                            // log file
-    int syslogEnabled;                        // 是否开启log
-    char *syslogIdent;                        // log标记
+    int verbosity;                                  // log level in log file
+    char *logfile;                                  // log file
+    int syslogEnabled;                              // 是否开启log
+    char *syslogIdent;                              // log标记
     int syslogFacility;
+
+    std::string configfile = "fly.conf";            // 配置文件名字
 
     MiscTool *miscTool;
     NetHandler  *netHandler;

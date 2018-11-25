@@ -56,7 +56,7 @@ int FileEvent::addFileProc(int mask, fileEventProc *proc, void *clientData) {
 void FileEvent::delFileProc(int mask) {
     this->mask &= ~mask;
     // 设置监听fd
-    PollState* eventState = (PollState*) clientData;
+    PollState* eventState = reinterpret_cast<PollState*>(clientData);
     eventState->del(fd, mask);
 }
 

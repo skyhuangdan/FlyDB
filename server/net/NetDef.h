@@ -16,7 +16,8 @@ enum NetConnectFlag {
 
 const int MAX_ACCEPTS_PER_CALL = 1000;
 const int NET_IP_STR_LEN = 46;
-const int NET_ERR_LEN = 256;                                    // 网络error信息buffer
+const int NET_ERR_LEN = 256;                                // 网络error信息buffer
+const int NET_MAX_WRITES_PER_EVENT = 1024 * 64;
 
 /**
  * 协议相关

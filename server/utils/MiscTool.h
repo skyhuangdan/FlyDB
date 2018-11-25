@@ -20,7 +20,9 @@ public:
         return instance;
     }
 
-    void spiltString(const std::string &str, const std::string &delim, std::vector<std::string> &res) {
+    void spiltString(const std::string &str,
+                     const std::string &delim,
+                     std::vector<std::string> &res) {
         int pos = 0, findPos = 0;
         int len = str.length();
         int delimLen = delim.length();
