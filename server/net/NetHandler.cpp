@@ -544,9 +544,6 @@ int NetHandler::processInputBuffer(EventLoop *eventLoop,
 
     // 处理命令
     flyServer->dealWithCommand(flyClient);
-    // 创建返回结果的file event
-    eventLoop->createFileEvent(flyClient->getFd(), ES_WRITABLE,
-                               sendReplyToClient, flyClient);
     return 1;
 }
 
@@ -554,7 +551,7 @@ int NetHandler::writeToClient(EventLoop *eventLoop,
                               FlyServer *flyServer,
                               FlyClient *flyClient,
                               int handlerInstalled) {
-    ssize_t onceCount = 0, totalCount;
+    ssize_t onceCount = 0, totalCount = 0;
     int fd = flyClient->getFd();
 
     // 循环写入
@@ -562,34 +559,34 @@ int NetHandler::writeToClient(EventLoop *eventLoop,
         if (0 != flyClient->getBufpos()) {
             // 通过网络发送出去
             onceCount = write(flyClient->getFd(),
-                    flyClient->getBuf() + flyClient->getSentLen(),
-                  flyClient->getBufpos() - flyClient->getSentLen());
+                              flyClient->getBuf() + flyClient->getSendLen(),
+                              flyClient->getBufpos() - flyClient->getSendLen());
             if (onceCount <= 0) {
                 break;
             }
-            flyClient->addSentLen(onceCount);
+            flyClient->addSendLen(onceCount);
             totalCount += onceCount;
 
             // 固定buf全部发送完
             if (flyClient->bufSendOver()) {
                 flyClient->setBufpos(0);
-                flyClient->setSentLen(0);
+                flyClient->setSendLen(0);
             }
         } else {
             std::string* reply = flyClient->getReply().front();
             int replyLen = reply->size();
-            int sentLen = flyClient->getSentLen();
+            int sentLen = flyClient->getSendLen();
 
             onceCount = write(fd, reply->c_str() + sentLen, replyLen - sentLen);
             if (onceCount <= 0) {
                 break;
             }
-            flyClient->addSentLen(onceCount);
+            flyClient->addSendLen(onceCount);
             totalCount += onceCount;
 
             // 该reply发送完毕
-            if (flyClient->getSentLen() == replyLen) {
-                flyClient->setSentLen(0);
+            if (flyClient->getSendLen() == replyLen) {
+                flyClient->setSendLen(0);
                 flyClient->replyPopFront();
             }
         }
@@ -614,7 +611,7 @@ int NetHandler::writeToClient(EventLoop *eventLoop,
     // 如果全部发送完
     if (flyClient->hasNoPending()) {
         // 删除hanlder
-        flyClient->setSentLen(0);
+        flyClient->setSendLen(0);
         if (handlerInstalled) {
             eventLoop->deleteFileEvent(fd, ES_WRITABLE);
         }

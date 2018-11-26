@@ -67,9 +67,9 @@ public:
     void addReply(const char *s, size_t len);
     int getReqType() const;
     void setReqType(int reqType);
-    size_t getSentLen() const;
-    void setSentLen(size_t sentLen);
-    void addSentLen(size_t sentLen);
+    size_t getSendLen() const;
+    void setSendLen(size_t sentLen);
+    void addSendLen(size_t sentLen);
 
 private:
     int addReplyToBuffer(const char *s, size_t len);
@@ -95,7 +95,7 @@ private:
     int reqType;
     int32_t multiBulkLen;               // 剩余可读的multi bulk参数数量
     int64_t bulkLen;
-    size_t sentLen;                     // 记录发送长度，用于处理一次没有发送完的情况
+    size_t sendLen;                     // 记录发送长度，用于处理一次没有发送完的情况
 
     LogHandler *logHandler;
 };

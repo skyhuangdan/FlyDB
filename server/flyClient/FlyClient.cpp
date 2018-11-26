@@ -24,6 +24,7 @@ FlyClient::FlyClient(int fd, FlyServer *flyServer) {
     this->reqType = 0;
     this->multiBulkLen = 0;
     this->bulkLen = 0;
+    this->sendLen = 0;
 }
 
 FlyClient::~FlyClient() {
@@ -173,7 +174,7 @@ const char *FlyClient::getBuf() const {
 }
 
 bool FlyClient::bufSendOver() {
-    return this->sentLen == this->bufpos;
+    return this->sendLen == this->bufpos;
 }
 
 void FlyClient::setId(uint64_t id) {
@@ -309,15 +310,15 @@ void FlyClient::setReqType(int reqType) {
     this->reqType = reqType;
 }
 
-size_t FlyClient::getSentLen() const {
-    return this->sentLen;
+size_t FlyClient::getSendLen() const {
+    return this->sendLen;
 }
 
-void FlyClient::setSentLen(size_t sentLen) {
-    this->sentLen = sentLen;
+void FlyClient::setSendLen(size_t sentLen) {
+    this->sendLen = sentLen;
 }
 
-void FlyClient::addSentLen(size_t sentLen) {
-    this->sentLen += sentLen;
+void FlyClient::addSendLen(size_t sentLen) {
+    this->sendLen += sentLen;
 }
 
