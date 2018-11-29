@@ -75,7 +75,11 @@ FlyServer::FlyServer() {
     this->syslogEnabled = CONFIG_DEFAULT_SYSLOG_ENABLED;
     this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
     this->syslogIdent = strdup(CONFIG_DEFAULT_SYSLOG_IDENT.c_str());
+    //rdb相关
+    this->rdbfile = strdup(CONFIG_DEFAULT_RDB_FILENAME.c_str());
 
+    this->miscTool = MiscTool::getInstance();
+    this->netHandler = NetHandler::getInstance();
 }
 
 FlyServer::~FlyServer() {
@@ -125,9 +129,7 @@ void FlyServer::init(int argc, char **argv) {
                 this->syslogFacility);
     }
 
-    // 各类tool放在最后，因为可能会用到flyServer, 最好等其初始化完毕
-    this->miscTool = MiscTool::getInstance();
-    this->netHandler = NetHandler::getInstance();
+    // LogHandler放在最后，因为初始化需要flyServer的配置, 最好等其初始化完毕
     LogHandler::init(this->logfile, this->syslogEnabled, this->verbosity);
     this->logHandler = LogHandler::getInstance();
 
@@ -471,6 +473,19 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
                          << std::endl;
             exit(1);
         }
+    } else if (0 == words[0].compare("dbfilename") && 2 == words.size()) {
+        FILE *rdbfd;
+        free(this->rdbfile);
+        this->rdbfile = strdup(words[1].c_str());
+
+        // todo :zlw
+        // 尝试打开一次，查看是否可以正常打开
+        rdbfd = fopen(this->rdbfile, "a");
+        if (NULL == rdbfd) {
+            std::cout << "Can not open rdb file: " << this->rdbfile << std::endl;
+            exit(1);
+        }
+        fclose(rdbfd);
     }
 }
 

@@ -15,11 +15,14 @@
 #include "event/EventLoop.h"
 #include "config/config.h"
 #include "log/LogHandler.h"
+#include "aof/AOFHandler.h"
 
 class NetHandler;
 class MiscTool;
 class LogHandler;
 class CommandTable;
+class AOFHandler;
+class RDBHandler;
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -94,17 +97,28 @@ private:
     std::list<FlyClient*> clientsPendingWrite;      // 需要install write handler
     std::list<FlyClient*> clientsToClose;           // 异步关闭的client链表
 
+    /**
+     * log相关
+     * */
     int verbosity;                                  // log level in log file
     char *logfile;                                  // log file
     int syslogEnabled;                              // 是否开启log
     char *syslogIdent;                              // log标记
     int syslogFacility;
 
+    /**
+     * RDB持久化相关
+     */
+    char *rdbfile;                                  // 持久化文件名字
+    pid_t rdbChildPid;                              // 做RDB持久化工作的子进程pid
+
     std::string configfile = "fly.conf";            // 配置文件名字
 
     MiscTool *miscTool;
     NetHandler  *netHandler;
     LogHandler *logHandler;
+    AOFHandler *aofHandler;
+    RDBHandler *rdbHandler;
 };
 
 #endif //FLYDB_FLYSERVER_H

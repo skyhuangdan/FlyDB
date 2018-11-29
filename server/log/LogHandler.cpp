@@ -52,6 +52,7 @@ void LogHandler::logRaw(int level, const char *msg) {
         int off = strftime(buf, sizeof(buf),
                 "%d %b %H:%M:%S.", localtime(&tv.tv_sec));
         snprintf(buf + off, sizeof(buf) - off, "%03d", (int) tv.tv_usec / 1000);
+        // todo: role
         role = 'S';
         // 日志格式： pid:role time ./-/*/# msg
         fprintf(fp, "%d:%c %s %c %s\n",
