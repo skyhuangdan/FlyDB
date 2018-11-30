@@ -16,13 +16,14 @@
 #include "config/config.h"
 #include "log/LogHandler.h"
 #include "aof/AOFHandler.h"
+#include "aof/AOFDef.h"
 
 class NetHandler;
 class MiscTool;
 class LogHandler;
 class CommandTable;
 class AOFHandler;
-class RDBHandler;
+class FDBHandler;
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -69,6 +70,7 @@ private:
     int configMapGetValue(configMap *config, const char *name);
     void deleteFromPending(int fd);
     void deleteFromAsyncClose(int fd);
+    void loadDataFromDisk();
 
     int pid;                                  // 运行server的线程标识
     std::array<FlyDB*, DB_NUM> dbArray;       // db列表
@@ -105,20 +107,26 @@ private:
     int syslogEnabled;                              // 是否开启log
     char *syslogIdent;                              // log标记
     int syslogFacility;
+    LogHandler *logHandler;
 
     /**
-     * RDB持久化相关
+     * FDB持久化相关
      */
-    char *rdbfile;                                  // 持久化文件名字
-    pid_t rdbChildPid;                              // 做RDB持久化工作的子进程pid
+    char *fdbFile;                                  // 持久化文件名字
+    pid_t fdbChildPid;                              // 做FDB持久化工作的子进程pid
+    FDBHandler *fdbHandler;
+
+    /**
+     * AOF持久化
+     * */
+     char *aofFile;
+    AOFState aofState;
+    AOFHandler *aofHandler;
 
     std::string configfile = "fly.conf";            // 配置文件名字
 
     MiscTool *miscTool;
     NetHandler  *netHandler;
-    LogHandler *logHandler;
-    AOFHandler *aofHandler;
-    RDBHandler *rdbHandler;
 };
 
 #endif //FLYDB_FLYSERVER_H

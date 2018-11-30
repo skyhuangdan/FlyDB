@@ -57,13 +57,13 @@ const int CONFIG_DEFAULT_TCP_KEEPALIVE = 300;
 // log相关
 const int CONFIG_DEFAULT_SYSLOG_ENABLED = 0;
 const std::string CONFIG_DEFAULT_LOGFILE = "";
-const std::string CONFIG_DEFAULT_SYSLOG_IDENT = "redis";
+const std::string CONFIG_DEFAULT_SYSLOG_IDENT = "flyDB";
 const int CONFIG_DEFAULT_VERBOSITY = LL_NOTICE;
 
-// rdb相关
-const std::string CONFIG_DEFAULT_RDB_FILENAME = "dump.rdb";
-const int CONFIG_DEFAULT_RDB_COMPRESSION = 1;
-const int CONFIG_DEFAULT_RDB_CHECKSUM = 1;
+// fdb相关
+const std::string CONFIG_DEFAULT_FDB_FILENAME = "dump.fdb";
+const int CONFIG_DEFAULT_FDB_COMPRESSION = 1;
+const int CONFIG_DEFAULT_FDB_CHECKSUM = 1;
 
 
 #endif //FLYDB_CONFIG_H

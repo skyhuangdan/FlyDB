@@ -13,6 +13,8 @@
 #include "net/NetHandler.h"
 #include "log/LogHandler.h"
 #include "flyClient/ClientDef.h"
+#include "fdb/FDBHandler.h"
+#include "aof/AOFDef.h"
 
 configMap loglevelMap[] = {
         {"debug",   LL_DEBUG},
@@ -75,8 +77,9 @@ FlyServer::FlyServer() {
     this->syslogEnabled = CONFIG_DEFAULT_SYSLOG_ENABLED;
     this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
     this->syslogIdent = strdup(CONFIG_DEFAULT_SYSLOG_IDENT.c_str());
-    //rdb相关
-    this->rdbfile = strdup(CONFIG_DEFAULT_RDB_FILENAME.c_str());
+    // fdb相关
+    this->fdbFile = strdup(CONFIG_DEFAULT_FDB_FILENAME.c_str());
+    this->fdbHandler = FDBHandler::getInstance();
 
     this->miscTool = MiscTool::getInstance();
     this->netHandler = NetHandler::getInstance();
@@ -132,6 +135,9 @@ void FlyServer::init(int argc, char **argv) {
     // LogHandler放在最后，因为初始化需要flyServer的配置, 最好等其初始化完毕
     LogHandler::init(this->logfile, this->syslogEnabled, this->verbosity);
     this->logHandler = LogHandler::getInstance();
+
+    // 从fdb或者aof中加载数据
+    loadDataFromDisk();
 
     return;
 }
@@ -474,19 +480,26 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
             exit(1);
         }
     } else if (0 == words[0].compare("dbfilename") && 2 == words.size()) {
-        FILE *rdbfd;
-        free(this->rdbfile);
-        this->rdbfile = strdup(words[1].c_str());
+        FILE *fdbfd;
+        free(this->fdbFile);
+        this->fdbFile = strdup(words[1].c_str());
 
-        // todo :zlw
         // 尝试打开一次，查看是否可以正常打开
-        rdbfd = fopen(this->rdbfile, "a");
-        if (NULL == rdbfd) {
-            std::cout << "Can not open rdb file: " << this->rdbfile << std::endl;
+        fdbfd = fopen(this->fdbFile, "a");
+        if (NULL == fdbfd) {
+            std::cout << "Can not open fdb file: " << this->fdbFile << std::endl;
             exit(1);
         }
-        fclose(rdbfd);
+        fclose(fdbfd);
+    } else if (0 == words[0].compare("appendonly") && words.size() == 2) {
+        int yes;
+        if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {
+            std::cout <<  "argument must be 'yes' or 'no'";
+            exit(1);
+        }
+        this->aofState = yes ? AOF_ON : AOF_OFF;
     }
+
 }
 
 int FlyServer::listenToPort() {
@@ -566,6 +579,16 @@ void FlyServer::deleteFromAsyncClose(int fd) {
             return;
         }
     }
+}
+
+void FlyServer::loadDataFromDisk() {
+    // 如果开启了AOF，则优先从AOF中加载持久化数据，否则从FDB中加载
+    if (AOF_ON == this->aofState) {
+        // load from append only fiile
+    } else {
+        // load from fdb
+    }
+
 }
 
 void FlyServer::freeClientsInAsyncFreeList() {
