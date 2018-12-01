@@ -5,23 +5,22 @@
 #ifndef FLYDB_FILEFIO_H
 #define FLYDB_FILEFIO_H
 
-
 #include <cstdio>
 #include "Fio.h"
 
 class FileFio : public Fio {
 public:
-    FileFio(FILE *fp);
-    size_t read(struct _rio *, void *buf, size_t len);
-    size_t write(struct _rio *, const void *buf, size_t len);
-    int tell(struct _rio *);
-    int flush(struct _rio *);
-    void updateChecksum(struct _rio *, const void *buf, size_t len);
+    FileFio(FILE *fp, uint64_t maxProcessingChunk);
+    size_t read(void *buf, size_t len);
+    size_t write(const void *buf, size_t len);
+    int tell();
+    int flush();
+    int updateChecksum(const void *buf, size_t len);
 
 private:
-    FILE *fp;
-    off_t buffered; /* Bytes written since last fsync. */
-    off_t autosync; /* fsync after 'autosync' bytes written. */
+    FILE *fp = NULL;
+    off_t buffered = 0;                     // 距离上一次fsync所写入的字节数
+    off_t autosync = 0;                     // 当写入数据>autosync时，执行fsync
 };
 
 

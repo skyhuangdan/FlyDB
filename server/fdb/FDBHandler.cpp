@@ -3,14 +3,18 @@
 //
 
 #include <cstdio>
+#include <cerrno>
 #include "FDBHandler.h"
 #include "../io/FileFio.h"
+#include "../log/LogHandler.h"
 
-FDBHandler::FDBHandler(char *filename) {
+FDBHandler::FDBHandler(char *filename, uint64_t maxProcessingChunk) {
     this->filename = filename;
+    this->maxProcessingChunk = maxProcessingChunk;
+    this->logHandler = LogHandler::getInstance();
 }
 
-int FDBHandler::load(fdbSaveInfo &fdbSaveInfo) {
+int FDBHandler::load(FDBSaveInfo &fdbSaveInfo) {
     // open fdb file with read premission
     FILE *fp;
     if (NULL == (fp = fopen(this->filename, "r"))) {
@@ -21,15 +25,32 @@ int FDBHandler::load(fdbSaveInfo &fdbSaveInfo) {
     this->startToLoad();
 
     // do real load
-    Fio *fio = new FileFio(fp);
-    doRealLoad(fio, fdbSaveInfo);
+    int res = loadFromFile(fp, fdbSaveInfo);
 
     // 读取完毕
     fclose(fp);
     this->stopLoad();
+
+    return res;
 }
 
-void FDBHandler::doRealLoad(Fio *fio, fdbSaveInfo &saveInfo) {
+int FDBHandler::loadFromFile(FILE *fp, FDBSaveInfo &saveInfo) {
+    Fio *fio = new FileFio(fp, this->maxProcessingChunk);
+    int res = loadFromFio(fio, saveInfo);
+    delete fio;
+
+    return res;
+}
+
+int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
+    // 检查FDB文件头部
+    if (-1 == checkHeader(fio)) {
+        return -1;
+    }
+
+    char ch = loadChar(fio);
+    switch (ch) {
+    }
 
 }
 
@@ -40,4 +61,40 @@ void FDBHandler::startToLoad() {
 
 void FDBHandler::stopLoad() {
     this->loading = false;
+}
+
+char FDBHandler::loadChar(Fio *fio) {
+    char ch;
+    if (-1 == fio->read(&ch, 1)) {
+        this->logHandler->logWarning("error to load char!");
+        return -1;
+    }
+
+    return ch;
+}
+
+int FDBHandler::checkHeader(Fio *fio) {
+    // 读取头部字节
+    char buf[1024];
+    if (0 == fio->read(buf, 9)) {
+        logHandler->logWarning("Short read or OOM loading DB. Unrecoverable error, aborting now.");
+        // todo rdbExitReportCorruptRDB
+        return -1;
+    }
+
+    buf[9] = '\0';
+    if (memcpy(buf, "FLYDB", 5) != 0) {
+        logHandler->logWarning("Wrong signature trying to load DB from file");
+        errno = EINVAL;
+        return -1;
+    }
+
+    int version = atoi(buf + 5);
+    if (version < 1 || version > FDB_VERSION) {
+        logHandler->logWarning("Can't handle FDB format version %d", version);
+        errno = EINVAL;
+        return -1;
+    }
+
+    return 1;
 }

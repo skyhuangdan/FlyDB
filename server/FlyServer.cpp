@@ -102,7 +102,7 @@ void FlyServer::init(int argc, char **argv) {
     }
 
     // fdb handler
-    this->fdbHandler = new FDBHandler(this->fdbFile);
+    this->fdbHandler = new FDBHandler(this->fdbFile, CONFIG_LOADING_INTERVAL_BYTES);
 
     // 打开监听socket，用于监听用户命令
     this->listenToPort();

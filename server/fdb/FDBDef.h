@@ -7,7 +7,7 @@
 
 #include <string>
 
-struct fdbSaveInfo {
+struct FDBSaveInfo {
     // load和save时都有使用
     int replStreamDB;
 
@@ -17,5 +17,16 @@ struct fdbSaveInfo {
     //char replID[CONFIG_RUN_ID_SIZE+1];    // Replication ID
     long long replOffset;                   // replication offset
 };
+
+enum FDBOpration {
+    RDB_OPCODE_AUX = 250,
+    RDB_OPCODE_RESIZEDB,
+    RDB_OPCODE_EXPIRETIME_MS,
+    RDB_OPCODE_EXPIRETIME,
+    RDB_OPCODE_SELECTDB,
+    RDB_OPCODE_EOF
+};
+
+const int FDB_VERSION = 8;
 
 #endif //FLYDB_FDBDEF_H

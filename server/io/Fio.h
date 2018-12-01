@@ -10,18 +10,17 @@
 
 class Fio {
 public:
-    virtual size_t read(struct _rio *, void *buf, size_t len) = 0;
-    virtual size_t write(struct _rio *, const void *buf, size_t len) = 0;
-    virtual int tell(struct _rio *) = 0;
-    virtual int flush(struct _rio *) = 0;
-    virtual void updateChecksum(struct _rio *, const void *buf, size_t len) {
-        return;
-    };
+    Fio(uint64_t maxProcessingChunk);
+    virtual size_t read(void *buf, size_t len) = 0;
+    virtual size_t write(const void *buf, size_t len) = 0;
+    virtual int tell() = 0;                         // get offset
+    virtual int flush() = 0;                        // flush data to device
+    virtual int updateChecksum(const void *buf, size_t len);
 
 private:
-    uint64_t checksum;
-    size_t processedBytes;
-    size_t maxProcessingChunk;
+    uint64_t checksum = 0;
+    size_t processedBytes = 0;
+    uint64_t maxProcessingChunk = 0;
 };
 
 #endif //FLYDB_FIO_H
