@@ -79,7 +79,6 @@ FlyServer::FlyServer() {
     this->syslogIdent = strdup(CONFIG_DEFAULT_SYSLOG_IDENT.c_str());
     // fdb相关
     this->fdbFile = strdup(CONFIG_DEFAULT_FDB_FILENAME.c_str());
-    this->fdbHandler = FDBHandler::getInstance();
 
     this->miscTool = MiscTool::getInstance();
     this->netHandler = NetHandler::getInstance();
@@ -101,6 +100,9 @@ void FlyServer::init(int argc, char **argv) {
     if (1 == this->miscTool->getAbsolutePath(this->configfile, fileName)) {
         loadConfig(fileName);
     }
+
+    // fdb handler
+    this->fdbHandler = new FDBHandler(this->fdbFile);
 
     // 打开监听socket，用于监听用户命令
     this->listenToPort();
