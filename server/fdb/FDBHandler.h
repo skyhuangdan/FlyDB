@@ -28,6 +28,8 @@ private:
     char loadChar(Fio *fio);
     time_t loadTime(Fio *fio);
     uint64_t loadMillisecondTime(Fio *fio);
+    int loadNum(Fio *fio, int *encoded);
+    int loadNumByRef(Fio *fio, int *encoded, uint64_t *lenptr);
     int checkHeader(Fio *fio);
 
     char *filename;

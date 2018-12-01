@@ -11,6 +11,8 @@
 class FlyDB {
 public:
     FlyDB();
+    int expandDict(uint64_t size);
+    int expandExpire(uint64_t size);
 
 private:
     Dict* dict;

@@ -109,6 +109,10 @@ uint32_t HashTable::getSize() const {
     return this->size;
 }
 
+uint32_t HashTable::getUsed() const {
+    return this->used;
+}
+
 bool HashTable::isEmpty() const {
     return 0 == this->used;
 }

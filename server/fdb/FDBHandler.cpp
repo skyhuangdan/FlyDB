@@ -80,15 +80,37 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
                     goto err;
                 }
                 break;
+            case FDB_OPCODE_RESIZEDB:
+                // 读取dbSize和expireSize
+                uint64_t dbSize = 0, expireSize = 0;
+                if (-1 == (dbSize = loadNum(fio, NULL))) {
+                    goto err;
+                }
+                if (-1 == (expireSize = loadNum(fio, NULL))) {
+                    goto err;
+                }
+
+                // 分别为dict和expire扩容
+                flyDB->expandDict(dbSize);
+                flyDB->expandExpire(expireSize);
+
+                break;
+            case FDB_OPCODE_AUX:
+                break;
             case FDB_OPCODE_EOF:
                 // todo: load completed
                 return 1;
             case FDB_OPCODE_SELECTDB:
+                int64_t dbId = 0;
+                if (-1 == (dbId = loadNum(fio, NULL))) {
+                    goto err;
+                }
+
+                FlyDB *temp = NULL;
+                if (NULL != (temp = flyServer->getFlyDB(dbId))) {
+                    flyDB = temp;
+                }
                 continue;
-            case FDB_OPCODE_RESIZEDB:
-                break;
-            case FDB_OPCODE_AUX:
-                break;
         }
 
     }
@@ -137,6 +159,65 @@ uint64_t FDBHandler::loadMillisecondTime(Fio *fio) {
     }
 
     return res;
+}
+
+int FDBHandler::loadNum(Fio *fio, int *encoded) {
+    uint64_t num = 0;
+    if (-1 == loadNumByRef(fio, encoded, &num)) {
+        return -1;
+    }
+
+    return num;
+}
+
+int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
+    char buf;
+    if(-1 == fio->read(&buf, 1)) {
+        this->logHandler->logWarning("error to load len from fio!");
+        return -1;
+    }
+
+    char temp = (buf & 0xC0) >> 6;
+    if (RDB_6BITLEN == temp) {
+        *numptr = buf & 0x3F;
+    } else if (RDB_14BITLEN == temp) {
+        // 读取低8位
+        char low;
+        if(-1 == fio->read(&low, 1)) {
+            this->logHandler->logWarning("error to load len from fio!");
+            return -1;
+        }
+
+        *numptr = (buf & 0x3F << 8) + low;
+    } else if (RDB_32BITLEN == buf) {
+        uint32_t num;
+        if(-1 == fio->read(&num, 4)) {
+            this->logHandler->logWarning("error to load len from fio!");
+            return -1;
+        }
+
+        // 需要降网络字节序转换成本机字节序
+        *numptr = ntohl(num);
+    } else if (RDB_64BITLEN == buf) {
+        uint64_t len;
+        if(-1 == fio->read(&len, 8)) {
+            this->logHandler->logWarning("error to load len from fio!");
+            return -1;
+        }
+
+        // 需要降网络字节序转换成本机字节序
+        *numptr = ntohll(len);
+    } else if (RDB_ENCVAL == buf) {     // 令encoded=1表示自定义类型
+        if (NULL != encoded) {
+            *encoded = 1;
+        }
+        *numptr = buf & 0x3F;
+    } else {
+        // todo: rdbExitReportCorruptRDB
+        return -1;
+    }
+
+    return 1;
 }
 
 int FDBHandler::checkHeader(Fio *fio) {

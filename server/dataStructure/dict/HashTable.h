@@ -22,6 +22,7 @@ class HashTable {
     uint32_t getIndex(void* key) const;
     uint32_t getIndex(uint32_t cursor) const;
     uint32_t getSize() const;
+    uint32_t getUsed() const;
     bool isEmpty() const;
     DictEntry* getEntryBy(uint32_t index) const;
     void scanEntries(uint32_t index, scanProc proc, void* priv);

@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "Dict.h"
+#include "../../utils/MiscTool.h"
 
 Dict::Dict(const DictType* type) : type(type) {
     this->ht[0] = new HashTable(type, HASH_TABLE_INITIAL_SIZE);
@@ -227,6 +228,26 @@ uint32_t Dict::revBits(uint32_t bits) {
     }
     return bits;
 }
+
+int Dict::expand(uint32_t size) {
+    // todo dict size目前最大是32位
+    uint64_t expandSize = nextPower(size);
+    //if (expandSize > )
+}
+
+uint64_t Dict::nextPower(uint32_t num) {
+    int i = HASH_TABLE_INITIAL_SIZE;
+    while (1) {
+        if (i >= num) {
+            break;
+        } else {
+            i *= 2;
+        }
+    }
+
+    return i;
+}
+
 
 unsigned int dictGenHashFunction(const char *buf, int len) {
     unsigned int hash = 5381;
