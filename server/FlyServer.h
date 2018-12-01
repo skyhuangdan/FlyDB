@@ -60,6 +60,8 @@ public:
     int handleClientsWithPendingWrites();
     void freeClientAsync(FlyClient *flyClient);
     void freeClientsInAsyncFreeList();
+    FlyDB* getFlyDB(int dbnum);
+    uint8_t getFlyDBCount() const;
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）

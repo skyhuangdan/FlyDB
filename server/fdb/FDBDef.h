@@ -19,12 +19,29 @@ struct FDBSaveInfo {
 };
 
 enum FDBOpration {
-    RDB_OPCODE_AUX = 250,
-    RDB_OPCODE_RESIZEDB,
-    RDB_OPCODE_EXPIRETIME_MS,
-    RDB_OPCODE_EXPIRETIME,
-    RDB_OPCODE_SELECTDB,
-    RDB_OPCODE_EOF
+    FDB_OPCODE_AUX = 250,
+    FDB_OPCODE_RESIZEDB,
+    FDB_OPCODE_EXPIRETIME_MS,
+    FDB_OPCODE_EXPIRETIME,
+    FDB_OPCODE_SELECTDB,
+    FDB_OPCODE_EOF
+};
+
+/**
+ *
+ * 00|XXXXXX => 如果最高两位是00，则表示是六位数据，在XXXXXX中保存
+ * 01|XXXXXX XXXXXXXX =>  如果是01, 则表示是14位数据, 6 bits + 8 bits of next byte
+ * 10|000000 [32 bit integer] => 如果是10，则是32位数据，保存在了接下来的32bit中
+ * 10|000001 [64 bit integer] => 64位数据，保存在了接下来的64bit中
+ * 11|OBKIND this means: 剩余六位表示了自定义类型.
+ *
+ * */
+enum FDBLenType {
+    RDB_6BITLEN = 0,
+    RDB_14BITLEN = 1,
+    RDB_32BITLEN = 0x80,
+    RDB_64BITLEN = 0x81,
+    RDB_ENCVAL = 3
 };
 
 const int FDB_VERSION = 8;

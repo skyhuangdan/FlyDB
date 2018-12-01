@@ -11,9 +11,13 @@
 #include "../io/Fio.h"
 
 class LogHandler;
+class FlyServer;
+
 class FDBHandler {
 public:
-    FDBHandler(char *filename, uint64_t maxProcessingChunk);
+    FDBHandler(FlyServer *flyServer,
+               char *filename,
+               uint64_t maxProcessingChunk);
     int load(FDBSaveInfo &fdbSaveInfo);
     int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo);
 
@@ -22,6 +26,8 @@ private:
     int loadFromFile(FILE *fp, FDBSaveInfo &fdbSaveInfo);
     void stopLoad();
     char loadChar(Fio *fio);
+    time_t loadTime(Fio *fio);
+    uint64_t loadMillisecondTime(Fio *fio);
     int checkHeader(Fio *fio);
 
     char *filename;
@@ -30,9 +36,9 @@ private:
     uint64_t loadBytes = 0;
     uint64_t loadTotalBytes = 0;
     off_t maxProcessingChunk = 0;
-    
-    LogHandler *logHandler;
 
+    LogHandler *logHandler;
+    FlyServer *flyServer;
 };
 
 

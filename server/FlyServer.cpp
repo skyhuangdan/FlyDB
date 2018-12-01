@@ -102,7 +102,7 @@ void FlyServer::init(int argc, char **argv) {
     }
 
     // fdb handler
-    this->fdbHandler = new FDBHandler(this->fdbFile, CONFIG_LOADING_INTERVAL_BYTES);
+    this->fdbHandler = new FDBHandler(this, this->fdbFile, CONFIG_LOADING_INTERVAL_BYTES);
 
     // 打开监听socket，用于监听用户命令
     this->listenToPort();
@@ -599,6 +599,18 @@ void FlyServer::freeClientsInAsyncFreeList() {
     }
 
     this->clientsToClose.clear();
+}
+
+FlyDB* FlyServer::getFlyDB(int dbnum) {
+    if (dbnum >= this->dbArray.size()) {
+        return NULL;
+    }
+
+    return this->dbArray[dbnum];
+}
+
+uint8_t FlyServer::getFlyDBCount() const {
+    return this->dbArray.size();
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
