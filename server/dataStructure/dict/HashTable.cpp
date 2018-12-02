@@ -3,6 +3,7 @@
 //
 #include <iostream>
 #include "HashTable.h"
+#include "../../log/LogHandler.h"
 
 
 HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(size) {
@@ -12,6 +13,8 @@ HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(siz
     }
     this->used = 0;
     this->mask = size - 1;
+
+    this->logHandler = LogHandler::getInstance();
 }
 
 HashTable::~HashTable() {
@@ -39,7 +42,7 @@ int HashTable::addEntry(void* key, void* val) {
 
     // 判断是否已经有相同的键，如果有，则不能继续插入
     if (hasKey(key)) {
-        std::cout << "have same key in ht!" << key << std::endl;
+        this->logHandler->logWarning("have same key in ht! key = %s\n", key);
         return -1;
     }
 

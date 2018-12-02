@@ -2,14 +2,16 @@
 // Created by 赵立伟 on 2018/9/20.
 //
 
-#include <iostream>
 #include "Dict.h"
 #include "../../utils/MiscTool.h"
+#include "../../log/LogHandler.h"
 
 Dict::Dict(const DictType* type) : type(type) {
     this->ht[0] = new HashTable(type, HASH_TABLE_INITIAL_SIZE);
     this->ht[1] = NULL;
     this->rehashIndex = -1;
+
+    this->logHandler = LogHandler::getInstance();
 }
 
 Dict::~Dict() {
@@ -25,8 +27,8 @@ bool Dict::isRehashing() const {
 
 int Dict::addEntry(void* key, void* val) {
     if (NULL == key || NULL == val) {
-        std::cout << "key or value is NULL, key = "
-                     << key << "value = " << val << std::endl;
+        this->logHandler->logWarning("key or value is NULL, key = %p, val = %p",
+                                     key, val);
         return -1;
     }
 
@@ -39,7 +41,8 @@ int Dict::addEntry(void* key, void* val) {
     } else {  // 如果没在rehash, 执行插入操作；并判断是否需要扩容
         if ((res = this->ht[0]->addEntry(key, val)) > 0) {
             if (this->ht[0]->needExpand()) {
-                this->ht[1] = new HashTable(this->type, this->ht[0]->getSize() * 2);
+                this->ht[1] =
+                        new HashTable(this->type, this->ht[0]->getSize() * 2);
                 this->rehashIndex = 0;
                 rehashSteps(1);
             }
@@ -75,7 +78,7 @@ DictEntry* Dict::findEntry(void* key) {
 
 void* Dict::fetchValue(void* key) {
     if (NULL == key) {
-        std::cout << "key or value is NULL, key = " << key << std::endl;
+        this->logHandler->logWarning("key is NULL!");
         return NULL;
     }
 
@@ -90,7 +93,7 @@ void* Dict::fetchValue(void* key) {
 
 int Dict::deleteEntry(void* key) {
     if (NULL == key) {
-        std::cout << "key or value is NULL, key = " << key << std::endl;
+        this->logHandler->logWarning("key is NULL!");
         return -1;
     }
 
@@ -108,7 +111,11 @@ int Dict::deleteEntry(void* key) {
             rehashSteps(1);
         }
         return 1;
-    } else if (isRehashing()) {  // 如果ht[0]中删除失败，并且正在rehash过程中, 则需要从ht[1]中进行查找删除
+    } else if (isRehashing()) {
+        /**
+         * 如果ht[0]中删除失败，并且正在rehash过程中,
+         * 则需要从ht[1]中进行查找删除
+         */
         return this->ht[1]->deleteEntry(key);
     }
 
@@ -117,8 +124,8 @@ int Dict::deleteEntry(void* key) {
 
 int Dict::replace(void* key, void* val) {
     if (NULL == key || NULL == val) {
-        std::cout << "key or value is NULL, key = "
-                     << key << "value = " << val << std::endl;
+        this->logHandler->logWarning("key or value is NULL, key = %p, val = %p",
+                                     key, val);
         return -1;
     }
 
@@ -165,7 +172,10 @@ void Dict::rehashSteps(uint32_t steps) {
     return;
 }
 
-uint32_t Dict::dictScan(uint32_t cursor, uint32_t steps, scanProc proc, void *priv) {
+uint32_t Dict::dictScan(uint32_t cursor,
+                        uint32_t steps,
+                        scanProc proc,
+                        void *priv) {
     uint32_t nextCursor = cursor;
     for (uint32_t i = 0; i < steps; i++) {
         nextCursor = dictScanOneStep(nextCursor, proc, priv);
@@ -192,7 +202,8 @@ uint32_t Dict::dictScanOneStep(uint32_t cursor, scanProc proc, void *priv) {
         uint32_t index = ht0->getIndex(cursor);
         ht0->scanEntries(index, proc, priv);
 
-        /* scan ht1: 由于ht1 > ht0, 所以ht1的大小是ht0的二倍
+        /**
+         * scan ht1: 由于ht1 > ht0, 所以ht1的大小是ht0的二倍
          * 1.以ht0为基准去进行迭代遍历，函数最后进位的时候也是以ht0的坐标去递进(使用了ht0的掩码),
          *   对于ht1中的遍历，只是查找ht1中与ht0中相对应的entry, 以防止遗漏
          * 2.ht1中有两个连续的entry与ht0中的entry相对应, 因此需要scan ht1中两个entry,
@@ -202,7 +213,8 @@ uint32_t Dict::dictScanOneStep(uint32_t cursor, scanProc proc, void *priv) {
          */
         index = ht1->getIndex(cursor);
         ht1->scanEntries(index, proc, priv);
-        index |= (~ht0->getMask() & ht1->getMask()) | (ht0->getMask() & ~ht1->getMask());
+        index |= (~ht0->getMask() & ht1->getMask())
+                | (ht0->getMask() & ~ht1->getMask());
         ht1->scanEntries(index, proc, priv);
     } else {
         // 如果未处于rehash, 只访问ht[0]就可以了
@@ -230,13 +242,34 @@ uint32_t Dict::revBits(uint32_t bits) {
 }
 
 int Dict::expand(uint32_t size) {
-    // todo dict size目前最大是32位
-    uint64_t expandSize = nextPower(size);
-    //if (expandSize > )
+    uint32_t expandSize = nextPower(size);
+    // 如果正在rehash, 或者扩容大小 < 目前已使用空间
+    if (isRehashing() || expandSize < this->ht[0]->getUsed()) {
+        return -1;
+    }
+
+    // 容量没变化
+    if (expandSize == this->ht[0]->getSize()) {
+        return -1;
+    }
+
+    // 扩(缩)容，并执行rehash
+    this->ht[1] = new HashTable(this->type, expandSize);
+    this->rehashIndex = 0;
+    rehashSteps(1);
+
+    return 1;
 }
 
-uint64_t Dict::nextPower(uint32_t num) {
+uint32_t Dict::nextPower(uint32_t num) {
     int i = HASH_TABLE_INITIAL_SIZE;
+
+    // 如果num大于32位数字中最大的power，则返回maxPower
+    uint32_t maxPower = 1 << 31;
+    if (num >= maxPower) {
+        return maxPower;
+    }
+
     while (1) {
         if (i >= num) {
             break;
@@ -261,8 +294,9 @@ uint64_t dictStrHash(const void *key) {
     if (NULL == key) {
         return 0;
     }
-    return dictGenHashFunction(reinterpret_cast<const std::string*>(key)->c_str(),
-                               reinterpret_cast<const std::string*>(key)->length());
+    return dictGenHashFunction(
+            reinterpret_cast<const std::string*>(key)->c_str(),
+            reinterpret_cast<const std::string*>(key)->length());
 }
 
 int dictStrKeyCompare(const void *key1, const void *key2) {

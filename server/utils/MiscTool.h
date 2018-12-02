@@ -109,6 +109,9 @@ public:
         } else return -1;
     }
 
+private:
+    MiscTool() {
+    }
 };
 
 #endif //FLYDB_STRINGTOOL_H

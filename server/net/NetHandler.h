@@ -16,7 +16,6 @@ void sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask)
 
 class NetHandler {
 public:
-    NetHandler();
     static NetHandler* getInstance();
     int setV6Only(char *err, int fd);
     int setSendTimeout(char *err, int fd, long long ms);
@@ -42,6 +41,7 @@ public:
     int writeToClient(EventLoop *eventLoop, FlyServer *flyServer, FlyClient *flyClient, int handlerInstalled);
 
 private:
+    NetHandler();
     void setError(char *err, const char *fmt, ...);
     int genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags);
     int setReuseAddr(char *err, int fd);

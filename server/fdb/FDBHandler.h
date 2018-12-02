@@ -30,6 +30,9 @@ private:
     uint64_t loadMillisecondTime(Fio *fio);
     int loadNum(Fio *fio, int *encoded);
     int loadNumByRef(Fio *fio, int *encoded, uint64_t *lenptr);
+    void* genericLoadStringObject(Fio *fio, int flag, size_t *lenptr);
+    void* loadIntegerObject(Fio *fio, int flag, size_t *lenptr);
+    void* loadLzfStringObject(Fio *fio, int flag, size_t *lenptr);
     int checkHeader(Fio *fio);
 
     char *filename;

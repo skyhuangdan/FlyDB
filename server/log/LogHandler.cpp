@@ -14,6 +14,10 @@ char* LogHandler::logfile = NULL;
 int LogHandler::syslogEnabled = 0;
 int LogHandler::verbosity = 0;
 
+LogHandler::LogHandler() {
+
+}
+
 LogHandler* LogHandler::getInstance() {
     static LogHandler *log = NULL;
     if (NULL == log) {

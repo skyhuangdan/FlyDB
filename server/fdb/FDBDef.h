@@ -37,11 +37,18 @@ enum FDBOpration {
  *
  * */
 enum FDBLenType {
-    RDB_6BITLEN = 0,
-    RDB_14BITLEN = 1,
-    RDB_32BITLEN = 0x80,
-    RDB_64BITLEN = 0x81,
-    RDB_ENCVAL = 3
+    FDB_6BITLEN = 0,
+    FDB_14BITLEN = 1,
+    FDB_32BITLEN = 0x80,
+    FDB_64BITLEN = 0x81,
+    FDB_ENCVAL = 3
+};
+
+enum FDBEncoding {
+    FDB_ENC_INT8 = 0,        // 8-bit
+    FDB_ENC_INT16 = 1,       // 16-bit
+    FDB_ENC_INT32 = 2,       // 32-bit
+    FDB_ENC_LZF = 3          // string compressed with FASTLZ
 };
 
 const int FDB_VERSION = 8;

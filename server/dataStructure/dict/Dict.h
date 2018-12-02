@@ -15,6 +15,7 @@ void dictStrDestructor(void *val);
 int dictStrKeyCompare(const void *key1, const void *key2);
 
 class MiscTool;
+class LogHandler;
 
 class Dict {
 public:
@@ -30,14 +31,16 @@ public:
     void rehashSteps(uint32_t steps);
     uint32_t dictScan(uint32_t cursor, uint32_t steps, scanProc proc, void *priv);
     uint32_t dictScanOneStep(uint32_t cursor, scanProc proc, void *priv);
-    int expand(uint32_t size);
+    int expand(uint32_t size);              // 扩容/缩容
     
 private:
-    uint64_t nextPower(uint32_t num);
+    uint32_t nextPower(uint32_t num);
     uint32_t revBits(uint32_t bits);
     std::array<class HashTable*, 2> ht;
     const DictType* type;
     int64_t rehashIndex = -1;
+
+    LogHandler *logHandler;
 };
 
 

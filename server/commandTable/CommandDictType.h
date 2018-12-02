@@ -8,9 +8,6 @@
 #include "../dataStructure/dict/DictType.h"
 
 class CommandDictType : public DictType {
-private:
-    CommandDictType() {
-    }
 public:
     static DictType* getInstance() {
         static CommandDictType* instance;
@@ -33,6 +30,10 @@ public:
     }
 
     void valDestructor(void *obj) const {
+    }
+
+private:
+    CommandDictType() {
     }
 };
 

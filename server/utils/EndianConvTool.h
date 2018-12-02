@@ -55,6 +55,9 @@ public:
     }
 
 private:
+    EndianConvTool() {
+    }
+
     void memrev16(void *p) {
         unsigned char *x = (unsigned char*)p, t;
 

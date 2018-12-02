@@ -19,6 +19,7 @@ public:
     void log(int level, const char *fmt, ...);
 
 private:
+    LogHandler();
     void log(int level, const char *fmt, va_list &ap);
     static char *logfile;
     static int syslogEnabled;
