@@ -51,6 +51,11 @@ enum FDBEncoding {
     FDB_ENC_LZF = 3          // string compressed with FASTLZ
 };
 
+enum FDBLoadType {
+    FDB_LOAD_STRING = 0,
+    FDB_LOAD_OBJECT
+};
+
 const int FDB_VERSION = 8;
 
 #endif //FLYDB_FDBDEF_H

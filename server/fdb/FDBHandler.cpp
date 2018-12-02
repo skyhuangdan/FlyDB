@@ -8,6 +8,8 @@
 #include "../io/FileFio.h"
 #include "../log/LogHandler.h"
 
+#define fdbExitReportCorrupt(...) checkThenExit(__LINE__,__VA_ARGS__)
+
 FDBHandler::FDBHandler(FlyServer *flyServer,
                        char *filename,
                        uint64_t maxProcessingChunk) {
@@ -137,21 +139,32 @@ char FDBHandler::loadChar(Fio *fio) {
     return ch;
 }
 
+// 返回FlyObj类型数据
+void* FDBHandler::loadStringObject(Fio *fio, int flag, size_t *lenptr) {
+    return this->genericLoadStringObject(fio, FDB_LOAD_OBJECT, lenptr);
+}
+
+// 返回string类型数据
+void* FDBHandler::loadStringPlain(Fio *fio, int flag, size_t *lenptr) {
+    return this->genericLoadStringObject(fio, FDB_LOAD_STRING, lenptr);
+}
+
 /**
  * 从FDB中加载string object
  *
- * RDB_LOAD_STRING: 返回string类型数据
- * RDB_LOAD_OBJECT: 返回FlyObj类型数据
+ * FDB_LOAD_STRING: 返回string类型数据
+ * FDB_LOAD_OBJECT: 返回FlyObj类型数据
  *
  * On I/O error NULL is returned.
  */
 void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
     int encoded = 0;
     int len;
-    if (-1 == loadNum(fio, &encoded)) {
+    if (-1 == (len = loadNum(fio, &encoded))) {
         return NULL;
     }
 
+    // 如果是自定义类型，则按照自定义类型获取
     if (0 != encoded) {
         switch (len) {
             case FDB_ENC_INT8:
@@ -161,11 +174,29 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
             case FDB_ENC_LZF:
                 return loadLzfStringObject(fio, flag, lenptr);
             default:
-                int i;
-                // todo :rdbExitReportCorruptRDB
+                fdbExitReportCorrupt("Unknown FDB string encoding type %d", len);
         }
     }
 
+    // len <= 0
+    if (len <= 0) {
+        this->logHandler->logWarning("the len <= 0! len = %d", len);
+        return NULL;
+    }
+
+    // 根据len从fio中读取字符串
+    std::string *str = new std::string();
+    if (-1 == fio->read((void*) str->c_str(), len)) {
+        this->logHandler->logWarning("error to load string from fio!");
+        delete str;
+    }
+
+    // 根据flag返回FlyObj或者直接返回string
+    if (flag & FDB_LOAD_OBJECT) {
+        return new FlyObj(str, FLY_TYPE_STRING);
+    } else {
+        return str;
+    }
 }
 
 void* FDBHandler::loadIntegerObject(Fio *fio, int flag, size_t *lenptr) {
@@ -279,4 +310,8 @@ int FDBHandler::checkHeader(Fio *fio) {
     }
 
     return 1;
+}
+
+void FDBHandler::checkThenExit(int linenum, char *reason, ...) {
+
 }
