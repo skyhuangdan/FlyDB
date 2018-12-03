@@ -1,0 +1,97 @@
+//
+// Created by 赵立伟 on 2018/12/3.
+//
+
+#ifndef FLYDB_ABSTRACTNETHANDLER_H
+#define FLYDB_ABSTRACTNETHANDLER_H
+
+#include <cstdio>
+#include <sys/socket.h>
+
+class EventLoop;
+class AbstractFlyServer;
+class AbstractFlyClient;
+
+class AbstractNetHandler {
+public:
+    virtual int setV6Only(char *err, int fd) = 0;
+
+    virtual int setSendTimeout(char *err, int fd, long long ms) = 0;
+
+    // val: 1-enbale no delay, 0-disable
+    virtual int setTcpNoDelay(char *err, int fd, int val) = 0;
+
+    virtual int setSendBuffer(char *err, int fd, int buffsize) = 0;
+
+    virtual int setTcpKeepAlive(char *err, int fd) = 0;
+
+    virtual int resolve(char *err,
+                        char *host,
+                        char *ipbuf,
+                        size_t ipbuf_len) = 0;
+
+    virtual int resolveIP(char *err,
+                          char *host,
+                          char *ipbuf,
+                          size_t ipbuf_len) = 0;
+
+    virtual int createSocket(char *err, int domain) = 0;
+
+    virtual int keepAlive(char *err, int fd, int interval) = 0;
+
+    virtual int tcpConnect(char *err, char *addr, int port) = 0;
+
+    virtual int tcpNonBlockConnect(char *err, char *addr, int port) = 0;
+
+    virtual int tcpNonBlockBindConnect(char *err,
+                                       char *addr,
+                                       int port,
+                                       char *source_addr) = 0;
+
+    virtual int tcpNonBlockBestEffortBindConnect(char *err,
+                                                 char *addr,
+                                                 int port,
+                                                 char *source_addr) = 0;
+
+    virtual int setListen(char *err,
+                          int s,
+                          struct sockaddr *sa,
+                          socklen_t len,
+                          int backlog) = 0;
+
+    virtual int unixServer(char *err,
+                           const char *path,
+                           mode_t perm,
+                           int backlog) = 0;
+
+    virtual int tcpServer(char *err,
+                          int port,
+                          const char *bindaddr,
+                          int backlog) = 0;
+
+    virtual int tcp6Server(char *err,
+                           int port,
+                           const char *bindaddr,
+                           int backlog) = 0;
+
+    virtual int setBlock(char *err, int fd, int block) = 0;
+
+    virtual int tcpAccept(char *err,
+                          int s,
+                          char *ip,
+                          size_t iplen,
+                          int *port) = 0;
+
+    virtual int unixAccept(char *err, int s) = 0;
+
+    virtual int processInputBuffer(EventLoop *eventLoop,
+                                   AbstractFlyServer *flyServer,
+                                   AbstractFlyClient *flyClient) = 0;
+
+    virtual int writeToClient(EventLoop *eventLoop,
+                              AbstractFlyServer *flyServer,
+                              AbstractFlyClient *flyClient,
+                              int handlerInstalled) = 0;
+};
+
+#endif //FLYDB_ABSTRACTNETHANDLER_H

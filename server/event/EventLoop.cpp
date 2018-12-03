@@ -6,8 +6,9 @@
 #include "EventLoop.h"
 #include "Select.h"
 #include "EventDef.h"
+#include "../flyServer/FlyServer.h"
 
-EventLoop::EventLoop(FlyServer *flyServer, int setSize) {
+EventLoop::EventLoop(AbstractFlyServer *flyServer, int setSize) {
     this->setSize = setSize;
     this->lastTime = getCurrentTime();
     this->timeEventNextId = 0;
@@ -275,16 +276,16 @@ void EventLoop::addFiredEvent(int fd, int mask) {
     this->firedEvents.push_back(FiredEvent(fd, mask));
 }
 
-FlyServer *EventLoop::getFlyServer() const {
+AbstractFlyServer *EventLoop::getFlyServer() const {
     return flyServer;
 }
 
-void EventLoop::setFlyServer(FlyServer *flyServer) {
-    EventLoop::flyServer = flyServer;
+void EventLoop::setFlyServer(AbstractFlyServer *flyServer) {
+    this->flyServer = flyServer;
 }
 
 void beforeSleep(EventLoop *eventLoop) {
-    FlyServer *flyServer = eventLoop->getFlyServer();
+    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
 
     // 处理命令回复
     flyServer->handleClientsWithPendingWrites();

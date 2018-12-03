@@ -6,7 +6,8 @@
 #include <cerrno>
 #include "FDBHandler.h"
 #include "../io/FileFio.h"
-#include "../log/LogHandler.h"
+#include "../log/LogFileHandler.h"
+#include "../flyObj/FlyObj.h"
 
 #define fdbExitReportCorrupt(...) checkThenExit(__LINE__,__VA_ARGS__)
 
@@ -16,7 +17,7 @@ FDBHandler::FDBHandler(FlyServer *flyServer,
     this->flyServer = flyServer;
     this->filename = filename;
     this->maxProcessingChunk = maxProcessingChunk;
-    this->logHandler = LogHandler::getInstance();
+    this->logHandler = LogFileHandler::getInstance();
 }
 
 int FDBHandler::load(FDBSaveInfo &fdbSaveInfo) {
@@ -54,7 +55,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
     }
 
     uint64_t expireTime;
-    FlyDB *flyDB = flyServer->getFlyDB(0);
+    AbstractFlyDB *flyDB = flyServer->getFlyDB(0);
 
     while (1) {
         char type = loadChar(fio);
@@ -100,7 +101,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
                 goto err;
             }
 
-            FlyDB *temp = NULL;
+            AbstractFlyDB *temp = NULL;
             if (NULL != (temp = flyServer->getFlyDB(dbId))) {
                 flyDB = temp;
             }

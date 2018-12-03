@@ -5,16 +5,17 @@
 #include <iostream>
 #include <syslog.h>
 #include "FlyServer.h"
-#include "commandTable/commandTable.h"
-#include "config/config.h"
-#include "atomic/AtomicHandler.h"
-#include "net/NetDef.h"
-#include "utils/MiscTool.h"
-#include "net/NetHandler.h"
-#include "log/LogHandler.h"
-#include "flyClient/ClientDef.h"
-#include "fdb/FDBHandler.h"
-#include "aof/AOFDef.h"
+#include "../commandTable/CommandTable.h"
+#include "../config/config.h"
+#include "../atomic/AtomicHandler.h"
+#include "../net/NetDef.h"
+#include "../utils/MiscTool.h"
+#include "../net/NetHandler.h"
+#include "../log/LogFileHandler.h"
+#include "../flyClient/ClientDef.h"
+#include "../fdb/FDBHandler.h"
+#include "../aof/AOFDef.h"
+#include "../db/FlyDB.h"
 
 configMap loglevelMap[] = {
         {"debug",   LL_DEBUG},
@@ -102,7 +103,9 @@ void FlyServer::init(int argc, char **argv) {
     }
 
     // fdb handler
-    this->fdbHandler = new FDBHandler(this, this->fdbFile, CONFIG_LOADING_INTERVAL_BYTES);
+    this->fdbHandler = new FDBHandler(this,
+            this->fdbFile,
+            CONFIG_LOADING_INTERVAL_BYTES);
 
     // 打开监听socket，用于监听用户命令
     this->listenToPort();
@@ -135,8 +138,8 @@ void FlyServer::init(int argc, char **argv) {
     }
 
     // LogHandler放在最后，因为初始化需要flyServer的配置, 最好等其初始化完毕
-    LogHandler::init(this->logfile, this->syslogEnabled, this->verbosity);
-    this->logHandler = LogHandler::getInstance();
+    LogFileHandler::init(this->logfile, this->syslogEnabled, this->verbosity);
+    this->logHandler = LogFileHandler::getInstance();
 
     // 从fdb或者aof中加载数据
     loadDataFromDisk();
@@ -148,15 +151,11 @@ int FlyServer::getPID() {
     return this->pid;
 }
 
-FlyDB* FlyServer::getDB(int dbID) {
-    return this->dbArray.at(dbID);
-}
-
 std::string FlyServer::getVersion() {
     return this->version;
 }
 
-int FlyServer::dealWithCommand(FlyClient *flyclient) {
+int FlyServer::dealWithCommand(AbstractFlyClient *flyclient) {
     return this->commandTable->dealWithCommand(flyclient);
 }
 
@@ -176,7 +175,7 @@ char *FlyServer::getNeterr() const {
     return neterr;
 }
 
-FlyClient* FlyServer::createClient(int fd) {
+AbstractFlyClient* FlyServer::createClient(int fd) {
     if (fd <= 0) {
         return NULL;
     }
@@ -188,7 +187,7 @@ FlyClient* FlyServer::createClient(int fd) {
     }
 
     // create FlyClient
-    FlyClient *flyClient = new FlyClient(fd, this);
+    AbstractFlyClient *flyClient = new FlyClient(fd, this);
     uint64_t clientId = 0;
     atomicGetIncr(this->nextClientId, clientId, 1);
     flyClient->setId(clientId);
@@ -212,7 +211,7 @@ FlyClient* FlyServer::createClient(int fd) {
 }
 
 int FlyServer::deleteClient(int fd) {
-    std::list<FlyClient *>::iterator iter = this->clients.begin();
+    std::list<AbstractFlyClient *>::iterator iter = this->clients.begin();
     for (iter; iter != this->clients.end(); iter++) {
         if (fd == (*iter)->getFd()) {
             // 删除file event
@@ -274,11 +273,11 @@ int FlyServer::getSyslogFacility() const {
     return this->syslogFacility;
 }
 
-NetHandler *FlyServer::getNetHandler() const {
+AbstractNetHandler *FlyServer::getNetHandler() const {
     return netHandler;
 }
 
-void FlyServer::addToClientsPendingToWrite(FlyClient *flyClient) {
+void FlyServer::addToClientsPendingToWrite(AbstractFlyClient *flyClient) {
     this->clientsPendingWrite.push_back(flyClient);
 }
 
@@ -287,7 +286,8 @@ int FlyServer::handleClientsWithPendingWrites() {
         return 0;
     }
 
-    std::list<FlyClient*>::iterator iter = this->clientsPendingWrite.begin();
+    std::list<AbstractFlyClient*>::iterator iter =
+            this->clientsPendingWrite.begin();
     for (iter; iter != this->clientsPendingWrite.end(); iter++) {
         // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
         // 否则无法加入。也就无法处理其输出
@@ -312,7 +312,7 @@ int FlyServer::handleClientsWithPendingWrites() {
     return pendingCount;
 }
 
-void FlyServer::freeClientAsync(FlyClient *flyClient) {
+void FlyServer::freeClientAsync(AbstractFlyClient *flyClient) {
     if (flyClient->getFlags() & CLIENT_CLOSE_ASAP) {
         return;
     }
@@ -328,7 +328,8 @@ void FlyServer::setMaxClientLimit() {
 
     // 获取当前进程可打开的最大文件描述符
     if (getrlimit(RLIMIT_NOFILE, &limit) == -1) {
-        // 如果获取失败, 按照进程中最大文件数量为1024计算(内核默认1024), 重置maxClients
+        // 如果获取失败, 按照进程中最大文件数量为1024计算(内核默认1024),
+        // 重置maxClients
         this->maxClients = 1024 - CONFIG_MIN_RESERVED_FDS;
     } else {
         int softLimit = limit.rlim_cur;
@@ -489,7 +490,8 @@ void FlyServer::loadConfigFromLineString(const std::string &line) {
         // 尝试打开一次，查看是否可以正常打开
         fdbfd = fopen(this->fdbFile, "a");
         if (NULL == fdbfd) {
-            std::cout << "Can not open fdb file: " << this->fdbFile << std::endl;
+            std::cout << "Can not open fdb file: "
+                         << this->fdbFile << std::endl;
             exit(1);
         }
         fclose(fdbfd);
@@ -564,7 +566,8 @@ int FlyServer::configMapGetValue(configMap *config, const char *name) {
 }
 
 void FlyServer::deleteFromPending(int fd) {
-    std::list<FlyClient*>::iterator iter = this->clientsPendingWrite.begin();
+    std::list<AbstractFlyClient*>::iterator iter =
+            this->clientsPendingWrite.begin();
     for (iter; iter != this->clientsPendingWrite.end(); iter++) {
         if ((*iter)->getFd() == fd) {
             this->clientsPendingWrite.erase(iter);
@@ -574,7 +577,7 @@ void FlyServer::deleteFromPending(int fd) {
 }
 
 void FlyServer::deleteFromAsyncClose(int fd) {
-    std::list<FlyClient*>::iterator iter = this->clientsToClose.begin();
+    std::list<AbstractFlyClient*>::iterator iter = this->clientsToClose.begin();
     for (iter; iter != this->clientsToClose.end(); iter++) {
         if ((*iter)->getFd() == fd) {
             this->clientsToClose.erase(iter);
@@ -601,7 +604,7 @@ void FlyServer::freeClientsInAsyncFreeList() {
     this->clientsToClose.clear();
 }
 
-FlyDB* FlyServer::getFlyDB(int dbnum) {
+AbstractFlyDB* FlyServer::getFlyDB(int dbnum) {
     if (dbnum >= this->dbArray.size()) {
         return NULL;
     }
@@ -614,7 +617,7 @@ uint8_t FlyServer::getFlyDBCount() const {
 }
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
-    FlyServer *flyServer = eventLoop->getFlyServer();
+    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
 
     // 设置当前时间
     flyServer->setNowt(time(NULL));

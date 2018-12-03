@@ -5,9 +5,11 @@
 #ifndef FLYDB_COMMANDENTRY_H
 #define FLYDB_COMMANDENTRY_H
 
+#include "../flyClient/interface/AbstractFlyClient.h"
+#include "../flyServer/interface/AbstractFlyServer.h"
+
 class FlyServer;
-class FlyClient;
-typedef void (*commandProc)(FlyServer*, FlyClient*);
+typedef void (*commandProc)(AbstractFlyServer*, AbstractFlyClient*);
 
 struct CommandEntry {
     CommandEntry(commandProc proc, int flag);
@@ -16,6 +18,6 @@ struct CommandEntry {
     int flag;
 };
 
-void versionProc(FlyServer*, FlyClient*);
+void versionProc(AbstractFlyServer*, AbstractFlyClient*);
 
 #endif //FLYDB_COMMANDENTRY_H

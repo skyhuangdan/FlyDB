@@ -8,7 +8,7 @@
 #include "Dict.h"
 #include "DictDef.h"
 
-class LogHandler;
+class AbstractLogHandler;
 
 class HashTable {
  public:
@@ -37,7 +37,7 @@ private:
     uint32_t mask;
     const DictType* type;
 
-    LogHandler *logHandler;
+    AbstractLogHandler *logHandler;
 };
 
 

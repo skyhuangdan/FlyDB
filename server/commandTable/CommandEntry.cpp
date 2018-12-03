@@ -3,13 +3,13 @@
 //
 
 #include <iostream>
-#include "../FlyServer.h"
 #include "CommandEntry.h"
+#include "../flyServer/interface/AbstractFlyServer.h"
 
 CommandEntry::CommandEntry(commandProc proc, int flag) :
         proc(proc), flag(flag) {}
 
-void versionProc(FlyServer* server, FlyClient *client) {
+void versionProc(AbstractFlyServer* server, AbstractFlyClient *client) {
     if (NULL == server || NULL == client) {
         return;
     }

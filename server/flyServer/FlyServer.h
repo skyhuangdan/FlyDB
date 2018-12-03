@@ -10,17 +10,18 @@
 #include <string>
 #include <list>
 #include <pthread.h>
-#include "db/FlyDB.h"
-#include "flyClient/FlyClient.h"
-#include "event/EventLoop.h"
-#include "config/config.h"
-#include "log/LogHandler.h"
-#include "aof/AOFHandler.h"
-#include "aof/AOFDef.h"
+#include "../event/EventLoop.h"
+#include "../config/config.h"
+#include "../log/LogFileHandler.h"
+#include "../aof/AOFHandler.h"
+#include "../aof/AOFDef.h"
+#include "../flyClient/interface/AbstractFlyClient.h"
+#include "interface/AbstractFlyServer.h"
+#include "../db/interface/AbstractFlyDB.h"
 
-class NetHandler;
+class AbstractNetHandler;
 class MiscTool;
-class LogHandler;
+class AbstractLogHandler;
 class CommandTable;
 class AOFHandler;
 class FDBHandler;
@@ -30,20 +31,19 @@ const std::string VERSION = "0.0.1";
 
 int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData);
 
-class FlyServer {
+class FlyServer : public AbstractFlyServer {
 public:
     FlyServer();
     ~FlyServer();
     void init(int argc, char **argv);            // 初始化函数
     int getPID();                                // 获取server id
-    FlyDB* getDB(int dbID);                      // 根据db id获取具体的db
     std::string getVersion();                    // 获取版本号
-    int dealWithCommand(FlyClient *flyclient);          // 处理命令
+    int dealWithCommand(AbstractFlyClient *flyclient);          // 处理命令
     void eventMain();                            // 事件循环处理
     int getHz() const;
     void setHz(int hz);
     char *getNeterr() const;
-    FlyClient* createClient(int fd);
+    AbstractFlyClient* createClient(int fd);
     int deleteClient(int fd);
     time_t getNowt() const;
     void setNowt(time_t nowt);
@@ -55,12 +55,12 @@ public:
     int getSyslogEnabled() const;
     char *getSyslogIdent() const;
     int getSyslogFacility() const;
-    NetHandler *getNetHandler() const;
-    void addToClientsPendingToWrite(FlyClient *flyClient);
+    AbstractNetHandler *getNetHandler() const;
+    void addToClientsPendingToWrite(AbstractFlyClient *flyClient);
     int handleClientsWithPendingWrites();
-    void freeClientAsync(FlyClient *flyClient);
+    void freeClientAsync(AbstractFlyClient *flyClient);
     void freeClientsInAsyncFreeList();
-    FlyDB* getFlyDB(int dbnum);
+    AbstractFlyDB* getFlyDB(int dbnum);
     uint8_t getFlyDBCount() const;
 
 private:
@@ -75,10 +75,10 @@ private:
     void loadDataFromDisk();
 
     int pid;                                  // 运行server的线程标识
-    std::array<FlyDB*, DB_NUM> dbArray;       // db列表
+    std::array<AbstractFlyDB*, DB_NUM> dbArray;       // db列表
     std::string version = VERSION;            // 版本号
     CommandTable* commandTable;               // 命令表
-    std::list<FlyClient *> clients;           // client列表
+    std::list<AbstractFlyClient *> clients;           // client列表
     int port;                                 // tcp listening port
     int maxClients;                           // 最大可同时连接的client数量
     EventLoop *eventLoop;                     // 事件循环处理器
@@ -98,8 +98,8 @@ private:
     size_t clientMaxQuerybufLen;                    // client buff最大长度
     int64_t statNetInputBytes;                      // 该server从网络获取的byte数量
     uint32_t lruclock;                              // LRU
-    std::list<FlyClient*> clientsPendingWrite;      // 需要install write handler
-    std::list<FlyClient*> clientsToClose;           // 异步关闭的client链表
+    std::list<AbstractFlyClient*> clientsPendingWrite;      // 需要install write handler
+    std::list<AbstractFlyClient*> clientsToClose;           // 异步关闭的client链表
 
     /**
      * log相关
@@ -109,7 +109,7 @@ private:
     int syslogEnabled;                              // 是否开启log
     char *syslogIdent;                              // log标记
     int syslogFacility;
-    LogHandler *logHandler;
+    AbstractLogHandler *logHandler;
 
     /**
      * FDB持久化相关
@@ -121,14 +121,14 @@ private:
     /**
      * AOF持久化
      * */
-     char *aofFile;
+    char *aofFile;
     AOFState aofState;
     AOFHandler *aofHandler;
 
     std::string configfile = "fly.conf";            // 配置文件名字
 
     MiscTool *miscTool;
-    NetHandler  *netHandler;
+    AbstractNetHandler  *netHandler;
 };
 
 #endif //FLYDB_FLYSERVER_H

@@ -8,13 +8,15 @@
 #include <sys/socket.h>
 #include "../event/EventLoop.h"
 #include "../utils/MiscTool.h"
+#include "interface/AbstractNetHandler.h"
+#include "../log/interface/AbstractLogHandler.h"
 
 // 对应socket的绑定接口
 void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 void sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
 
-class NetHandler {
+class NetHandler : public AbstractNetHandler {
 public:
     static NetHandler* getInstance();
     int setV6Only(char *err, int fd);
@@ -37,8 +39,13 @@ public:
     int setBlock(char *err, int fd, int block);
     int tcpAccept(char *err, int s, char *ip, size_t iplen, int *port);
     int unixAccept(char *err, int s);
-    int processInputBuffer(EventLoop *eventLoop, FlyServer* flyServer, FlyClient *flyClient);
-    int writeToClient(EventLoop *eventLoop, FlyServer *flyServer, FlyClient *flyClient, int handlerInstalled);
+    int processInputBuffer(EventLoop *eventLoop,
+                           AbstractFlyServer* flyServer,
+                           AbstractFlyClient *flyClient);
+    int writeToClient(EventLoop *eventLoop,
+                      AbstractFlyServer *flyServer,
+                      AbstractFlyClient *flyClient,
+                      int handlerInstalled);
 
 private:
     NetHandler();
@@ -49,17 +56,17 @@ private:
     int tcpGenericServer(char *err, int port, const char *bindaddr, int af, int backlog);
     int tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len);
     void dealError(int fd, struct addrinfo *servinfo);
-    int processInlineBuffer(FlyClient *flyClient);
-    int processMultiBulkBuffer(FlyClient *flyClient);
-    int analyseMultiBulkLen(FlyClient *flyClient, size_t &pos);
-    int analyseMultiBulk(FlyClient *flyClient, size_t &pos);
-    int analyseBulk(FlyClient *flyClient);
-    int setProtocolError(char *err, FlyClient *flyClient, size_t pos);
-    void addReplyErrorFormat(FlyClient *flyClient, const char *fmt, ...);
-    int addReplyError(FlyClient *flyClient, const char *err);
+    int processInlineBuffer(AbstractFlyClient *flyClient);
+    int processMultiBulkBuffer(AbstractFlyClient *flyClient);
+    int analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos);
+    int analyseMultiBulk(AbstractFlyClient *flyClient, size_t &pos);
+    int analyseBulk(AbstractFlyClient *flyClient);
+    int setProtocolError(char *err, AbstractFlyClient *flyClient, size_t pos);
+    void addReplyErrorFormat(AbstractFlyClient *flyClient, const char *fmt, ...);
+    int addReplyError(AbstractFlyClient *flyClient, const char *err);
 
     MiscTool *miscTool;
-    LogHandler *logHandler;
+    AbstractLogHandler *logHandler;
 };
 
 #endif //FLYDB_NETHANDLER_H

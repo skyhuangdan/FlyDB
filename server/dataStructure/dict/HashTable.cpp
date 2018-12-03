@@ -3,7 +3,7 @@
 //
 #include <iostream>
 #include "HashTable.h"
-#include "../../log/LogHandler.h"
+#include "../../log/LogFileHandler.h"
 
 
 HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(size) {
@@ -14,7 +14,7 @@ HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(siz
     this->used = 0;
     this->mask = size - 1;
 
-    this->logHandler = LogHandler::getInstance();
+    this->logHandler = LogFileHandler::getInstance();
 }
 
 HashTable::~HashTable() {

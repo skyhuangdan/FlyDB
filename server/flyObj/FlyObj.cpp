@@ -6,9 +6,9 @@
 #include <list>
 #include <mach/mach.h>
 #include "FlyObj.h"
-#include "../dict/Dict.h"
-#include "../intset/IntSet.h"
-#include "../skiplist/SkipList.h"
+#include "../dataStructure/dict/Dict.h"
+#include "../dataStructure/intset/IntSet.h"
+#include "../dataStructure/skiplist/SkipList.h"
 
 FlyObj::FlyObj(void *ptr, FlyObjType type) {
     this->ptr = ptr;

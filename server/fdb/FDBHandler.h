@@ -8,9 +8,9 @@
 #include <ctime>
 #include <cstdint>
 #include "FDBDef.h"
-#include "../io/Fio.h"
+#include "../io/interface/Fio.h"
 
-class LogHandler;
+class AbstractLogHandler;
 class FlyServer;
 
 class FDBHandler {
@@ -45,7 +45,7 @@ private:
     uint64_t loadTotalBytes = 0;
     off_t maxProcessingChunk = 0;
 
-    LogHandler *logHandler;
+    AbstractLogHandler *logHandler;
     FlyServer *flyServer;
 };
 

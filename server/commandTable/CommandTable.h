@@ -8,21 +8,21 @@
 
 #include "../dataStructure/dict/Dict.h"
 #include "../flyClient/FlyClient.h"
-#include "../log/LogHandler.h"
+#include "../log/LogFileHandler.h"
 
 class FlyServer;
 class MiscTool;
-class LogHandler;
+class AbstractLogHandler;
 class CommandTable {
 public:
     CommandTable(FlyServer* flyServer);
     ~CommandTable();
-    int dealWithCommand(FlyClient *flyClient);
+    int dealWithCommand(AbstractFlyClient *flyClient);
 
 private:
     FlyServer* flyServer;
     Dict* commands;
-    LogHandler *logHandler;
+    AbstractLogHandler *logHandler;
 };
 
 

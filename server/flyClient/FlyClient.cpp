@@ -5,9 +5,9 @@
 #include "FlyClient.h"
 #include "../net/NetDef.h"
 #include "ClientDef.h"
-#include "../FlyServer.h"
+#include "../flyServer/interface/AbstractFlyServer.h"
 
-FlyClient::FlyClient(int fd, FlyServer *flyServer) {
+FlyClient::FlyClient(int fd, AbstractFlyServer *flyServer) {
     this->flyServer = flyServer;
     this->id = 0;
     this->fd = fd;

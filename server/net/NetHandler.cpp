@@ -23,10 +23,13 @@
 #include "../config/config.h"
 #include "../utils/MiscTool.h"
 #include "../flyClient/ClientDef.h"
+#include "../log/LogFileHandler.h"
+#include "../flyObj/FlyObjType.h"
+#include "../flyObj/FlyObj.h"
 
 NetHandler::NetHandler() {
     this->miscTool = MiscTool::getInstance();
-    this->logHandler = LogHandler::getInstance();
+    this->logHandler = LogFileHandler::getInstance();
 }
 
 NetHandler* NetHandler::getInstance() {
@@ -524,8 +527,8 @@ int NetHandler::tcpGenericAccept(char *err, int s,
 }
 
 int NetHandler::processInputBuffer(EventLoop *eventLoop,
-                                   FlyServer* flyServer,
-                                   FlyClient *flyClient) {
+                                   AbstractFlyServer* flyServer,
+                                   AbstractFlyClient *flyClient) {
     while (flyClient->getQueryBufSize() > 0) {
         // 第一个字符是'*'代表是整体multibulk串;
         // reqtype=multibulk代表是上次读取已经处理了部分的multibulk
@@ -548,8 +551,8 @@ int NetHandler::processInputBuffer(EventLoop *eventLoop,
 }
 
 int NetHandler::writeToClient(EventLoop *eventLoop,
-                              FlyServer *flyServer,
-                              FlyClient *flyClient,
+                              AbstractFlyServer *flyServer,
+                              AbstractFlyClient *flyClient,
                               int handlerInstalled) {
     ssize_t onceCount = 0, totalCount = 0;
     int fd = flyClient->getFd();
@@ -628,7 +631,7 @@ int NetHandler::writeToClient(EventLoop *eventLoop,
 }
 
 
-int NetHandler::processInlineBuffer(FlyClient *flyClient) {
+int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
     size_t pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
@@ -670,7 +673,7 @@ int NetHandler::processInlineBuffer(FlyClient *flyClient) {
  *  1.当前的query buffer中还不足以解析出一个完整的command，需要等待下次读取完
  *  2.当前协议解析失败，此时需要中断和客户端的连接
  */
-int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
+int NetHandler::processMultiBulkBuffer(AbstractFlyClient *flyClient) {
     size_t pos = 0;
     flyClient->setReqType(PROTO_REQ_MULTIBULK);
 
@@ -694,7 +697,7 @@ int NetHandler::processMultiBulkBuffer(FlyClient *flyClient) {
     return 1;
 }
 
-int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
+int NetHandler::analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos) {
     pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
@@ -740,7 +743,7 @@ int NetHandler::analyseMultiBulkLen(FlyClient *flyClient, size_t &pos) {
     return 1;
 }
 
-int NetHandler::analyseMultiBulk(FlyClient *flyClient, size_t &pos) {
+int NetHandler::analyseMultiBulk(AbstractFlyClient *flyClient, size_t &pos) {
     int64_t multiBulkLen = flyClient->getMultiBulkLen();
     for (int i = flyClient->getArgc(); i < multiBulkLen; i++) {
         if(-1 == analyseBulk(flyClient)) {
@@ -749,7 +752,7 @@ int NetHandler::analyseMultiBulk(FlyClient *flyClient, size_t &pos) {
     }
 }
 
-int NetHandler::analyseBulk(FlyClient *flyClient) {
+int NetHandler::analyseBulk(AbstractFlyClient *flyClient) {
     // 如果字符串为空，说明需要通过下次来读取，直接返回(但并不是协议错误)
     if (0 == flyClient->getQueryBuf().size()) {
         return -1;
@@ -807,7 +810,7 @@ int NetHandler::analyseBulk(FlyClient *flyClient) {
     return 1;
 }
 
-int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
+int NetHandler::setProtocolError(char *err, AbstractFlyClient *flyClient, size_t pos) {
     // 打印log
     char buf[256];
     snprintf(buf, sizeof(buf), "Query buffer during protocol error: '%s'",
@@ -821,7 +824,7 @@ int NetHandler::setProtocolError(char *err, FlyClient *flyClient, size_t pos) {
     flyClient->trimQueryBuf(pos + 2, -1);
 }
 
-void NetHandler::addReplyErrorFormat(FlyClient *flyClient,
+void NetHandler::addReplyErrorFormat(AbstractFlyClient *flyClient,
                                      const char *fmt, ...) {
     va_list ap;
     char msg[1024];
@@ -840,7 +843,7 @@ void NetHandler::addReplyErrorFormat(FlyClient *flyClient,
     addReplyError(flyClient, msg);
 }
 
-int NetHandler::addReplyError(FlyClient *flyClient, const char *err) {
+int NetHandler::addReplyError(AbstractFlyClient *flyClient, const char *err) {
     flyClient->addReply("-ERR ", 5);
     flyClient->addReply(err, strlen(err));
     flyClient->addReply("\r\n", 2);
@@ -850,8 +853,8 @@ void acceptTcpHandler(EventLoop *eventLoop,
                       int fd,
                       void *clientdata,
                       int mask) {
-    FlyServer *flyServer = eventLoop->getFlyServer();
-    NetHandler *netHandler = flyServer->getNetHandler();
+    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
+    AbstractNetHandler *netHandler = flyServer->getNetHandler();
 
     int cfd, cport;
     char cip[NET_IP_STR_LEN];
@@ -862,7 +865,7 @@ void acceptTcpHandler(EventLoop *eventLoop,
             return;
         }
 
-        FlyClient* flyClient = flyServer->createClient(cfd);
+        AbstractFlyClient* flyClient = flyServer->createClient(cfd);
         if (NULL == flyClient) {
             std::cout<< "error to create fly client" << std::endl;
             close(cfd);
@@ -874,9 +877,9 @@ void readQueryFromClient(EventLoop *eventLoop,
                          int fd,
                          void *clientdata,
                          int mask) {
-    FlyServer *flyServer = eventLoop->getFlyServer();
-    NetHandler *netHandler = flyServer->getNetHandler();
-    FlyClient *flyClient = reinterpret_cast<FlyClient *>(clientdata);
+    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
+    AbstractNetHandler *netHandler = flyServer->getNetHandler();
+    AbstractFlyClient *flyClient = reinterpret_cast<AbstractFlyClient *>(clientdata);
 
     char buf[PROTO_IOBUF_LEN];
     int readCnt = read(fd, buf, sizeof(buf));
@@ -915,10 +918,10 @@ void sendReplyToClient(EventLoop *eventLoop,
                        int fd,
                        void *clientdata,
                        int mask) {
-    FlyServer *flyServer = eventLoop->getFlyServer();
-    NetHandler *netHandler = flyServer->getNetHandler();
+    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
+    AbstractNetHandler *netHandler = flyServer->getNetHandler();
 
-    FlyClient *flyClient = reinterpret_cast<FlyClient *>(clientdata);
+    AbstractFlyClient *flyClient = reinterpret_cast<AbstractFlyClient *>(clientdata);
     netHandler->writeToClient(eventLoop, flyServer, flyClient, 1);
 }
 

@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "server/FlyServer.h"
+#include "server/flyServer/FlyServer.h"
 #include "server/dataStructure/dict/Dict.h"
 #include "server/dataStructure/dict/test/TestDictType.h"
 #include "server/dataStructure/skiplist/SkipList.h"

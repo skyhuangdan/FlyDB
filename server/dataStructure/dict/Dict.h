@@ -15,7 +15,7 @@ void dictStrDestructor(void *val);
 int dictStrKeyCompare(const void *key1, const void *key2);
 
 class MiscTool;
-class LogHandler;
+class AbstractLogHandler;
 
 class Dict {
 public:
@@ -40,7 +40,7 @@ private:
     const DictType* type;
     int64_t rehashIndex = -1;
 
-    LogHandler *logHandler;
+    AbstractLogHandler *logHandler;
 };
 
 

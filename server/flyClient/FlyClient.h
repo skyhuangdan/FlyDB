@@ -7,16 +7,16 @@
 
 #include <string>
 #include <list>
-#include "../dataStructure/flyObj/FlyObj.h"
+#include "../flyObj/FlyObj.h"
 #include "../commandTable/CommandEntry.h"
 #include "ClientDef.h"
+#include "interface/AbstractFlyClient.h"
+#include "../log/interface/AbstractLogHandler.h"
+#include "../flyServer/interface/AbstractFlyServer.h"
 
-class FlyServer;
-class LogHandler;
-
-class FlyClient {
+class FlyClient : public AbstractFlyClient {
 public:
-    FlyClient(int fd, FlyServer *flyServer);
+    FlyClient(int fd, AbstractFlyServer *flyServer);
     ~FlyClient();
     uint64_t getId() const;
     void setId(uint64_t id);
@@ -75,7 +75,7 @@ private:
     int addReplyToBuffer(const char *s, size_t len);
     int addReplyToReplyList(const char *s, size_t len);
 
-    FlyServer *flyServer;
+    AbstractFlyServer *flyServer;
     uint64_t id;
     int fd;                             // 套接字
     FlyObj* name;                       // client名字
@@ -97,7 +97,7 @@ private:
     int64_t bulkLen;
     size_t sendLen;                     // 记录发送长度，用于处理一次没有发送完的情况
 
-    LogHandler *logHandler;
+    AbstractLogHandler *logHandler;
 };
 
 

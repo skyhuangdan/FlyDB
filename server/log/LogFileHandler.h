@@ -5,26 +5,26 @@
 #ifndef FLYDB_LOGHANDLER_H
 #define FLYDB_LOGHANDLER_H
 
-#include "../FlyServer.h"
+#include "../flyServer/FlyServer.h"
+#include "interface/AbstractLogHandler.h"
 
-class LogHandler {
+class LogFileHandler : public AbstractLogHandler {
 public:
-    static LogHandler* getInstance();
+    static LogFileHandler* getInstance();
     static void init(char *logfile, int syslogEnabled, int verbosity);
     void logDebug(const char *fmt, ...);
     void logVerbose(const char *fmt, ...);
     void logNotice(const char *fmt, ...);
     void logWarning(const char *fmt, ...);
-    void logRaw(int level, const char *msg);
     void log(int level, const char *fmt, ...);
 
 private:
-    LogHandler();
+    LogFileHandler();
     void log(int level, const char *fmt, va_list &ap);
+    void logRaw(int level, const char *msg);
     static char *logfile;
     static int syslogEnabled;
     static int verbosity;
 };
-
 
 #endif //FLYDB_LOGHANDLER_H

@@ -11,14 +11,14 @@
 CommandTable::CommandTable(FlyServer* flyServer) : flyServer(flyServer) {
     this->commands = new Dict(CommandDictType::getInstance());
     this->commands->addEntry(new std::string("version"), new CommandEntry(versionProc, 0));
-    this->logHandler = LogHandler::getInstance();
+    this->logHandler = LogFileHandler::getInstance();
 }
 
 CommandTable::~CommandTable() {
     delete this->commands;
 }
 
-int CommandTable::dealWithCommand(FlyClient* flyClient) {
+int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
     char *command = (char*) flyClient->getArgv()[0]->getPtr();
     DictEntry* dictEntry = this->commands->findEntry(flyClient->getArgv()[0]->getPtr());
     if (NULL == dictEntry) {

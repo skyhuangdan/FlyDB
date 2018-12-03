@@ -11,7 +11,7 @@
 #include "FileEvent.h"
 #include "TimeEvent.h"
 #include "FiredEvent.h"
-#include "../FlyServer.h"
+#include "../flyServer/interface/AbstractFlyServer.h"
 
 class EventLoop;
 typedef void beforeAndAfterSleepProc(EventLoop *eventLoop);
@@ -19,13 +19,13 @@ typedef void beforeAndAfterSleepProc(EventLoop *eventLoop);
 void beforeSleep(EventLoop *eventLoop);
 class EventLoop {
 public:
-    EventLoop(FlyServer *flyserver, int setSize);
+    EventLoop(AbstractFlyServer *flyserver, int setSize);
     ~EventLoop();
     int processEvents(int flags);
     void eventMain();
     int getMaxfd() const;
-    FlyServer *getFlyServer() const;
-    void setFlyServer(FlyServer *flyServer);
+    AbstractFlyServer *getFlyServer() const;
+    void setFlyServer(AbstractFlyServer *flyServer);
 
     // file event
     int getSetSize() const;
@@ -60,7 +60,7 @@ private:
     void *apiData;
     beforeAndAfterSleepProc *beforeSleepProc;
     beforeAndAfterSleepProc *afterSleepProc;
-    FlyServer *flyServer;
+    AbstractFlyServer *flyServer;
 };
 
 

@@ -6,33 +6,33 @@
 #include <cstdio>
 #include <sys/time.h>
 #include <zconf.h>
-#include "LogHandler.h"
+#include "LogFileHandler.h"
 #include "../config/config.h"
 #include "LogDef.h"
 
-char* LogHandler::logfile = NULL;
-int LogHandler::syslogEnabled = 0;
-int LogHandler::verbosity = 0;
+char* LogFileHandler::logfile = NULL;
+int LogFileHandler::syslogEnabled = 0;
+int LogFileHandler::verbosity = 0;
 
-LogHandler::LogHandler() {
+LogFileHandler::LogFileHandler() {
 
 }
 
-LogHandler* LogHandler::getInstance() {
-    static LogHandler *log = NULL;
+LogFileHandler* LogFileHandler::getInstance() {
+    static LogFileHandler *log = NULL;
     if (NULL == log) {
-        log = new LogHandler();
+        log = new LogFileHandler();
     }
     return log;
 }
 
-void LogHandler::init(char *logfile, int syslogEnabled, int verbosity) {
-    LogHandler::logfile = logfile;
-    LogHandler::syslogEnabled = syslogEnabled;
-    LogHandler::verbosity = verbosity;
+void LogFileHandler::init(char *logfile, int syslogEnabled, int verbosity) {
+    LogFileHandler::logfile = logfile;
+    LogFileHandler::syslogEnabled = syslogEnabled;
+    LogFileHandler::verbosity = verbosity;
 }
 
-void LogHandler::logRaw(int level, const char *msg) {
+void LogFileHandler::logRaw(int level, const char *msg) {
     const int syslogLevelMap[] = {
             LOG_DEBUG,
             LOG_INFO,
@@ -72,7 +72,7 @@ void LogHandler::logRaw(int level, const char *msg) {
     }
 }
 
-void LogHandler::log(int level, const char *fmt, ...) {
+void LogFileHandler::log(int level, const char *fmt, ...) {
     if (level & 0xff < verbosity) {
         return;
     }
@@ -86,35 +86,35 @@ void LogHandler::log(int level, const char *fmt, ...) {
     logRaw(level, msg);
 }
 
-void LogHandler::logDebug(const char *fmt, ...) {
+void LogFileHandler::logDebug(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     log(LL_DEBUG, fmt, ap);
     va_end(ap);
 }
 
-void LogHandler::logVerbose(const char *fmt, ...) {
+void LogFileHandler::logVerbose(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     log(LL_VERBOSE, fmt, ap);
     va_end(ap);
 }
 
-void LogHandler::logNotice(const char *fmt, ...) {
+void LogFileHandler::logNotice(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     log(LL_NOTICE, fmt, ap);
     va_end(ap);
 }
 
-void LogHandler::logWarning(const char *fmt, ...) {
+void LogFileHandler::logWarning(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     log(LL_WARNING, fmt, ap);
     va_end(ap);
 }
 
-void LogHandler::log(int level, const char *fmt, va_list &ap) {
+void LogFileHandler::log(int level, const char *fmt, va_list &ap) {
     char msg[LOG_MAX_LEN];
     if (level & 0xff < verbosity) {
         return;
