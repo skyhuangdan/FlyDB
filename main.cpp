@@ -7,6 +7,7 @@
 #include "server/dataStructure/skiplist/test/TestSkipListType.h"
 #include "server/dataStructure/intset/IntSet.h"
 #include "server/utils/MiscTool.h"
+#include "config.h"
 
 /**
  * flyDB，取名fly有两层含义：
@@ -14,6 +15,8 @@
  *  第二："飞"寓意飞快，代表其高性能
  * created by zlw, 20180918
  */
+
+AbstractLogFactory *logFactory = new FileLogFactory();
 
 int main(int argc, char **argv) {
     std::cout << "Hello, flyDB. Wish you be better!" << std::endl;

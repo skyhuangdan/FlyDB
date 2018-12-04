@@ -3,3 +3,8 @@
 //
 
 #include "FlyDBFactory.h"
+#include "FlyDB.h"
+
+AbstractFlyDB* FlyDBFactory::getFlyDB() {
+    return new FlyDB();
+}

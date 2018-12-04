@@ -8,9 +8,9 @@
 #include "../flyServer/FlyServer.h"
 #include "interface/AbstractLogHandler.h"
 
-class LogFileHandler : public AbstractLogHandler {
+class FileLogHandler : public AbstractLogHandler {
 public:
-    static LogFileHandler* getInstance();
+    static FileLogHandler* getInstance();
     static void init(char *logfile, int syslogEnabled, int verbosity);
     void logDebug(const char *fmt, ...);
     void logVerbose(const char *fmt, ...);
@@ -19,7 +19,7 @@ public:
     void log(int level, const char *fmt, ...);
 
 private:
-    LogFileHandler();
+    FileLogHandler();
     void log(int level, const char *fmt, va_list &ap);
     void logRaw(int level, const char *msg);
     static char *logfile;

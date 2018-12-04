@@ -7,11 +7,12 @@
 #include "CommandDictType.h"
 #include "CommandEntry.h"
 #include "../utils/MiscTool.h"
+#include "../log/FileLogFactory.h"
 
 CommandTable::CommandTable(FlyServer* flyServer) : flyServer(flyServer) {
     this->commands = new Dict(CommandDictType::getInstance());
     this->commands->addEntry(new std::string("version"), new CommandEntry(versionProc, 0));
-    this->logHandler = LogFileHandler::getInstance();
+    this->logHandler = logFactory->getLogger();
 }
 
 CommandTable::~CommandTable() {

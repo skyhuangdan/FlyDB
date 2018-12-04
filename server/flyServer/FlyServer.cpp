@@ -6,16 +6,18 @@
 #include <syslog.h>
 #include "FlyServer.h"
 #include "../commandTable/CommandTable.h"
-#include "../config/config.h"
+#include "../../config.h"
 #include "../atomic/AtomicHandler.h"
 #include "../net/NetDef.h"
 #include "../utils/MiscTool.h"
 #include "../net/NetHandler.h"
-#include "../log/LogFileHandler.h"
+#include "../log/FileLogHandler.h"
 #include "../flyClient/ClientDef.h"
 #include "../fdb/FDBHandler.h"
 #include "../aof/AOFDef.h"
 #include "../db/FlyDB.h"
+#include "../log/FileLogFactory.h"
+#include "../db/FlyDBFactory.h"
 
 configMap loglevelMap[] = {
         {"debug",   LL_DEBUG},
@@ -39,9 +41,12 @@ configMap syslogFacilityMap[] = {
 };
 
 FlyServer::FlyServer() {
+    // fly db factory
+    this->flyDBFactory = new FlyDBFactory();
+
     // init db array
     for (int i = 0; i < DB_NUM; i++) {
-        this->dbArray[i] = new FlyDB();
+        this->dbArray[i] = this->flyDBFactory->getFlyDB();
         if (NULL == this->dbArray.at(i)) {
             std::cout << "error to create FlyDB[" << i << "]" << std::endl;
             exit(1);
@@ -138,8 +143,11 @@ void FlyServer::init(int argc, char **argv) {
     }
 
     // LogHandler放在最后，因为初始化需要flyServer的配置, 最好等其初始化完毕
-    LogFileHandler::init(this->logfile, this->syslogEnabled, this->verbosity);
-    this->logHandler = LogFileHandler::getInstance();
+    // todo: 需要把整个配置的读取都独立出来，并且FileLogFactory.init独立到main中
+
+    //FileLogHandler::init(this->logfile, this->syslogEnabled, this->verbosity);
+    FileLogFactory::init(this->logfile, this->syslogEnabled, this->verbosity);
+    this->logHandler = logFactory->getLogger();
 
     // 从fdb或者aof中加载数据
     loadDataFromDisk();

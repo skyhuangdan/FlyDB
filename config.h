@@ -7,7 +7,9 @@
 
 #include <string>
 #include <syslog.h>
-#include "../log/LogDef.h"
+#include "server/log/LogDef.h"
+#include "server/log/interface/AbstractLogFactory.h"
+#include "server/log/FileLogFactory.h"
 
 #ifndef BYTE_ORDER
 #if (BSD >= 199103)
@@ -59,6 +61,8 @@ const int CONFIG_DEFAULT_SYSLOG_ENABLED = 0;
 const std::string CONFIG_DEFAULT_LOGFILE = "";
 const std::string CONFIG_DEFAULT_SYSLOG_IDENT = "flyDB";
 const int CONFIG_DEFAULT_VERBOSITY = LL_NOTICE;
+
+extern AbstractLogFactory *logFactory;
 
 // fdb相关
 const std::string CONFIG_DEFAULT_FDB_FILENAME = "dump.fdb";

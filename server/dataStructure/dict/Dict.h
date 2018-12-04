@@ -9,6 +9,7 @@
 #include <array>
 #include "HashTable.h"
 #include "DictDef.h"
+#include "../../log/interface/AbstractLogFactory.h"
 
 uint64_t dictStrHash(const void *key);
 void dictStrDestructor(void *val);

@@ -8,7 +8,7 @@
 
 #include "../dataStructure/dict/Dict.h"
 #include "../flyClient/FlyClient.h"
-#include "../log/LogFileHandler.h"
+#include "../log/FileLogHandler.h"
 
 class FlyServer;
 class MiscTool;

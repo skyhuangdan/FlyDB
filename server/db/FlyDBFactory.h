@@ -10,6 +10,7 @@
 class FlyDBFactory : public AbstractFlyDBFactory {
 public:
 
+    AbstractFlyDB* getFlyDB();
 };
 
 

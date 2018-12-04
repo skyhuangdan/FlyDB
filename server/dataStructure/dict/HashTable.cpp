@@ -3,8 +3,9 @@
 //
 #include <iostream>
 #include "HashTable.h"
-#include "../../log/LogFileHandler.h"
-
+#include "../../log/FileLogHandler.h"
+#include "../../log/FileLogFactory.h"
+#include "../../../config.h"
 
 HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(size) {
     this->table = new DictEntry*[size];
@@ -14,7 +15,7 @@ HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(siz
     this->used = 0;
     this->mask = size - 1;
 
-    this->logHandler = LogFileHandler::getInstance();
+    this->logHandler = logFactory->getLogger();
 }
 
 HashTable::~HashTable() {

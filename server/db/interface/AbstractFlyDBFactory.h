@@ -5,8 +5,11 @@
 #ifndef FLYDB_ABSTRACTFLYDBFACTORY_H
 #define FLYDB_ABSTRACTFLYDBFACTORY_H
 
+#include "AbstractFlyDB.h"
+
 class AbstractFlyDBFactory {
 public:
+    virtual AbstractFlyDB* getFlyDB() = 0;
 
 };
 

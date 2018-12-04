@@ -7,6 +7,7 @@
 
 class AbstractLogHandler {
 public:
+
     virtual void logDebug(const char *fmt, ...) = 0;
 
     virtual void logVerbose(const char *fmt, ...) = 0;

@@ -4,14 +4,15 @@
 
 #include "Dict.h"
 #include "../../utils/MiscTool.h"
-#include "../../log/LogFileHandler.h"
+#include "../../log/FileLogHandler.h"
+#include "../../log/FileLogFactory.h"
 
 Dict::Dict(const DictType* type) : type(type) {
     this->ht[0] = new HashTable(type, HASH_TABLE_INITIAL_SIZE);
     this->ht[1] = NULL;
     this->rehashIndex = -1;
 
-    this->logHandler = LogFileHandler::getInstance();
+    this->logHandler = logFactory->getLogger();
 }
 
 Dict::~Dict() {

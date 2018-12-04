@@ -10,6 +10,7 @@
 #include "../utils/MiscTool.h"
 #include "interface/AbstractNetHandler.h"
 #include "../log/interface/AbstractLogHandler.h"
+#include "../log/interface/AbstractLogFactory.h"
 
 // 对应socket的绑定接口
 void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);

@@ -20,16 +20,17 @@
 #include <iostream>
 #include "NetHandler.h"
 #include "NetDef.h"
-#include "../config/config.h"
+#include "../../config.h"
 #include "../utils/MiscTool.h"
 #include "../flyClient/ClientDef.h"
-#include "../log/LogFileHandler.h"
+#include "../log/FileLogHandler.h"
 #include "../flyObj/FlyObjType.h"
 #include "../flyObj/FlyObj.h"
+#include "../log/FileLogFactory.h"
 
 NetHandler::NetHandler() {
     this->miscTool = MiscTool::getInstance();
-    this->logHandler = LogFileHandler::getInstance();
+    this->logHandler = logFactory->getLogger();
 }
 
 NetHandler* NetHandler::getInstance() {

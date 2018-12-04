@@ -11,13 +11,14 @@
 #include <list>
 #include <pthread.h>
 #include "../event/EventLoop.h"
-#include "../config/config.h"
-#include "../log/LogFileHandler.h"
+#include "../../config.h"
+#include "../log/FileLogHandler.h"
 #include "../aof/AOFHandler.h"
 #include "../aof/AOFDef.h"
 #include "../flyClient/interface/AbstractFlyClient.h"
 #include "interface/AbstractFlyServer.h"
 #include "../db/interface/AbstractFlyDB.h"
+#include "../db/interface/AbstractFlyDBFactory.h"
 
 class AbstractNetHandler;
 class MiscTool;
@@ -25,6 +26,7 @@ class AbstractLogHandler;
 class CommandTable;
 class AOFHandler;
 class FDBHandler;
+class AbstractLogFactory;
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
@@ -75,6 +77,7 @@ private:
     void loadDataFromDisk();
 
     int pid;                                  // 运行server的线程标识
+    AbstractFlyDBFactory *flyDBFactory;
     std::array<AbstractFlyDB*, DB_NUM> dbArray;       // db列表
     std::string version = VERSION;            // 版本号
     CommandTable* commandTable;               // 命令表
