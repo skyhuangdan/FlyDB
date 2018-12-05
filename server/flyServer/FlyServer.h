@@ -11,7 +11,7 @@
 #include <list>
 #include <pthread.h>
 #include "../event/EventLoop.h"
-#include "../../config.h"
+#include "../../def.h"
 #include "../log/FileLogHandler.h"
 #include "../aof/AOFHandler.h"
 #include "../aof/AOFDef.h"
@@ -67,11 +67,7 @@ public:
 
 private:
     void setMaxClientLimit();                 // 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）
-    void loadConfig(const std::string &fileName);
-    void loadConfigFromString(const std::string& config);
-    void loadConfigFromLineString(const std::string &line);
     int listenToPort();                       // 打开监听socket，用于监听用户命令
-    int configMapGetValue(configMap *config, const char *name);
     void deleteFromPending(int fd);
     void deleteFromAsyncClose(int fd);
     void loadDataFromDisk();

@@ -17,6 +17,7 @@ public:
     virtual void logWarning(const char *fmt, ...) = 0;
 
     virtual void log(int level, const char *fmt, ...) = 0;
+
 };
 
 #endif //FLYDB_ABSTRACTLOGHANDLER_H

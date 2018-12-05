@@ -6,7 +6,7 @@
 #define FLYDB_ENDIANCONVTOOL_H
 
 #include <cstdint>
-#include "../../config.h"
+#include "../../def.h"
 
 class EndianConvTool {
 public:

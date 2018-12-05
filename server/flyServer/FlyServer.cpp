@@ -6,7 +6,7 @@
 #include <syslog.h>
 #include "FlyServer.h"
 #include "../commandTable/CommandTable.h"
-#include "../../config.h"
+#include "../../def.h"
 #include "../atomic/AtomicHandler.h"
 #include "../net/NetDef.h"
 #include "../utils/MiscTool.h"
@@ -18,27 +18,6 @@
 #include "../db/FlyDB.h"
 #include "../log/FileLogFactory.h"
 #include "../db/FlyDBFactory.h"
-
-configMap loglevelMap[] = {
-        {"debug",   LL_DEBUG},
-        {"verbose", LL_VERBOSE},
-        {"notice",  LL_NOTICE},
-        {"warning", LL_WARNING},
-        {NULL, 0}
-};
-
-configMap syslogFacilityMap[] = {
-        {"user",    LOG_USER},
-        {"local0",  LOG_LOCAL0},
-        {"local1",  LOG_LOCAL1},
-        {"local2",  LOG_LOCAL2},
-        {"local3",  LOG_LOCAL3},
-        {"local4",  LOG_LOCAL4},
-        {"local5",  LOG_LOCAL5},
-        {"local6",  LOG_LOCAL6},
-        {"local7",  LOG_LOCAL7},
-        {NULL, 0}
-};
 
 FlyServer::FlyServer() {
     // fly db factory
@@ -55,11 +34,6 @@ FlyServer::FlyServer() {
 
     // init command table
     this->commandTable = new CommandTable(this);
-    // server端口
-    this->port = CONFIG_DEFAULT_SERVER_PORT;
-    // unix domain socket
-    this->unixsocket = NULL;
-    this->unixsocketperm = CONFIG_DEFAULT_UNIX_SOCKET_PERM;
     // 设置最大客户端数量
     setMaxClientLimit();
     // 时间循环处理器
@@ -68,8 +42,6 @@ FlyServer::FlyServer() {
     // serverCron运行频率
     this->hz = CONFIG_CRON_HZ;
     this->neterr = new char[NET_ERR_LEN];
-    // keep alive
-    this->tcpKeepAlive = CONFIG_DEFAULT_TCP_KEEPALIVE;
     // 拒绝连接次数设置为0
     this->statRejectedConn = 0;
     // next client id
@@ -78,13 +50,6 @@ FlyServer::FlyServer() {
     // 当前时间
     this->nowt = time(NULL);
     this->clientMaxQuerybufLen = PROTO_MAX_QUERYBUF_LEN;
-    // log相关
-    this->verbosity = CONFIG_DEFAULT_VERBOSITY;
-    this->syslogEnabled = CONFIG_DEFAULT_SYSLOG_ENABLED;
-    this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
-    this->syslogIdent = strdup(CONFIG_DEFAULT_SYSLOG_IDENT.c_str());
-    // fdb相关
-    this->fdbFile = strdup(CONFIG_DEFAULT_FDB_FILENAME.c_str());
 
     this->miscTool = MiscTool::getInstance();
     this->netHandler = NetHandler::getInstance();
@@ -101,12 +66,6 @@ FlyServer::~FlyServer() {
 }
 
 void FlyServer::init(int argc, char **argv) {
-    // 加载配置文件中配置
-    std::string fileName;
-    if (1 == this->miscTool->getAbsolutePath(this->configfile, fileName)) {
-        loadConfig(fileName);
-    }
-
     // fdb handler
     this->fdbHandler = new FDBHandler(this,
             this->fdbFile,
@@ -368,151 +327,6 @@ void FlyServer::setMaxClientLimit() {
     }
 }
 
-void FlyServer::loadConfig(const std::string& fileName) {
-    char buf[CONFIG_MAX_LINE + 1];
-    std::string config;
-
-    if (fileName.length() != 0) {
-        FILE *fp = NULL;
-        if ('-' == fileName[0] && '\0' == fileName[1]) {
-            fp = stdin;
-        } else {
-            if (NULL == (fp = fopen(fileName.c_str(), "r"))) {
-                exit(1);
-            }
-        }
-
-        // 从配置文件中依次读取配置 --> config
-        while (fgets(buf, CONFIG_MAX_LINE + 1, fp) != NULL) {
-            config += buf;
-        }
-
-        // 读取完毕，如果不是stdin，则关闭文件
-        if (fp != stdin) {
-            fclose(fp);
-        }
-    }
-
-    loadConfigFromString(config);
-}
-
-void FlyServer::loadConfigFromString(const std::string& config) {
-    // 将文件分隔成行
-    std::string delim = "\n";
-    std::vector<std::string> lines;
-    this->miscTool->spiltString(config, delim, lines);
-
-    // 依次处理每行
-    for (auto line : lines) {
-        if (0 == line.size() || '#' == line[0]) {
-            continue;
-        }
-        loadConfigFromLineString(line);
-    }
-}
-
-void FlyServer::loadConfigFromLineString(const std::string &line) {
-    // 截取words
-    std::vector<std::string> words;
-    this->miscTool->spiltString(line, " ", words);
-    if (0 == words.size()) {
-        return;
-    }
-
-    if (0 == words[0].compare("port") && 2 == words.size()) {
-        int port = atoi(words[1].c_str());
-        if (0 <= port && port <= 65535) {
-            this->port = port;
-        }
-    } else if (0 == words[0].compare("bind")) {
-        int addressCount = words.size() - 1;
-        if (addressCount > CONFIG_BINDADDR_MAX) {
-            std::cout << "Too many bind addresses specified!" << std::endl;
-            exit(1);
-        }
-        for (int j = 0; j < addressCount; j++) {
-            this->bindAddr.push_back(words[j + 1]);
-        }
-    } else if (0 == words[0].compare("unixsocket") && 2 == words.size()) {
-        this->unixsocket = strdup(words[1].c_str());
-    } else if (0 == words[0].compare("unixsocketperm") && 2 == words.size()) {
-        this->unixsocketperm = (mode_t) strtol(words[1].c_str(), NULL, 0);
-        if (this->unixsocketperm > 0777) {
-            std::cout << "Invalid socket file permissions" << std::endl;
-            exit(1);
-        }
-    } else if (0 == words[0].compare("tcp-keepalive") && 2 == words.size()) {
-        this->tcpKeepAlive = atoi(words[1].c_str());
-        if (this->tcpKeepAlive < 0) {
-            std::cout << "Invalid tcp-keepalive value" << std::endl;
-            exit(1);
-        }
-    } else if (0 == words[0].compare("logfile") && 2 == words.size()) {
-        FILE *logfd;
-        free(this->logfile);
-        this->logfile = strdup(words[1].c_str());
-        if ('\0' != this->logfile[0]) {
-            // 尝试打开一次，查看是否可以正常打开
-            logfd = fopen(this->logfile, "a");
-            if (NULL == logfd) {
-                std::cout << "Can not open log file: "
-                             << this->logfile << std::endl;
-                exit(1);
-            }
-            fclose(logfd);
-        }
-    } else if (0 == words[0].compare("syslog-enabled") && 2 == words.size()) {
-        if (-1 == (this->syslogEnabled =
-                this->miscTool->yesnotoi(words[1].c_str()))) {
-            std::cout << "syslog-enabled must be 'yes(YES)' or 'no(NO)'"
-                         << std::endl;
-            exit(1);
-        }
-    } else if (0 == words[0].compare("syslog-ident") && 2 == words.size()) {
-        if (this->syslogIdent) {
-            free(this->syslogIdent);
-        }
-        this->syslogIdent = strdup(words[1].c_str());
-    } else if (0 == words[0].compare("loglevel") && 2 == words.size()) {
-        this->verbosity = configMapGetValue(loglevelMap, words[1].c_str());
-        if (INT_MIN == this->verbosity) {
-            std::cout << "Invalid log level. "
-                         "Must be one of debug, verbose, notice, warning"
-                         << std::endl;
-            exit(1);
-        }
-    } else if (0 == words[0].compare("syslog-facility") && 2 == words.size()) {
-        this->syslogFacility =
-                configMapGetValue(syslogFacilityMap, words[1].c_str());
-        if (INT_MIN == this->syslogFacility) {
-            std::cout << "Invalid log facility. "
-                         "Must be one of USER or between LOCAL0-LOCAL7"
-                         << std::endl;
-            exit(1);
-        }
-    } else if (0 == words[0].compare("dbfilename") && 2 == words.size()) {
-        FILE *fdbfd;
-        free(this->fdbFile);
-        this->fdbFile = strdup(words[1].c_str());
-
-        // 尝试打开一次，查看是否可以正常打开
-        fdbfd = fopen(this->fdbFile, "a");
-        if (NULL == fdbfd) {
-            std::cout << "Can not open fdb file: "
-                         << this->fdbFile << std::endl;
-            exit(1);
-        }
-        fclose(fdbfd);
-    } else if (0 == words[0].compare("appendonly") && words.size() == 2) {
-        int yes;
-        if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {
-            std::cout <<  "argument must be 'yes' or 'no'";
-            exit(1);
-        }
-        this->aofState = yes ? AOF_ON : AOF_OFF;
-    }
-
-}
 
 int FlyServer::listenToPort() {
     int fd;
@@ -561,16 +375,6 @@ int FlyServer::listenToPort() {
     }
 
     return 1;
-}
-
-int FlyServer::configMapGetValue(configMap *config, const char *name) {
-    while (config->name != NULL) {
-        if (!strcasecmp(config->name, name)) {
-            return config->value;
-        }
-        config++;
-    }
-    return INT_MIN;
 }
 
 void FlyServer::deleteFromPending(int fd) {

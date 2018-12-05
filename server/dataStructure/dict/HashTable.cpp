@@ -5,7 +5,7 @@
 #include "HashTable.h"
 #include "../../log/FileLogHandler.h"
 #include "../../log/FileLogFactory.h"
-#include "../../../config.h"
+#include "../../../def.h"
 
 HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(size) {
     this->table = new DictEntry*[size];

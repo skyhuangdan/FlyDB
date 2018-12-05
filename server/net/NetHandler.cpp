@@ -20,7 +20,7 @@
 #include <iostream>
 #include "NetHandler.h"
 #include "NetDef.h"
-#include "../../config.h"
+#include "../../def.h"
 #include "../utils/MiscTool.h"
 #include "../flyClient/ClientDef.h"
 #include "../log/FileLogHandler.h"
