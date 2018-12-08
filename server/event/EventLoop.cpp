@@ -8,7 +8,7 @@
 #include "EventDef.h"
 #include "../flyServer/FlyServer.h"
 
-EventLoop::EventLoop(AbstractFlyServer *flyServer, int setSize) {
+EventLoop::EventLoop(const AbstractCoordinator *coordinator, int setSize) {
     this->setSize = setSize;
     this->lastTime = getCurrentTime();
     this->timeEventNextId = 0;
@@ -18,9 +18,9 @@ EventLoop::EventLoop(AbstractFlyServer *flyServer, int setSize) {
     this->fileEvents.resize(this->setSize);
     for (int i = 0; i < this->setSize; i++) {
         this->fileEvents[i].setFd(i);
-        this->fileEvents[i].setEventLoop(this);
+        this->fileEvents[i].setCoordinator(coordinator);
     }
-    this->flyServer = flyServer;
+    this->coordinator = coordinator;
     this->beforeSleepProc = beforeSleep;
     this->afterSleepProc = NULL;
 }
@@ -36,7 +36,7 @@ void EventLoop::eventMain() {
     this->stopFlag = 0;
     while (!this->stopFlag) {
         if (NULL != this->beforeSleepProc) {
-            this->beforeSleepProc(this);
+            this->beforeSleepProc(this->coordinator);
         }
         this->processEvents(EVENT_ALL_EVENTS | EVENT_CALL_AFTER_SLEEP);
     }
@@ -191,7 +191,7 @@ int EventLoop::processEvents(int flags) {
         int numEvents =
                 reinterpret_cast<PollState*>(this->apiData)->poll(this, tvp);
         if (afterSleepProc != NULL && flags & EVENT_CALL_AFTER_SLEEP) {
-            this->afterSleepProc(this);
+            this->afterSleepProc(this->coordinator);
         }
 
         // 处理获取到的文件事件, 处理完清空firedEvents
@@ -233,7 +233,7 @@ int EventLoop::processTimeEvents() {
         if (iter->getWhen() < nowt) {
             processed++;
             int ret = iter->getTimeProc()(
-                    this, iter->getId(), iter->getClientData());
+                    this->coordinator, iter->getId(), iter->getClientData());
             if (ret > 0) {
                 iter->setWhen(nowt + ret);
                 needSort = true;
@@ -255,7 +255,7 @@ int EventLoop::deleteTimeEvent(uint64_t id) {
     for (iter; iter != this->timeEvents.end(); iter++) {
         if (iter->getId() == id) {
             if (iter->getFinalizerProc()) {
-                iter->getFinalizerProc()(this, iter->getClientData());
+                iter->getFinalizerProc()(this->coordinator, iter->getClientData());
             }
             this->timeEvents.erase(iter++);
             return 1;
@@ -276,16 +276,8 @@ void EventLoop::addFiredEvent(int fd, int mask) {
     this->firedEvents.push_back(FiredEvent(fd, mask));
 }
 
-AbstractFlyServer *EventLoop::getFlyServer() const {
-    return flyServer;
-}
-
-void EventLoop::setFlyServer(AbstractFlyServer *flyServer) {
-    this->flyServer = flyServer;
-}
-
-void beforeSleep(EventLoop *eventLoop) {
-    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
+void beforeSleep(const AbstractCoordinator *coordinator) {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
     // 处理命令回复
     flyServer->handleClientsWithPendingWrites();

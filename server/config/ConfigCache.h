@@ -6,11 +6,12 @@
 #define FLYDB_FILECONFIG_H
 
 #include <string>
-#include "interface/AbstractConfigCache.h"
+#include <vector>
 #include "../aof/AOFDef.h"
 
-class ConfigCache : public AbstractConfigCache {
+struct ConfigCache {
 public:
+
     ConfigCache();
 
     const std::vector<std::string> &getBindAddrs() const;
@@ -65,7 +66,7 @@ private:
     /**
      * 网络相关
      * */
-    std::vector<std::string> bindAddrs;              // 绑定地址
+    std::vector<std::string> bindAddrs;             // 绑定地址
     const char *unixsocket;                         // UNIX socket path
     mode_t unixsocketperm;                          // UNIX socket permission
     int tcpKeepAlive;
@@ -86,6 +87,5 @@ private:
     char *fdbFile;                                  // 持久化文件名字
     AOFState aofState;
 };
-
 
 #endif //FLYDB_FILECONFIG_H

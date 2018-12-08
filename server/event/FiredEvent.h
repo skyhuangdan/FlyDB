@@ -5,7 +5,7 @@
 #ifndef FLYDB_FIREDEVENT_H
 #define FLYDB_FIREDEVENT_H
 
-class FiredEvent {
+struct FiredEvent {
 public:
     FiredEvent(int fd, int mask);
     int getFd() const;

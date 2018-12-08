@@ -7,8 +7,7 @@
 #include "DictEntry.h"
 #include "Dict.h"
 #include "DictDef.h"
-
-class AbstractLogHandler;
+#include "../../log/interface/AbstractLogHandler.h"
 
 class HashTable {
  public:
@@ -39,6 +38,5 @@ private:
 
     AbstractLogHandler *logHandler;
 };
-
 
 #endif //FLYDB_HASHTABLE_H

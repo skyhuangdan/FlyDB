@@ -7,6 +7,9 @@
 #include "EventDef.h"
 #include "Select.h"
 
+FileEvent::FileEvent() {
+}
+
 void FileEvent::setMask(int mask) {
     this->mask = mask;
 }
@@ -70,11 +73,11 @@ void FileEvent::process(int mask) {
     // 如果是有可读/可写事件，则执行事件回调
     if (mask & ES_READABLE) {
         rfired = 1;
-        rfileProc(this->eventLoop, this->fd, clientData, mask);
+        rfileProc(this->coordinator, this->fd, clientData, mask);
     }
     if (mask & ES_WRITABLE) {
         if (this->wfileProc != this->rfileProc || 0 == rfired) {
-            wfileProc(this->eventLoop, fd, clientData, mask);
+            wfileProc(this->coordinator, fd, clientData, mask);
         }
     }
 }
@@ -87,10 +90,7 @@ void FileEvent::setFd(int fd) {
     this->fd = fd;
 }
 
-EventLoop *FileEvent::getEventLoop() const {
-    return eventLoop;
+void FileEvent::setCoordinator(const AbstractCoordinator *coordinator) {
+    this->coordinator = coordinator;
 }
 
-void FileEvent::setEventLoop(EventLoop *eventLoop) {
-    FileEvent::eventLoop = eventLoop;
-}

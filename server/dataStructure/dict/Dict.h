@@ -15,9 +15,6 @@ uint64_t dictStrHash(const void *key);
 void dictStrDestructor(void *val);
 int dictStrKeyCompare(const void *key1, const void *key2);
 
-class MiscTool;
-class AbstractLogHandler;
-
 class Dict {
 public:
     Dict(const DictType* type);

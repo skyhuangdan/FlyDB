@@ -6,11 +6,11 @@
 #define FLYDB_FILEEVENT_H
 
 #include "EventDef.h"
+#include "interface/AbstractEventLoop.h"
 
-class EventLoop;
-
-class FileEvent {
+struct FileEvent {
 public:
+    FileEvent();
     void setMask(int mask);
     int getMask() const;
     void setClientData(void *clientData);
@@ -25,15 +25,14 @@ public:
     void process(int mask);
     int getFd() const;
     void setFd(int fd);
-    EventLoop *getEventLoop() const;
-    void setEventLoop(EventLoop *eventLoop);
+    void setCoordinator(const AbstractCoordinator *coordinator);
 
 private:
     int fd;
     int mask;       // EVENT_READABLE或者EVENT_WRITABLE
     void *clientData;
     fileEventProc *rfileProc, *wfileProc;
-    EventLoop *eventLoop;
+    const AbstractCoordinator *coordinator;
 };
 
 

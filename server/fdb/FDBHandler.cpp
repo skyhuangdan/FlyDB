@@ -12,10 +12,10 @@
 
 #define fdbExitReportCorrupt(...) checkThenExit(__LINE__,__VA_ARGS__)
 
-FDBHandler::FDBHandler(FlyServer *flyServer,
+FDBHandler::FDBHandler(const AbstractCoordinator *coordinator,
                        char *filename,
                        uint64_t maxProcessingChunk) {
-    this->flyServer = flyServer;
+    this->coordinator = coordinator;
     this->filename = filename;
     this->maxProcessingChunk = maxProcessingChunk;
     this->logHandler = logFactory->getLogger();
@@ -56,7 +56,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
     }
 
     uint64_t expireTime;
-    AbstractFlyDB *flyDB = flyServer->getFlyDB(0);
+    AbstractFlyDB *flyDB = coordinator->getFlyServer()->getFlyDB(0);
 
     while (1) {
         char type = loadChar(fio);
@@ -103,7 +103,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
             }
 
             AbstractFlyDB *temp = NULL;
-            if (NULL != (temp = flyServer->getFlyDB(dbId))) {
+            if (NULL != (temp = coordinator->getFlyServer()->getFlyDB(dbId))) {
                 flyDB = temp;
             }
             continue;

@@ -8,7 +8,6 @@
 #include "../flyClient/interface/AbstractFlyClient.h"
 #include "../flyServer/interface/AbstractFlyServer.h"
 
-class FlyServer;
 typedef void (*commandProc)(AbstractFlyServer*, AbstractFlyClient*);
 
 struct CommandEntry {

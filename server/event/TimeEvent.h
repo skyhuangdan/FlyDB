@@ -9,9 +9,13 @@
 
 int64_t getCurrentTime();
 
-class TimeEvent {
+struct TimeEvent {
 public:
-    TimeEvent(int64_t id, int64_t milliseconds, timeEventProc *proc, void *clientData, eventFinalizerProc *finalizerProc);
+    TimeEvent(int64_t id,
+              int64_t milliseconds,
+              timeEventProc *proc,
+              void *clientData,
+              eventFinalizerProc *finalizerProc);
     int64_t getId() const;
     void setId(int64_t id);
     int64_t getWhen() const;

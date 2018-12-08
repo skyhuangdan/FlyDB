@@ -527,8 +527,7 @@ int NetHandler::tcpGenericAccept(char *err, int s,
     }
 }
 
-int NetHandler::processInputBuffer(EventLoop *eventLoop,
-                                   AbstractFlyServer* flyServer,
+int NetHandler::processInputBuffer(const AbstractCoordinator* coordinator,
                                    AbstractFlyClient *flyClient) {
     while (flyClient->getQueryBufSize() > 0) {
         // 第一个字符是'*'代表是整体multibulk串;
@@ -547,12 +546,11 @@ int NetHandler::processInputBuffer(EventLoop *eventLoop,
     }
 
     // 处理命令
-    flyServer->dealWithCommand(flyClient);
+    coordinator->getFlyServer()->dealWithCommand(flyClient);
     return 1;
 }
 
-int NetHandler::writeToClient(EventLoop *eventLoop,
-                              AbstractFlyServer *flyServer,
+int NetHandler::writeToClient(const AbstractCoordinator *coordinator,
                               AbstractFlyClient *flyClient,
                               int handlerInstalled) {
     ssize_t onceCount = 0, totalCount = 0;
@@ -604,24 +602,24 @@ int NetHandler::writeToClient(EventLoop *eventLoop,
     // 如果写入过程出错，删除flyClient
     if (onceCount <= 0 && EAGAIN != errno) {
         logHandler->logVerbose("Error writing to client: %s", strerror(errno));
-        flyServer->freeClientAsync(flyClient);
+        coordinator->getFlyServer()->freeClientAsync(flyClient);
         close(fd);
         return -1;
     }
 
     // 统计服务端总共发送的字节数
-    flyServer->addToStatNetInputBytes(totalCount);
+    coordinator->getFlyServer()->addToStatNetInputBytes(totalCount);
 
     // 如果全部发送完
     if (flyClient->hasNoPending()) {
         // 删除hanlder
         flyClient->setSendLen(0);
         if (handlerInstalled) {
-            eventLoop->deleteFileEvent(fd, ES_WRITABLE);
+            coordinator->getEventLoop()->deleteFileEvent(fd, ES_WRITABLE);
         }
 
         if (flyClient->getFlags() & CLIENT_CLOSE_AFTER_REPLY) {
-            flyServer->freeClientAsync(flyClient);
+            coordinator->getFlyServer()->freeClientAsync(flyClient);
             close(fd);
             return -1;
         }
@@ -850,12 +848,12 @@ int NetHandler::addReplyError(AbstractFlyClient *flyClient, const char *err) {
     flyClient->addReply("\r\n", 2);
 }
 
-void acceptTcpHandler(EventLoop *eventLoop,
+void acceptTcpHandler(const AbstractCoordinator *coordinator,
                       int fd,
                       void *clientdata,
                       int mask) {
-    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
-    AbstractNetHandler *netHandler = flyServer->getNetHandler();
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+    AbstractNetHandler *netHandler = coordinator->getNetHandler();
 
     int cfd, cport;
     char cip[NET_IP_STR_LEN];
@@ -874,13 +872,14 @@ void acceptTcpHandler(EventLoop *eventLoop,
     }
 }
 
-void readQueryFromClient(EventLoop *eventLoop,
+void readQueryFromClient(const AbstractCoordinator *coordinator,
                          int fd,
                          void *clientdata,
                          int mask) {
-    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
-    AbstractNetHandler *netHandler = flyServer->getNetHandler();
-    AbstractFlyClient *flyClient = reinterpret_cast<AbstractFlyClient *>(clientdata);
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+    AbstractNetHandler *netHandler = coordinator->getNetHandler();
+    AbstractFlyClient *flyClient =
+            reinterpret_cast<AbstractFlyClient *>(clientdata);
 
     char buf[PROTO_IOBUF_LEN];
     int readCnt = read(fd, buf, sizeof(buf));
@@ -912,17 +911,14 @@ void readQueryFromClient(EventLoop *eventLoop,
         return;
     }
 
-    netHandler->processInputBuffer(eventLoop, flyServer, flyClient);
+    netHandler->processInputBuffer(coordinator, flyClient);
 }
 
-void sendReplyToClient(EventLoop *eventLoop,
+void sendReplyToClient(const AbstractCoordinator *coordinator,
                        int fd,
                        void *clientdata,
                        int mask) {
-    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
-    AbstractNetHandler *netHandler = flyServer->getNetHandler();
-
     AbstractFlyClient *flyClient = reinterpret_cast<AbstractFlyClient *>(clientdata);
-    netHandler->writeToClient(eventLoop, flyServer, flyClient, 1);
+    coordinator->getNetHandler()->writeToClient(coordinator, flyClient, 1);
 }
 

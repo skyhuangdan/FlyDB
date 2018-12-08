@@ -10,17 +10,14 @@
 #include "../flyClient/FlyClient.h"
 #include "../log/FileLogHandler.h"
 
-class FlyServer;
-class MiscTool;
-class AbstractLogHandler;
 class CommandTable {
 public:
-    CommandTable(FlyServer* flyServer);
+    CommandTable(const AbstractCoordinator* coordinator);
     ~CommandTable();
     int dealWithCommand(AbstractFlyClient *flyClient);
 
 private:
-    FlyServer* flyServer;
+    const AbstractCoordinator* coordinator;
     Dict* commands;
     AbstractLogHandler *logHandler;
 };

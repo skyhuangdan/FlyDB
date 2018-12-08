@@ -7,8 +7,7 @@
 
 #include <cstdint>
 #include "IntSetDef.h"
-
-class EndianConvTool;
+#include "../../utils/EndianConvTool.h"
 
 /**
  * 有序整数集合: 从小到大排列

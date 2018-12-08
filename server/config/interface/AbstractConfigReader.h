@@ -5,14 +5,18 @@
 #ifndef FLYDB_ABSTRACTCONFIGREADER_H
 #define FLYDB_ABSTRACTCONFIGREADER_H
 
-#include "AbstractConfigCache.h"
+#include "../ConfigCache.h"
 
 class AbstractConfigReader {
 public:
-    virtual AbstractConfigCache* loadConfig() = 0;
+    AbstractConfigReader() {
+        this->configCache = new ConfigCache();
+    }
+
+    virtual ConfigCache* loadConfig() = 0;
 
 protected:
-    AbstractConfigCache *configCache;
+    ConfigCache *configCache;
 };
 
 #endif //FLYDB_ABSTRACTCONFIGREADER_H

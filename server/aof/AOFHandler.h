@@ -5,7 +5,9 @@
 #ifndef FLYDB_AOFHANDLER_H
 #define FLYDB_AOFHANDLER_H
 
-class AOFHandler {
+#include "interface/AbstractAOFHandler.h"
+
+class AOFHandler : public AbstractAOFHandler {
     static AOFHandler* getInstance();
 
 };

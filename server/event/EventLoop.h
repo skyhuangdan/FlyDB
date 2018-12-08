@@ -11,27 +11,26 @@
 #include "FileEvent.h"
 #include "TimeEvent.h"
 #include "FiredEvent.h"
-#include "../flyServer/interface/AbstractFlyServer.h"
+#include "interface/AbstractEventLoop.h"
+#include "../coordinator/interface/AbstractCoordinator.h"
 
-class EventLoop;
-typedef void beforeAndAfterSleepProc(EventLoop *eventLoop);
-
-void beforeSleep(EventLoop *eventLoop);
-class EventLoop {
+void beforeSleep(const AbstractCoordinator *coordinator);
+class EventLoop : public AbstractEventLoop {
 public:
-    EventLoop(AbstractFlyServer *flyserver, int setSize);
+    EventLoop(const AbstractCoordinator *coordinator, int setSize);
     ~EventLoop();
     int processEvents(int flags);
     void eventMain();
     int getMaxfd() const;
-    AbstractFlyServer *getFlyServer() const;
-    void setFlyServer(AbstractFlyServer *flyServer);
 
     // file event
     int getSetSize() const;
     int resizeSetSize(int setSize);
     void stop();
-    int createFileEvent(int fd, int mask, fileEventProc* proc, void *clientdata);
+    int createFileEvent(int fd,
+                        int mask,
+                        fileEventProc* proc,
+                        void *clientdata);
     int deleteFileEvent(int fd, int mask);
     int getFileEvents(int fd);
     beforeAndAfterSleepProc* getBeforeSleepProc() const;
@@ -49,7 +48,7 @@ public:
     void addFiredEvent(int fd, int mask);
 
 private:
-    int maxfd;          // 当前注册的最大fd(file descriptor)
+    int maxfd;          /** 当前注册的最大fd(file descriptor) */
     int setSize;        // 最大fd数量
     uint64_t timeEventNextId;
     int64_t lastTime;
@@ -60,7 +59,7 @@ private:
     void *apiData;
     beforeAndAfterSleepProc *beforeSleepProc;
     beforeAndAfterSleepProc *afterSleepProc;
-    AbstractFlyServer *flyServer;
+    const AbstractCoordinator *coordinator;
 };
 
 

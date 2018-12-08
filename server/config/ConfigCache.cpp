@@ -17,9 +17,9 @@ ConfigCache::ConfigCache() {
     this->tcpKeepAlive = CONFIG_DEFAULT_TCP_KEEPALIVE;
 
     // log相关
+    this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
     this->verbosity = CONFIG_DEFAULT_VERBOSITY;
     this->syslogEnabled = CONFIG_DEFAULT_SYSLOG_ENABLED;
-    this->logfile = strdup(CONFIG_DEFAULT_LOGFILE.c_str());
     this->syslogIdent = strdup(CONFIG_DEFAULT_SYSLOG_IDENT.c_str());
 
     // fdb相关

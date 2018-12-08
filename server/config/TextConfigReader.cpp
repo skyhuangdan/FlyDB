@@ -28,38 +28,31 @@ configMap syslogFacilityMap[] = {
         {NULL, 0}
 };
 
-TextConfigReader::TextConfigReader(
-        AbstractConfigCache *configCache,
-        const std::string &fileName) {
-    this->fileName = fileName;
-    this->configCache = configCache;
+TextConfigReader::TextConfigReader(std::string &configfile) {
+    if ('-' == configfile[0] && '\0' == configfile[1]) {
+        this->fp = stdin;
+    } else {
+        if (NULL == (this->fp = fopen(configfile.c_str(), "r"))) {
+            exit(1);
+        }
+    }
 }
 
-AbstractConfigCache* TextConfigReader::loadConfig() {
+ConfigCache* TextConfigReader::loadConfig() {
     char buf[CONFIG_MAX_LINE + 1];
     std::string config;
 
-    if (fileName.length() != 0) {
-        FILE *fp = NULL;
-        if ('-' == fileName[0] && '\0' == fileName[1]) {
-            fp = stdin;
-        } else {
-            if (NULL == (fp = fopen(fileName.c_str(), "r"))) {
-                exit(1);
-            }
-        }
-
-        // 从配置文件中依次读取配置 --> config
-        while (fgets(buf, CONFIG_MAX_LINE + 1, fp) != NULL) {
-            config += buf;
-        }
-
-        // 读取完毕，如果不是stdin，则关闭文件
-        if (fp != stdin) {
-            fclose(fp);
-        }
+    // 从配置文件中依次读取配置 --> config
+    while (fgets(buf, CONFIG_MAX_LINE + 1, fp) != NULL) {
+        config += buf;
     }
 
+    // 读取完毕，如果不是stdin，则关闭文件
+    if (fp != stdin) {
+        fclose(fp);
+    }
+
+    // 加载配置
     loadConfigFromString(config);
 
     return this->configCache;

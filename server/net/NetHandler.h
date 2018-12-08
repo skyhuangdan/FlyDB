@@ -13,9 +13,9 @@
 #include "../log/interface/AbstractLogFactory.h"
 
 // 对应socket的绑定接口
-void acceptTcpHandler(EventLoop *eventLoop, int fd, void *clientdata, int mask);
-void readQueryFromClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
-void sendReplyToClient(EventLoop *eventLoop, int fd, void *clientdata, int mask);
+void acceptTcpHandler(const AbstractCoordinator *coordinator, int fd, void *clientdata, int mask);
+void readQueryFromClient(const AbstractCoordinator *coordinator, int fd, void *clientdata, int mask);
+void sendReplyToClient(const AbstractCoordinator *coordinator, int fd, void *clientdata, int mask);
 
 class NetHandler : public AbstractNetHandler {
 public:
@@ -40,11 +40,9 @@ public:
     int setBlock(char *err, int fd, int block);
     int tcpAccept(char *err, int s, char *ip, size_t iplen, int *port);
     int unixAccept(char *err, int s);
-    int processInputBuffer(EventLoop *eventLoop,
-                           AbstractFlyServer* flyServer,
+    int processInputBuffer(const AbstractCoordinator* coordinator,
                            AbstractFlyClient *flyClient);
-    int writeToClient(EventLoop *eventLoop,
-                      AbstractFlyServer *flyServer,
+    int writeToClient(const AbstractCoordinator *coordinator,
                       AbstractFlyClient *flyClient,
                       int handlerInstalled);
 

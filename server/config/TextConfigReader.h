@@ -7,23 +7,21 @@
 
 #include <string>
 #include "interface/AbstractConfigReader.h"
-#include "interface/AbstractConfigCache.h"
 #include "../utils/MiscTool.h"
 #include "../../def.h"
+#include "ConfigCache.h"
 
 class TextConfigReader : public AbstractConfigReader {
 public:
-    TextConfigReader(AbstractConfigCache *configCache,
-                      const std::string &fileName);
-    AbstractConfigCache* loadConfig();
+    TextConfigReader(std::string &configfile);
+    ConfigCache* loadConfig();
 
 private:
     void loadConfigFromString(const std::string& config);
     void loadConfigFromLineString(const std::string &line);
     int configMapGetValue(configMap *config, const char *name);
 
-    std::string fileName;
-
+    FILE *fp;
     MiscTool *miscTool;
 };
 

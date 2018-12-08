@@ -9,13 +9,13 @@
 #include <cstdint>
 #include "FDBDef.h"
 #include "../io/interface/Fio.h"
+#include "interface/AbstractFDBHandler.h"
+#include "../coordinator/interface/AbstractCoordinator.h"
+#include "../log/interface/AbstractLogHandler.h"
 
-class AbstractLogHandler;
-class FlyServer;
-
-class FDBHandler {
+class FDBHandler : public AbstractFDBHandler {
 public:
-    FDBHandler(FlyServer *flyServer,
+    FDBHandler(const AbstractCoordinator *coordinator,
                char *filename,
                uint64_t maxProcessingChunk);
     int load(FDBSaveInfo &fdbSaveInfo);
@@ -46,7 +46,7 @@ private:
     off_t maxProcessingChunk = 0;
 
     AbstractLogHandler *logHandler;
-    FlyServer *flyServer;
+    const AbstractCoordinator *coordinator;
 };
 
 

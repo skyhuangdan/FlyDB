@@ -7,13 +7,13 @@
 
 #include <string>
 #include "../../net/interface/AbstractNetHandler.h"
-
-class AbstractFlyDB;
+#include "../../db/interface/AbstractFlyDB.h"
+#include "../../config/ConfigCache.h"
 
 class AbstractFlyServer {
 public:
     // 初始化函数
-    virtual void init(int argc, char **argv) = 0;
+    virtual void init(ConfigCache *configCache) = 0;
 
     // 获取server id
     virtual int getPID() = 0;
@@ -23,9 +23,6 @@ public:
 
     // 处理命令
     virtual int dealWithCommand(AbstractFlyClient *flyclient) = 0;
-
-    // 事件循环处理
-    virtual void eventMain() = 0;
 
     virtual int getHz() const = 0;
 
@@ -47,18 +44,6 @@ public:
 
     virtual void addToStatNetInputBytes(int64_t size) = 0;
 
-    virtual int getVerbosity() const = 0;
-
-    virtual char *getLogfile() const = 0;
-
-    virtual int getSyslogEnabled() const = 0;
-
-    virtual char *getSyslogIdent() const = 0;
-
-    virtual int getSyslogFacility() const = 0;
-
-    virtual AbstractNetHandler *getNetHandler() const = 0;
-
     virtual void addToClientsPendingToWrite(AbstractFlyClient *flyClient) = 0;
 
     virtual int handleClientsWithPendingWrites() = 0;
@@ -70,6 +55,8 @@ public:
     virtual AbstractFlyDB *getFlyDB(int dbnum) = 0;
 
     virtual uint8_t getFlyDBCount() const = 0;
+
+    virtual int getMaxClients() const = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

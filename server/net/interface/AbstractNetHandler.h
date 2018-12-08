@@ -8,8 +8,7 @@
 #include <cstdio>
 #include <sys/socket.h>
 
-class EventLoop;
-class AbstractFlyServer;
+class AbstractCoordinator;
 class AbstractFlyClient;
 
 class AbstractNetHandler {
@@ -84,12 +83,10 @@ public:
 
     virtual int unixAccept(char *err, int s) = 0;
 
-    virtual int processInputBuffer(EventLoop *eventLoop,
-                                   AbstractFlyServer *flyServer,
+    virtual int processInputBuffer(const AbstractCoordinator *coordinator,
                                    AbstractFlyClient *flyClient) = 0;
 
-    virtual int writeToClient(EventLoop *eventLoop,
-                              AbstractFlyServer *flyServer,
+    virtual int writeToClient(const AbstractCoordinator *coordinator,
                               AbstractFlyClient *flyClient,
                               int handlerInstalled) = 0;
 };

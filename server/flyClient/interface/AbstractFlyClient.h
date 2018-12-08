@@ -9,10 +9,7 @@
 #include <cstdint>
 #include <string>
 #include <list>
-
-class FlyServer;
-class FlyObj;
-class CommandEntry;
+#include "../../flyObj/FlyObj.h"
 
 class AbstractFlyClient {
 public:
@@ -58,10 +55,6 @@ public:
     virtual void addArgv(FlyObj *obj) = 0;
 
     virtual void setArgc(int argc) = 0;
-
-    virtual CommandEntry *getCmd() const = 0;
-
-    virtual void setCmd(CommandEntry *cmd) = 0;
 
     virtual const char *getBuf() const = 0;
 

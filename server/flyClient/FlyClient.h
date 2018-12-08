@@ -12,11 +12,11 @@
 #include "ClientDef.h"
 #include "interface/AbstractFlyClient.h"
 #include "../log/interface/AbstractLogHandler.h"
-#include "../flyServer/interface/AbstractFlyServer.h"
+#include "../coordinator/interface/AbstractCoordinator.h"
 
 class FlyClient : public AbstractFlyClient {
 public:
-    FlyClient(int fd, AbstractFlyServer *flyServer);
+    FlyClient(int fd, const AbstractCoordinator *coordinator);
     ~FlyClient();
     uint64_t getId() const;
     void setId(uint64_t id);
@@ -75,7 +75,7 @@ private:
     int addReplyToBuffer(const char *s, size_t len);
     int addReplyToReplyList(const char *s, size_t len);
 
-    AbstractFlyServer *flyServer;
+    const AbstractCoordinator *coordinator;
     uint64_t id;
     int fd;                             // 套接字
     FlyObj* name;                       // client名字

@@ -19,7 +19,9 @@
 #include "../log/FileLogFactory.h"
 #include "../db/FlyDBFactory.h"
 
-FlyServer::FlyServer() {
+FlyServer::FlyServer(const AbstractCoordinator *coordinator) {
+    this->coordinator = coordinator;
+    
     // fly db factory
     this->flyDBFactory = new FlyDBFactory();
 
@@ -33,26 +35,20 @@ FlyServer::FlyServer() {
     }
 
     // init command table
-    this->commandTable = new CommandTable(this);
+    this->commandTable = new CommandTable(coordinator);
     // 设置最大客户端数量
     setMaxClientLimit();
-    // 时间循环处理器
-    this->eventLoop = new EventLoop(this, this->maxClients + CONFIG_FDSET_INCR);
-    this->eventLoop->createTimeEvent(1, serverCron, NULL, NULL);
     // serverCron运行频率
     this->hz = CONFIG_CRON_HZ;
     this->neterr = new char[NET_ERR_LEN];
     // 拒绝连接次数设置为0
     this->statRejectedConn = 0;
-    // next client id
-    this->nextClientId = 1;
     pthread_mutex_init(&this->nextClientIdMutex, NULL);
     // 当前时间
     this->nowt = time(NULL);
     this->clientMaxQuerybufLen = PROTO_MAX_QUERYBUF_LEN;
 
     this->miscTool = MiscTool::getInstance();
-    this->netHandler = NetHandler::getInstance();
 }
 
 FlyServer::~FlyServer() {
@@ -60,16 +56,26 @@ FlyServer::~FlyServer() {
         delete this->dbArray.at(i);
     }
     delete this->commandTable;
-    delete this->eventLoop;
     delete[] this->neterr;
     closelog();
 }
 
-void FlyServer::init(int argc, char **argv) {
-    // fdb handler
-    this->fdbHandler = new FDBHandler(this,
-            this->fdbFile,
-            CONFIG_LOADING_INTERVAL_BYTES);
+void FlyServer::loadFromConfig(ConfigCache *configCache) {
+    this->bindAddr = configCache->getBindAddrs();
+    this->unixsocket = configCache->getUnixsocket();
+    this->unixsocketperm = configCache->getUnixsocketperm();
+    this->tcpKeepAlive = configCache->getTcpKeepAlive();
+    this->port = configCache->getPort();
+    this->aofState = configCache->getAofState();
+}
+
+void FlyServer::init(ConfigCache *configCache) {
+    // 从configCache获取参数
+    this->loadFromConfig(configCache);
+
+    // 时间循环处理器
+    this->coordinator->getEventLoop()->createTimeEvent(
+            1, serverCron, NULL, NULL);
 
     // 打开监听socket，用于监听用户命令
     this->listenToPort();
@@ -77,35 +83,27 @@ void FlyServer::init(int argc, char **argv) {
     // 打开Unix domain socket
     if (NULL != this->unixsocket) {
         unlink(this->unixsocket);       // 如果存在，则删除unixsocket文件
-        this->usfd = this->netHandler->unixServer(this->neterr,
-                this->unixsocket, this->unixsocketperm, this->tcpBacklog);
+        this->usfd = this->coordinator->getNetHandler()->unixServer(
+                this->neterr,
+                this->unixsocket,
+                this->unixsocketperm,
+                this->tcpBacklog);
         if (-1 == this->usfd) {
             std::cout << "Opening Unix Domain Socket: "
                          << this->neterr << std::endl;
             exit(1);
         }
-        this->netHandler->setBlock(NULL, this->usfd, 0);
+        this->coordinator->getNetHandler()->setBlock(NULL, this->usfd, 0);
     }
 
     // 创建定时任务，用于创建客户端连接
     for (auto fd : this->ipfd) {
-        if (-1 == this->eventLoop->createFileEvent(
+        if (-1 == this->coordinator->getEventLoop()->createFileEvent(
                 fd, ES_READABLE, acceptTcpHandler, NULL)) {
             exit(1);
         }
     }
 
-    // syslog
-    if (this->syslogEnabled) {
-        openlog(this->syslogIdent, LOG_PID | LOG_NDELAY | LOG_NOWAIT,
-                this->syslogFacility);
-    }
-
-    // LogHandler放在最后，因为初始化需要flyServer的配置, 最好等其初始化完毕
-    // todo: 需要把整个配置的读取都独立出来，并且FileLogFactory.init独立到main中
-
-    //FileLogHandler::init(this->logfile, this->syslogEnabled, this->verbosity);
-    FileLogFactory::init(this->logfile, this->syslogEnabled, this->verbosity);
     this->logHandler = logFactory->getLogger();
 
     // 从fdb或者aof中加载数据
@@ -126,10 +124,6 @@ int FlyServer::dealWithCommand(AbstractFlyClient *flyclient) {
     return this->commandTable->dealWithCommand(flyclient);
 }
 
-void FlyServer::eventMain() {
-    this->eventLoop->eventMain();
-}
-
 int FlyServer::getHz() const {
     return hz;
 }
@@ -142,63 +136,6 @@ char *FlyServer::getNeterr() const {
     return neterr;
 }
 
-AbstractFlyClient* FlyServer::createClient(int fd) {
-    if (fd <= 0) {
-        return NULL;
-    }
-
-    // 超过了客户端最大数量
-    if (this->clients.size() >= this->maxClients) {
-        this->statRejectedConn++;
-        return NULL;
-    }
-
-    // create FlyClient
-    AbstractFlyClient *flyClient = new FlyClient(fd, this);
-    uint64_t clientId = 0;
-    atomicGetIncr(this->nextClientId, clientId, 1);
-    flyClient->setId(clientId);
-
-    // 设置读socket，并为其创建相应的file event
-    this->netHandler->setBlock(NULL, fd, 0);
-    this->netHandler->setTcpNoDelay(NULL, fd, 1);
-    if (this->tcpKeepAlive > 0) {
-        this->netHandler->keepAlive(NULL, fd, this->tcpKeepAlive);
-    }
-    if (-1 == this->eventLoop->createFileEvent(
-            fd, ES_READABLE, readQueryFromClient, flyClient)) {
-        delete flyClient;
-        return NULL;
-    }
-
-    // 加入到clients队列中
-    this->clients.push_back(flyClient);
-
-    return flyClient;
-}
-
-int FlyServer::deleteClient(int fd) {
-    std::list<AbstractFlyClient *>::iterator iter = this->clients.begin();
-    for (iter; iter != this->clients.end(); iter++) {
-        if (fd == (*iter)->getFd()) {
-            // 删除file event
-            this->eventLoop->deleteFileEvent(fd, ES_READABLE | ES_WRITABLE);
-
-            // 在相应列表中删除
-            this->deleteFromAsyncClose(fd);
-            this->deleteFromPending(fd);
-
-            // 删除FlyClient
-            delete (*iter);
-            this->clients.erase(iter);
-
-            return 1;
-        }
-    }
-
-    // 没有找到对应的FlyClient
-    return -1;
-}
 
 time_t FlyServer::getNowt() const {
     return nowt;
@@ -218,74 +155,6 @@ int64_t FlyServer::getStatNetInputBytes() const {
 
 void FlyServer::addToStatNetInputBytes(int64_t size) {
     this->clientMaxQuerybufLen += size;
-}
-
-int FlyServer::getVerbosity() const {
-    return this->verbosity;
-}
-
-char *FlyServer::getLogfile() const {
-    return this->logfile;
-}
-
-int FlyServer::getSyslogEnabled() const {
-    return this->syslogEnabled;
-}
-
-char *FlyServer::getSyslogIdent() const {
-    return this->syslogIdent;
-}
-
-int FlyServer::getSyslogFacility() const {
-    return this->syslogFacility;
-}
-
-AbstractNetHandler *FlyServer::getNetHandler() const {
-    return netHandler;
-}
-
-void FlyServer::addToClientsPendingToWrite(AbstractFlyClient *flyClient) {
-    this->clientsPendingWrite.push_back(flyClient);
-}
-
-int FlyServer::handleClientsWithPendingWrites() {
-    if (0 == this->clientsPendingWrite.size()) {
-        return 0;
-    }
-
-    std::list<AbstractFlyClient*>::iterator iter =
-            this->clientsPendingWrite.begin();
-    for (iter; iter != this->clientsPendingWrite.end(); iter++) {
-        // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
-        // 否则无法加入。也就无法处理其输出
-        (*iter)->delFlag(~CLIENT_PENDING_WRITE);
-
-        // 先直接发送，如果发送不完，再创建文件事件异步发送
-        if (-1 == this->netHandler->writeToClient(
-                this->eventLoop, this, *iter, 0)) {
-            continue;
-        }
-
-        // 异步发送
-        if (!(*iter)->hasNoPending()
-            && -1 == eventLoop->createFileEvent((*iter)->getFd(), ES_WRITABLE,
-                                                sendReplyToClient, *iter)) {
-            freeClientAsync(*iter);
-        }
-    }
-
-    int pendingCount = this->clientsPendingWrite.size();
-    this->clientsPendingWrite.clear();
-    return pendingCount;
-}
-
-void FlyServer::freeClientAsync(AbstractFlyClient *flyClient) {
-    if (flyClient->getFlags() & CLIENT_CLOSE_ASAP) {
-        return;
-    }
-
-    flyClient->setFlags(CLIENT_CLOSE_ASAP);
-    this->clientsToClose.push_back(flyClient);
 }
 
 void FlyServer::setMaxClientLimit() {
@@ -327,28 +196,33 @@ void FlyServer::setMaxClientLimit() {
     }
 }
 
-
 int FlyServer::listenToPort() {
     int fd;
     // try to bind all to IPV4 and IPV6
     if (0 == this->bindAddr.size()) {
         int success = 0;
         // try to set *(any address) to ipv6
-        fd = this->netHandler->tcp6Server(this->neterr,
-                this->port, NULL, this->tcpBacklog);
+        fd = this->coordinator->getNetHandler()->tcp6Server(
+                this->neterr,
+                this->port,
+                NULL,
+                this->tcpBacklog);
         if (fd != -1) {
             // set nonblock
-            this->netHandler->setBlock(NULL, fd, 0);
+            this->coordinator->getNetHandler()->setBlock(NULL, fd, 0);
             this->ipfd.push_back(fd);
             success++;
         }
 
         // try to set *(any address) to ipv4
-        fd = this->netHandler->tcpServer(this->neterr,
-                this->port, NULL, this->tcpBacklog);
+        fd = this->coordinator->getNetHandler()->tcpServer(
+                this->neterr,
+                this->port,
+                NULL,
+                this->tcpBacklog);
         if (fd != -1) {
             // set nonblock
-            this->netHandler->setBlock(NULL, fd, 0);
+            this->coordinator->getNetHandler()->setBlock(NULL, fd, 0);
             this->ipfd.push_back(fd);
             success++;
         }
@@ -360,16 +234,22 @@ int FlyServer::listenToPort() {
         for (auto addr : this->bindAddr) {
             // 如果是IPV6
             if (addr.find(":") != addr.npos) {
-                fd = this->netHandler->tcp6Server(this->neterr,
-                        this->port, addr.c_str(), this->tcpBacklog);
+                fd = this->coordinator->getNetHandler()->tcp6Server(
+                        this->neterr,
+                        this->port,
+                        addr.c_str(),
+                        this->tcpBacklog);
             } else {
-                fd = this->netHandler->tcpServer(this->neterr,
-                        this->port, addr.c_str(), this->tcpBacklog);
+                fd = this->coordinator->getNetHandler()->tcpServer(
+                        this->neterr,
+                        this->port,
+                        addr.c_str(),
+                        this->tcpBacklog);
             }
             if (-1 == fd) {
                 return -1;
             }
-            this->netHandler->setBlock(NULL, fd, 0);
+            this->coordinator->getNetHandler()->setBlock(NULL, fd, 0);
             this->ipfd.push_back(fd);
         }
     }
@@ -377,26 +257,6 @@ int FlyServer::listenToPort() {
     return 1;
 }
 
-void FlyServer::deleteFromPending(int fd) {
-    std::list<AbstractFlyClient*>::iterator iter =
-            this->clientsPendingWrite.begin();
-    for (iter; iter != this->clientsPendingWrite.end(); iter++) {
-        if ((*iter)->getFd() == fd) {
-            this->clientsPendingWrite.erase(iter);
-            return;
-        }
-    }
-}
-
-void FlyServer::deleteFromAsyncClose(int fd) {
-    std::list<AbstractFlyClient*>::iterator iter = this->clientsToClose.begin();
-    for (iter; iter != this->clientsToClose.end(); iter++) {
-        if ((*iter)->getFd() == fd) {
-            this->clientsToClose.erase(iter);
-            return;
-        }
-    }
-}
 
 void FlyServer::loadDataFromDisk() {
     // 如果开启了AOF，则优先从AOF中加载持久化数据，否则从FDB中加载
@@ -428,8 +288,138 @@ uint8_t FlyServer::getFlyDBCount() const {
     return this->dbArray.size();
 }
 
-int serverCron(EventLoop *eventLoop, uint64_t id, void *clientData) {
-    AbstractFlyServer *flyServer = eventLoop->getFlyServer();
+
+AbstractFlyClient* FlyServer::createClient(int fd) {
+    if (fd <= 0) {
+        return NULL;
+    }
+
+    // 超过了客户端最大数量
+    if (this->clients.size() >= this->maxClients) {
+        this->statRejectedConn++;
+        return NULL;
+    }
+
+    // create FlyClient
+    AbstractFlyClient *flyClient = new FlyClient(fd, coordinator);
+    uint64_t clientId = 0;
+    atomicGetIncr(this->nextClientId, clientId, 1);
+    flyClient->setId(clientId);
+
+    // 设置读socket，并为其创建相应的file event
+    this->coordinator->getNetHandler()->setBlock(NULL, fd, 0);
+    this->coordinator->getNetHandler()->setTcpNoDelay(NULL, fd, 1);
+    if (this->tcpKeepAlive > 0) {
+        this->coordinator->getNetHandler()->keepAlive(
+                NULL, fd, this->tcpKeepAlive);
+    }
+    if (-1 == this->coordinator->getEventLoop()->createFileEvent(
+            fd, ES_READABLE, readQueryFromClient, flyClient)) {
+        delete flyClient;
+        return NULL;
+    }
+
+    // 加入到clients队列中
+    this->clients.push_back(flyClient);
+
+    return flyClient;
+}
+
+int FlyServer::deleteClient(int fd) {
+    std::list<AbstractFlyClient *>::iterator iter = this->clients.begin();
+    for (iter; iter != this->clients.end(); iter++) {
+        if (fd == (*iter)->getFd()) {
+            // 删除file event
+            this->coordinator->getEventLoop()->deleteFileEvent(
+                    fd, ES_READABLE | ES_WRITABLE);
+
+            // 在相应列表中删除
+            this->deleteFromAsyncClose(fd);
+            this->deleteFromPending(fd);
+
+            // 删除FlyClient
+            delete (*iter);
+            this->clients.erase(iter);
+
+            return 1;
+        }
+    }
+
+    // 没有找到对应的FlyClient
+    return -1;
+}
+
+void FlyServer::addToClientsPendingToWrite(AbstractFlyClient *flyClient) {
+    this->clientsPendingWrite.push_back(flyClient);
+}
+
+int FlyServer::handleClientsWithPendingWrites() {
+    if (0 == this->clientsPendingWrite.size()) {
+        return 0;
+    }
+
+    std::list<AbstractFlyClient*>::iterator iter =
+            this->clientsPendingWrite.begin();
+    for (iter; iter != this->clientsPendingWrite.end(); iter++) {
+        // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
+        // 否则无法加入。也就无法处理其输出
+        (*iter)->delFlag(~CLIENT_PENDING_WRITE);
+
+        // 先直接发送，如果发送不完，再创建文件事件异步发送
+        if (-1 == this->coordinator->getNetHandler()->writeToClient(
+                this->coordinator, *iter, 0)) {
+            continue;
+        }
+
+        // 异步发送
+        if (!(*iter)->hasNoPending()
+            && -1 == this->coordinator->getEventLoop()->createFileEvent(
+                    (*iter)->getFd(), ES_WRITABLE, sendReplyToClient, *iter)) {
+            freeClientAsync(*iter);
+        }
+    }
+
+    int pendingCount = this->clientsPendingWrite.size();
+    this->clientsPendingWrite.clear();
+    return pendingCount;
+}
+
+void FlyServer::freeClientAsync(AbstractFlyClient *flyClient) {
+    if (flyClient->getFlags() & CLIENT_CLOSE_ASAP) {
+        return;
+    }
+
+    flyClient->setFlags(CLIENT_CLOSE_ASAP);
+    this->clientsToClose.push_back(flyClient);
+}
+
+void FlyServer::deleteFromPending(int fd) {
+    std::list<AbstractFlyClient*>::iterator iter =
+            this->clientsPendingWrite.begin();
+    for (iter; iter != this->clientsPendingWrite.end(); iter++) {
+        if ((*iter)->getFd() == fd) {
+            this->clientsPendingWrite.erase(iter);
+            return;
+        }
+    }
+}
+
+void FlyServer::deleteFromAsyncClose(int fd) {
+    std::list<AbstractFlyClient*>::iterator iter = this->clientsToClose.begin();
+    for (iter; iter != this->clientsToClose.end(); iter++) {
+        if ((*iter)->getFd() == fd) {
+            this->clientsToClose.erase(iter);
+            return;
+        }
+    }
+}
+
+int FlyServer::getMaxClients() const {
+    return maxClients;
+}
+
+int serverCron(const AbstractCoordinator *coordinator, uint64_t id, void *clientData) {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
     // 设置当前时间
     flyServer->setNowt(time(NULL));

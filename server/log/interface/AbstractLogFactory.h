@@ -9,7 +9,6 @@
 
 class AbstractLogFactory {
 public:
-
     virtual AbstractLogHandler* getLogger() = 0;
 };
 

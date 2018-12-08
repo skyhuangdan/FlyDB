@@ -5,10 +5,9 @@
 #include "FlyClient.h"
 #include "../net/NetDef.h"
 #include "ClientDef.h"
-#include "../flyServer/interface/AbstractFlyServer.h"
 
-FlyClient::FlyClient(int fd, AbstractFlyServer *flyServer) {
-    this->flyServer = flyServer;
+FlyClient::FlyClient(int fd, const AbstractCoordinator *coordinator) {
+    this->coordinator = coordinator;
     this->id = 0;
     this->fd = fd;
     this->name = NULL;
@@ -92,14 +91,6 @@ int FlyClient::getArgc() const {
 
 void FlyClient::setArgc(int argc) {
     this->argc = argc;
-}
-
-CommandEntry *FlyClient::getCmd() const {
-    return cmd;
-}
-
-void FlyClient::setCmd(CommandEntry *cmd) {
-    this->cmd = cmd;
 }
 
 int FlyClient::getAuthentiated() const {
@@ -233,7 +224,7 @@ int FlyClient::prepareClientToWrite() {
     // 需要先将其标记并放入flyserver的pending client list中
     if (hasNoPending() && !(this->flags & CLIENT_PENDING_WRITE)) {
         this->addFlag(CLIENT_PENDING_WRITE);
-        this->flyServer->addToClientsPendingToWrite(this);
+        this->coordinator->getFlyServer()->addToClientsPendingToWrite(this);
     }
 
     return 1;
