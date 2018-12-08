@@ -13,18 +13,13 @@
 
 class Coordinator : public AbstractCoordinator {
 public:
+    Coordinator();
+    ~Coordinator();
     AbstractNetHandler *getNetHandler() const;
     AbstractFlyServer *getFlyServer() const;
     AbstractEventLoop *getEventLoop() const;
     AbstractAOFHandler *getAofHandler() const;
     AbstractFDBHandler *getFdbHandler() const;
-
-    AbstractCoordinator* setNetHandler(AbstractNetHandler *netHandler);
-    AbstractCoordinator* setFlyServer(AbstractFlyServer *flyServer);
-    AbstractCoordinator* setEventLoop(AbstractEventLoop *eventLoop);
-    AbstractCoordinator* setAofHandler(AbstractAOFHandler *aofHandler);
-    AbstractCoordinator* setFdbHandler(AbstractFDBHandler *fdbHandler);
-
 private:
 
     AbstractNetHandler *netHandler;

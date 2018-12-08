@@ -10,6 +10,46 @@
 #include "../atomic/AtomicHandler.h"
 #include "../flyClient/FlyClient.h"
 
+Coordinator::Coordinator() {
+    // 加载config
+    std::string configfile = "fly.conf";                    /** 配置文件名字 */
+    AbstractConfigReader *configReader = new TextConfigReader(configfile);
+    ConfigCache *configCache = configReader->loadConfig();
+
+    this->netHandler = NetHandler::getInstance();
+
+    /** logger初始化 */
+    FileLogFactory::init(configCache->getLogfile(),
+                         configCache->getSyslogEnabled(),
+                         configCache->getVerbosity());
+    if (configCache->getSyslogEnabled()) {          /** syslog */
+        openlog(configCache->getSyslogIdent(),
+                LOG_PID | LOG_NDELAY | LOG_NOWAIT,
+                configCache->getSyslogFacility());
+    }
+
+    // fdb handler
+    this->fdbHandler = new FDBHandler(this,
+                                      configCache->getFdbFile(),
+                                      CONFIG_LOADING_INTERVAL_BYTES);
+
+    // event loop
+    this->flyServer = new FlyServer(this);
+    this->eventLoop =
+            new EventLoop(this, flyServer->getMaxClients() + CONFIG_FDSET_INCR);
+
+    // flyserver初始化
+    this->flyServer->init(configCache);
+}
+
+Coordinator::~Coordinator() {
+    delete this->flyServer;
+    delete this->eventLoop;
+    delete this->fdbHandler;
+    delete this->netHandler;
+    delete this->aofHandler;
+}
+
 AbstractNetHandler *Coordinator::getNetHandler() const {
     return this->netHandler;
 }
@@ -29,29 +69,3 @@ AbstractAOFHandler *Coordinator::getAofHandler() const {
 AbstractFDBHandler *Coordinator::getFdbHandler() const {
     return this->fdbHandler;
 }
-
-AbstractCoordinator* Coordinator::setNetHandler(AbstractNetHandler *netHandler) {
-    this->netHandler = netHandler;
-    return this;
-}
-
-AbstractCoordinator* Coordinator::setFlyServer(AbstractFlyServer *flyServer) {
-    this->flyServer = flyServer;
-    return this;
-}
-
-AbstractCoordinator* Coordinator::setEventLoop(AbstractEventLoop *eventLoop) {
-    this->eventLoop = eventLoop;
-    return this;
-}
-
-AbstractCoordinator* Coordinator::setAofHandler(AbstractAOFHandler *aofHandler) {
-    this->aofHandler = aofHandler;
-    return this;
-}
-
-AbstractCoordinator* Coordinator::setFdbHandler(AbstractFDBHandler *fdbHandler) {
-    this->fdbHandler = fdbHandler;
-    return this;
-}
-

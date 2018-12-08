@@ -27,17 +27,6 @@ public:
     virtual AbstractAOFHandler *getAofHandler() const = 0;
 
     virtual AbstractFDBHandler *getFdbHandler() const = 0;
-
-    virtual AbstractCoordinator* setNetHandler(AbstractNetHandler *netHandler) = 0;
-
-    virtual AbstractCoordinator* setFlyServer(AbstractFlyServer *flyServer) = 0;
-
-    virtual AbstractCoordinator* setEventLoop(AbstractEventLoop *eventLoop) = 0;
-
-    virtual AbstractCoordinator* setAofHandler(AbstractAOFHandler *aofHandler) = 0;
-
-    virtual AbstractCoordinator* setFdbHandler(AbstractFDBHandler *fdbHandler) = 0;
-
 };
 
 #endif //FLYDB_ABSTRACTCOORDINATOR_H
