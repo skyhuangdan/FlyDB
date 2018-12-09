@@ -27,7 +27,6 @@ public:
     void setFd(int fd);
     void setCoordinator(const AbstractCoordinator *coordinator);
 
-private:
     int fd;
     int mask;       // EVENT_READABLE或者EVENT_WRITABLE
     void *clientData;

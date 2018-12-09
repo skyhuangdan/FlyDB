@@ -9,6 +9,7 @@
 #include "../dataStructure/dict/Dict.h"
 #include "../dataStructure/intset/IntSet.h"
 #include "../dataStructure/skiplist/SkipList.h"
+#include "FlyObjDef.h"
 
 FlyObj::FlyObj(void *ptr, FlyObjType type) {
     this->ptr = ptr;
@@ -24,28 +25,7 @@ void FlyObj::incrRefCount() {
 void FlyObj::decrRefCount() {
     this->refCount--;
     if (0 == this->refCount) {
-        switch (this->encoding) {
-            case FLY_ENCODING_INT:
-                delete reinterpret_cast<int *>(ptr);
-                break;
-            case FLY_ENCODING_STRING:
-                delete reinterpret_cast<std::string *>(ptr);
-                break;
-            case FLY_ENCODING_HT:
-                delete reinterpret_cast<Dict*>(ptr);
-                break;
-            case FLY_ENCODING_LINKEDLIST:
-                delete reinterpret_cast<std::list<std::string> *>(ptr);
-                break;
-            case FLY_ENCODING_INTSET:
-                delete reinterpret_cast<IntSet *>(ptr);
-                break;
-            case FLY_ENCODING_SKIPLIST:
-                delete reinterpret_cast<SkipList *>(ptr);
-                break;
-            default:
-                panic("wrong fly encoding!");
-        }
+        this->encoding->destructor(this->ptr);
     }
 }
 
@@ -59,14 +39,6 @@ FlyObjType FlyObj::getType() const {
 
 void FlyObj::setType(FlyObjType type) {
     this->type = type;
-}
-
-FlyObjEncoding FlyObj::getEncoding() const {
-    return this->encoding;
-}
-
-void FlyObj::setEncoding(FlyObjEncoding encoding) {
-    this->encoding = encoding;
 }
 
 uint32_t FlyObj::getRefCount() const {
@@ -92,3 +64,12 @@ void *FlyObj::getPtr() const {
 void FlyObj::setPtr(void *ptr) {
     this->ptr = ptr;
 }
+
+const FlyObjEncoding *FlyObj::getEncoding() const {
+    return this->encoding;
+}
+
+void FlyObj::setEncoding(const FlyObjEncoding *encoding) {
+    this->encoding = encoding;
+}
+

@@ -1,0 +1,25 @@
+//
+// Created by 赵立伟 on 2018/12/9.
+//
+
+#ifndef FLYDB_FLYOBJDEF_H
+#define FLYDB_FLYOBJDEF_H
+
+enum FlyObjType {
+    FLY_TYPE_STRING = 0,
+    FLY_TYPE_LIST = 1,
+    FLY_TYPE_HASH = 2,
+    FLY_TYPE_SET = 3,
+    FLY_TYPE_ZSET = 4
+};
+
+enum FlyObjEncode {
+    FLY_ENCODING_INT,
+    FLY_ENCODING_STRING,
+    FLY_ENCODING_HT,
+    FLY_ENCODING_LINKEDLIST,
+    FLY_ENCODING_INTSET,
+    FLY_ENCODING_SKIPLIST
+};
+
+#endif //FLYDB_FLYOBJDEF_H

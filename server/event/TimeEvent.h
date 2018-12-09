@@ -25,7 +25,7 @@ public:
     timeEventProc* getTimeProc();
     bool operator< (const TimeEvent& timeEvent) const;
     bool operator== (const TimeEvent& timeEvent) const;
-private:
+
     int64_t id;
     int64_t when;         // 单位：ms
     timeEventProc *timeProc;

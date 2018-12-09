@@ -5,10 +5,8 @@
 #ifndef FLYDB_FLYOBJ_H
 #define FLYDB_FLYOBJ_H
 
-
 #include <cstdint>
-#include "FlyObjType.h"
-#include "FlyObjEncoding.h"
+#include "encoding/FlyObjEncoding.h"
 
 class FlyObj {
 public:
@@ -18,8 +16,8 @@ public:
     void resetRefCount();
     FlyObjType getType() const;
     void setType(FlyObjType type);
-    FlyObjEncoding getEncoding() const;
-    void setEncoding(FlyObjEncoding encoding);
+    const FlyObjEncoding *getEncoding() const;
+    void setEncoding(const FlyObjEncoding *encoding);
     uint32_t getRefCount() const;
     void setRefCount(uint32_t refCount);
     uint16_t getLru() const;
@@ -29,7 +27,7 @@ public:
 
 private:
     FlyObjType type;
-    FlyObjEncoding encoding;
+    const FlyObjEncoding* encoding;
     uint32_t refCount;
     uint16_t lru;
     void* ptr;

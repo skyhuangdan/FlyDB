@@ -24,7 +24,6 @@
 #include "../utils/MiscTool.h"
 #include "../flyClient/ClientDef.h"
 #include "../log/FileLogHandler.h"
-#include "../flyObj/FlyObjType.h"
 #include "../flyObj/FlyObj.h"
 #include "../log/FileLogFactory.h"
 

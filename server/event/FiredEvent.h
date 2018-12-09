@@ -13,7 +13,6 @@ public:
     int getMask() const;
     void setMask(int mask);
 
-private:
     int fd;
     int mask;
 };
