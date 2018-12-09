@@ -5,28 +5,24 @@
 #include <string>
 #include <list>
 #include <mach/mach.h>
-#include "FlyObj.h"
+#include "interface/FlyObj.h"
 #include "../dataStructure/dict/Dict.h"
 #include "../dataStructure/intset/IntSet.h"
 #include "../dataStructure/skiplist/SkipList.h"
 #include "FlyObjDef.h"
 
+FlyObj::FlyObj(FlyObjType type) {
+    this->type = type;
+}
+
 FlyObj::FlyObj(void *ptr, FlyObjType type) {
     this->ptr = ptr;
     this->type = type;
     this->refCount = 1;
-    // todo encoding / lru
 }
 
 void FlyObj::incrRefCount() {
     this->refCount++;
-}
-
-void FlyObj::decrRefCount() {
-    this->refCount--;
-    if (0 == this->refCount) {
-        this->encoding->destructor(this->ptr);
-    }
 }
 
 void FlyObj::resetRefCount() {
@@ -64,12 +60,3 @@ void *FlyObj::getPtr() const {
 void FlyObj::setPtr(void *ptr) {
     this->ptr = ptr;
 }
-
-const FlyObjEncoding *FlyObj::getEncoding() const {
-    return this->encoding;
-}
-
-void FlyObj::setEncoding(const FlyObjEncoding *encoding) {
-    this->encoding = encoding;
-}
-

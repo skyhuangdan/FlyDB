@@ -10,6 +10,7 @@
 #include "../flyServer/FlyServer.h"
 #include "../fdb/interface/AbstractFDBHandler.h"
 #include "../config/interface/AbstractConfigReader.h"
+#include "../flyObj/interface/AbstractFlyObjFactory.h"
 
 class Coordinator : public AbstractCoordinator {
 public:
@@ -20,6 +21,16 @@ public:
     AbstractEventLoop *getEventLoop() const;
     AbstractAOFHandler *getAofHandler() const;
     AbstractFDBHandler *getFdbHandler() const;
+    AbstractFlyClientFactory *getFlyClientFactory() const;
+
+    /** fly object factory **/
+    AbstractFlyObjFactory *getFlyObjHashTableFactory() const;
+    AbstractFlyObjFactory *getFlyObjIntFactory() const;
+    AbstractFlyObjFactory *getFlyObjLinkedListFactory() const;
+    AbstractFlyObjFactory *getFlyObjSkipListFactory() const;
+    AbstractFlyObjFactory *getFlyObjIntSetFactory() const;
+    AbstractFlyObjFactory *getFlyObjStringFactory() const;
+
 private:
 
     AbstractNetHandler *netHandler;
@@ -27,6 +38,13 @@ private:
     AbstractEventLoop *eventLoop;
     AbstractAOFHandler *aofHandler;
     AbstractFDBHandler *fdbHandler;
+    AbstractFlyClientFactory *flyClientFactory;
+    AbstractFlyObjFactory *flyObjHashTableFactory;
+    AbstractFlyObjFactory *flyObjIntFactory;
+    AbstractFlyObjFactory *flyObjLinkedListFactory;
+    AbstractFlyObjFactory *flyObjSkipListFactory;
+    AbstractFlyObjFactory *flyObjIntSetFactory;
+    AbstractFlyObjFactory *flyObjStringFactory;
 
 };
 

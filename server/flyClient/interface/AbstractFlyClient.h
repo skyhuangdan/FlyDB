@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <string>
 #include <list>
-#include "../../flyObj/FlyObj.h"
+#include "../../flyObj/interface/FlyObj.h"
 
 class AbstractFlyClient {
 public:

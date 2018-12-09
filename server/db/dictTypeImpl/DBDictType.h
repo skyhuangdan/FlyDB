@@ -7,7 +7,7 @@
 
 #include "../../dataStructure/dict/DictType.h"
 #include "../../dataStructure/dict/Dict.h"
-#include "../../flyObj/FlyObj.h"
+#include "../../flyObj/interface/FlyObj.h"
 
 class DBDictType : public DictType {
 private:

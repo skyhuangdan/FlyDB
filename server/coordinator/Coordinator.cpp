@@ -9,13 +9,32 @@
 #include "../fdb/FDBHandler.h"
 #include "../atomic/AtomicHandler.h"
 #include "../flyClient/FlyClient.h"
+#include "../flyClient/FlyClientFactory.h"
+#include "../flyObj/flyObjHashTable/FlyObjHashTableFactory.h"
+#include "../flyObj/FlyObjInt/FlyObjIntFactory.h"
+#include "../flyObj/FlyObjLinkedList/FlyObjLinkedListFactory.h"
+#include "../flyObj/FlyObjSkipList/FlyObjSkipListFactory.h"
+#include "../flyObj/FlyObjIntSet/FlyObjIntSetFactory.h"
+#include "../flyObj/FlyObjString/FlyObjStringFactory.h"
 
 Coordinator::Coordinator() {
-    // 加载config
+    /** 加载config **/
     std::string configfile = "fly.conf";                    /** 配置文件名字 */
     AbstractConfigReader *configReader = new TextConfigReader(configfile);
     ConfigCache *configCache = configReader->loadConfig();
 
+    /** client factory **/
+    this->flyClientFactory = new FlyClientFactory();
+
+    /** fly obj factory **/
+    this->flyObjHashTableFactory = new FlyObjHashTableFactory();
+    this->flyObjIntFactory = new FlyObjIntFactory();
+    this->flyObjLinkedListFactory = new FlyObjLinkedListFactory();
+    this->flyObjSkipListFactory = new FlyObjSkipListFactory();
+    this->flyObjIntSetFactory = new FlyObjIntSetFactory();
+    this->flyObjStringFactory = new FlyObjStringFactory();
+
+    /** net handler **/
     this->netHandler = NetHandler::getInstance();
 
     /** logger初始化 */
@@ -28,17 +47,17 @@ Coordinator::Coordinator() {
                 configCache->getSyslogFacility());
     }
 
-    // fdb handler
+    /** fdb handler **/
     this->fdbHandler = new FDBHandler(this,
                                       configCache->getFdbFile(),
                                       CONFIG_LOADING_INTERVAL_BYTES);
 
-    // event loop
+    /** event loop **/
     this->flyServer = new FlyServer(this);
     this->eventLoop =
             new EventLoop(this, flyServer->getMaxClients() + CONFIG_FDSET_INCR);
 
-    // flyserver初始化
+    /** flyserver初始化 **/
     this->flyServer->init(configCache);
 }
 
@@ -68,4 +87,32 @@ AbstractAOFHandler *Coordinator::getAofHandler() const {
 
 AbstractFDBHandler *Coordinator::getFdbHandler() const {
     return this->fdbHandler;
+}
+
+AbstractFlyClientFactory *Coordinator::getFlyClientFactory() const {
+    return this->flyClientFactory;
+}
+
+AbstractFlyObjFactory *Coordinator::getFlyObjHashTableFactory() const {
+    return flyObjHashTableFactory;
+}
+
+AbstractFlyObjFactory *Coordinator::getFlyObjIntFactory() const {
+    return flyObjIntFactory;
+}
+
+AbstractFlyObjFactory *Coordinator::getFlyObjLinkedListFactory() const {
+    return flyObjLinkedListFactory;
+}
+
+AbstractFlyObjFactory *Coordinator::getFlyObjSkipListFactory() const {
+    return flyObjSkipListFactory;
+}
+
+AbstractFlyObjFactory *Coordinator::getFlyObjIntSetFactory() const {
+    return flyObjIntSetFactory;
+}
+
+AbstractFlyObjFactory *Coordinator::getFlyObjStringFactory() const {
+    return flyObjStringFactory;
 }

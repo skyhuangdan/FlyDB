@@ -8,6 +8,9 @@
 #include "interface/AbstractFlyClientFactory.h"
 
 class FlyClientFactory : public AbstractFlyClientFactory {
+public:
+    AbstractFlyClient* getFlyClient(
+            int fd, const AbstractCoordinator *coordinator);
 
 };
 

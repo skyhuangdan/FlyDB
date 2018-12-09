@@ -7,7 +7,7 @@
 #include "FDBHandler.h"
 #include "../io/FileFio.h"
 #include "../log/FileLogHandler.h"
-#include "../flyObj/FlyObj.h"
+#include "../flyObj/interface/FlyObj.h"
 #include "../log/FileLogFactory.h"
 
 #define fdbExitReportCorrupt(...) checkThenExit(__LINE__,__VA_ARGS__)

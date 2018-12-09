@@ -24,7 +24,7 @@
 #include "../utils/MiscTool.h"
 #include "../flyClient/ClientDef.h"
 #include "../log/FileLogHandler.h"
-#include "../flyObj/FlyObj.h"
+#include "../flyObj/interface/FlyObj.h"
 #include "../log/FileLogFactory.h"
 
 NetHandler::NetHandler() {
