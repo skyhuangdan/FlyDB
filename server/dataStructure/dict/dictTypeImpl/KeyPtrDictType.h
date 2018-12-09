@@ -6,13 +6,9 @@
 #define FLYDB_KEYPTRDICTTYPE_H
 
 
-#include "../../dataStructure/dict/Dict.h"
+#include "../Dict.h"
 
 class KeyPtrDictType : public DictType {
-private:
-    KeyPtrDictType() {
-    }
-
 public:
     static DictType* getInstance() {
         static KeyPtrDictType* instance;
@@ -29,6 +25,11 @@ public:
     int keyCompare(const void *key1, const void *key2) const {
         return dictStrKeyCompare(key1, key2);
     }
+
+private:
+    KeyPtrDictType() {
+    }
+
 };
 
 

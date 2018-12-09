@@ -5,14 +5,11 @@
 #ifndef FLYDB_DBDICTTYPE_H
 #define FLYDB_DBDICTTYPE_H
 
-#include "../../dataStructure/dict/DictType.h"
-#include "../../dataStructure/dict/Dict.h"
-#include "../../flyObj/interface/FlyObj.h"
+#include "../DictType.h"
+#include "../Dict.h"
+#include "../../../flyObj/interface/FlyObj.h"
 
 class DBDictType : public DictType {
-private:
-    DBDictType() {
-    }
 public:
     static DictType* getInstance() {
         static DBDictType* instance;
@@ -41,6 +38,10 @@ public:
 
         FlyObj* flyObj = reinterpret_cast<FlyObj *>(obj);
         flyObj->decrRefCount();
+    }
+
+private:
+    DBDictType() {
     }
 };
 

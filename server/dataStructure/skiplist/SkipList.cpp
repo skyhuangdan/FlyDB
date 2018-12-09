@@ -6,7 +6,7 @@
 #include "SkipList.h"
 #include "SkipListDef.h"
 
-SkipList::SkipList(const SkipListType& type) : type(type) {
+SkipList::SkipList(const SkipListType* type) : type(type) {
     this->level = 1;
     this->length = 0;
     this->header = this->tailer = new SkipListNode(type, NULL, 0);
@@ -54,7 +54,7 @@ void SkipList::insertNode(double score, void* obj) {
         rank[i] = rank[i+1];                  // 哨兵用于这里
         SkipListNode* next = temp->getLevels()[i].next;
         while (NULL != next && (next->getScore() < score
-                   || (next->getScore() == score && (this->type.compare(next->getObj(), obj) < 0)))) {
+                   || (next->getScore() == score && (this->type->compare(next->getObj(), obj) < 0)))) {
             rank[i] += temp->getLevels()[i].span;
             temp = next;
             next = next->getLevels()[i].next;
@@ -126,7 +126,7 @@ int SkipList::deleteNode(double score, void* obj, SkipListNode** res) {
         SkipListNode* prevNode = this->header;
         SkipListNode* node = prevNode->getLevels()[l].next;
         // 找到node==NULL或者score、obj都相等的node
-        while (node != NULL && (node->getScore() < score || type.compare(node->getObj(), obj) < 0)) {
+        while (node != NULL && (node->getScore() < score || type->compare(node->getObj(), obj) < 0)) {
             prevNode = node;
             node = prevNode->getLevels()[l].next;
         }
@@ -136,7 +136,7 @@ int SkipList::deleteNode(double score, void* obj, SkipListNode** res) {
     // 没有找到符合条件的node
     if (NULL == forwards[0]->getLevels()[0].next
         || (forwards[0]->getLevels()[0].next->getScore() != score
-            && 0 == type.compare(forwards[0]->getLevels()[0].next->getObj(), obj))) {
+            && 0 == type->compare(forwards[0]->getLevels()[0].next->getObj(), obj))) {
         return -1;
     } else {  // 处理previous指针
         SkipListNode* node = *res = forwards[0]->getLevels()[0].next;
@@ -182,14 +182,14 @@ uint32_t SkipList::getRank(double score, void* obj) {
           *      2.找到合适的node
           *      3.当前node超过了查找的值，此时需要向下一层寻找
          **/
-        while (next != NULL && (next->getScore() < score || type.compare(next->getObj(), obj) < 0)) {
+        while (next != NULL && (next->getScore() < score || type->compare(next->getObj(), obj) < 0)) {
             prev = next;
             next = prev->getLevels()[l].next;
             totalSpan += prev->getLevels()[l].span;
         }
 
         // 如果找到了，直接返回
-        if (next != NULL && next->getScore() == score && type.compare(next->getObj(), obj) == 0) {
+        if (next != NULL && next->getScore() == score && type->compare(next->getObj(), obj) == 0) {
             totalSpan += prev->getLevels()[l].span;
             return totalSpan;
         }

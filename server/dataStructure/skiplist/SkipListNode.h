@@ -23,13 +23,13 @@ struct SkipListLevel {
 
 class SkipListNode {
 public:
-    SkipListNode(const SkipListType& type, void* obj, double score);
+    SkipListNode(const SkipListType *type, void* obj, double score);
     virtual ~SkipListNode();
     void *getObj() const;
     double getScore() const;
     SkipListNode *getPrevious() const;
     void setPrevious(SkipListNode *previous);
-    const SkipListType &getType() const;
+    const SkipListType *getType() const;
     std::vector<SkipListLevel> &getLevels();
     bool scoreLtRange(SkipListRange range);
     bool scoreGtRange(SkipListRange range);
@@ -40,7 +40,7 @@ private:
     double score;
     std::vector<SkipListLevel> levels;
     SkipListNode *previous;
-    const SkipListType& type;
+    const SkipListType* type;
 };
 
 

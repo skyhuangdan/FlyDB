@@ -7,7 +7,7 @@
 #include "../../dataStructure/skiplist/SkipListStringType.h"
 
 FlyObjSkipList::FlyObjSkipList(FlyObjType type) : FlyObj(type) {
-    this->ptr = new SkipList(SkipListStringType());
+    this->ptr = new SkipList(SkipListStringType::getInstance());
 }
 
 FlyObjSkipList::FlyObjSkipList(void *ptr, FlyObjType type) : FlyObj(ptr, type) {

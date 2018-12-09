@@ -5,7 +5,7 @@
 #ifndef FLYDB_DBDICTTYPE_H
 #define FLYDB_DBDICTTYPE_H
 
-#include "../dataStructure/dict/DictType.h"
+#include "../DictType.h"
 
 class CommandDictType : public DictType {
 public:

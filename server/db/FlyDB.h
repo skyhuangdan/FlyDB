@@ -11,6 +11,7 @@
 class FlyDB : public AbstractFlyDB {
 public:
     FlyDB();
+    ~FlyDB();
     int expandDict(uint64_t size);
     int expandExpire(uint64_t size);
 

@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "CommandTable.h"
-#include "CommandDictType.h"
+#include "../dataStructure/dict/dictTypeImpl/CommandDictType.h"
 #include "CommandEntry.h"
 #include "../utils/MiscTool.h"
 #include "../log/FileLogFactory.h"
