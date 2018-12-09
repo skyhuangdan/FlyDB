@@ -12,6 +12,7 @@ class FlyObj {
 public:
     FlyObj(FlyObjType type);
     FlyObj(void *ptr, FlyObjType type);
+    virtual ~FlyObj();
     void incrRefCount();
     void resetRefCount();
     FlyObjType getType() const;

@@ -21,6 +21,10 @@ FlyObj::FlyObj(void *ptr, FlyObjType type) {
     this->refCount = 1;
 }
 
+FlyObj::~FlyObj() {
+    delete this->ptr;
+}
+
 void FlyObj::incrRefCount() {
     this->refCount++;
 }
