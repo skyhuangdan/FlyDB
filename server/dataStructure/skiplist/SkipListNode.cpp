@@ -4,28 +4,33 @@
 
 #include "SkipListNode.h"
 
-SkipListNode::SkipListNode(const SkipListType* type, void* obj, double score) : type(type) {
+template<class T>
+SkipListNode<T>::SkipListNode(T obj, double score) {
     this->obj = obj;
     this->score = score;
     this->previous = NULL;
     for (int i = 0; i < SKIP_LIST_MAX_LEVEL; i++) {
-        this->levels.push_back(SkipListLevel());
+        this->levels.push_back(SkipListLevel<T>());
     }
 }
 
-std::vector<SkipListLevel> &SkipListNode::getLevels() {
+template<class T>
+std::vector<SkipListLevel<T>> &SkipListNode<T>::getLevels() {
     return levels;
 }
 
-bool SkipListNode::scoreLtRange(SkipListRange range) {
+template<class T>
+bool SkipListNode<T>::scoreLtRange(SkipListRange range) {
     return range.minex ? this->score <= range.min : this->score < range.min;
 }
 
-bool SkipListNode::scoreGtRange(SkipListRange range) {
+template<class T>
+bool SkipListNode<T>::scoreGtRange(SkipListRange range) {
     return range.maxex ? this->score >= range.max : this->score > range.max;
 }
 
-bool SkipListNode::scoreInRange(SkipListRange range) {
+template<class T>
+bool SkipListNode<T>::scoreInRange(SkipListRange range) {
     if (!scoreLtRange(range) && !scoreGtRange(range)) {
         return true;
     }
@@ -33,26 +38,26 @@ bool SkipListNode::scoreInRange(SkipListRange range) {
     return false;
 }
 
-void *SkipListNode::getObj() const {
+template<class T>
+T& SkipListNode<T>::getObj() const {
     return obj;
 }
 
-double SkipListNode::getScore() const {
+template<class T>
+double SkipListNode<T>::getScore() const {
     return score;
 }
 
-SkipListNode *SkipListNode::getPrevious() const {
+template<class T>
+SkipListNode<T> *SkipListNode<T>::getPrevious() const {
     return previous;
 }
 
-const SkipListType *SkipListNode::getType() const {
-    return type;
+template<class T>
+void SkipListNode<T>::setPrevious(SkipListNode<T> *previous) {
+    this->previous = previous;
 }
 
-void SkipListNode::setPrevious(SkipListNode *previous) {
-    SkipListNode::previous = previous;
-}
-
-SkipListNode::~SkipListNode() {
-    type->destructor(this->obj);
+template<class T>
+SkipListNode<T>::~SkipListNode() {
 }

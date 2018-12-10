@@ -10,7 +10,9 @@
 #include "SkipListType.h"
 #include "SkipListDef.h"
 
-class SkipListNode;
+template<class T> class SkipListNode;
+
+template<class T>
 struct SkipListLevel {
     SkipListLevel() {
         this->span = 0;
@@ -18,30 +20,28 @@ struct SkipListLevel {
     };
 
     uint32_t span;
-    SkipListNode* next;
+    SkipListNode<T>* next;
 };
 
+template<class T>
 class SkipListNode {
 public:
-    SkipListNode(const SkipListType *type, void* obj, double score);
+    SkipListNode(T obj, double score);
     virtual ~SkipListNode();
-    void *getObj() const;
+    T& getObj() const;
     double getScore() const;
-    SkipListNode *getPrevious() const;
-    void setPrevious(SkipListNode *previous);
-    const SkipListType *getType() const;
-    std::vector<SkipListLevel> &getLevels();
+    SkipListNode<T> *getPrevious() const;
+    void setPrevious(SkipListNode<T> *previous);
+    std::vector<SkipListLevel<T>> &getLevels();
     bool scoreLtRange(SkipListRange range);
     bool scoreGtRange(SkipListRange range);
     bool scoreInRange(SkipListRange range);
 
 private:
-    void* obj;
+    T obj;
     double score;
-    std::vector<SkipListLevel> levels;
-    SkipListNode *previous;
-    const SkipListType* type;
+    std::vector<SkipListLevel<T>> levels;
+    SkipListNode<T> *previous;
 };
-
 
 #endif //FLYDB_SKIPLISTNODE_H

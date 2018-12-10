@@ -4,35 +4,35 @@
 
 #ifndef FLYDB_SKIPLIST_H
 #define FLYDB_SKIPLIST_H
-#include "SkipListNode.h"
+#include "SkipListNode.cpp"
 #include "SkipListDef.h"
 
 // 按小-->大的顺序排序
+template<class T>
 class SkipList {
 public:
-    SkipList(const SkipListType* type);
+    SkipList();
     virtual ~SkipList();
-    SkipListNode *getHeader() const;
-    SkipListNode *getTailer() const;
+    SkipListNode<T> *getHeader() const;
+    SkipListNode<T> *getTailer() const;
     uint32_t getLength() const;
     uint32_t getLevel() const;
-    void insertNode(double score, void* obj);
-    int deleteNode(double score, void* obj, SkipListNode** res);
-    uint32_t getRank(double score, void* obj);
-    SkipListNode* getNodeByRank(uint32_t rank);
+    void insertNode(double score, T obj);
+    int deleteNode(double score, T obj, SkipListNode<T>** res);
+    uint32_t getRank(double score, T obj);
+    SkipListNode<T>* getNodeByRank(uint32_t rank);
     int isInRange(SkipListRange range);
-    SkipListNode* firstInRange(SkipListRange range);
-    SkipListNode* lastInRange(SkipListRange range);
+    SkipListNode<T>* firstInRange(SkipListRange range);
+    SkipListNode<T>* lastInRange(SkipListRange range);
     uint32_t deleteRangeByScore(SkipListRange range);
     uint32_t deleteRangeByRank(uint32_t start, uint32_t end);
-    int deleteNode(SkipListNode* node); // 会释放节点
+    int deleteNode(SkipListNode<T>* node); // 会释放节点
 
 private:
     uint8_t randomLevel();
-    SkipListNode *header, *tailer;
+    SkipListNode<T> *header, *tailer;
     uint32_t length;
     uint8_t level;
-    const SkipListType* type;
 };
 
 #endif //FLYDB_SKIPLIST_H
