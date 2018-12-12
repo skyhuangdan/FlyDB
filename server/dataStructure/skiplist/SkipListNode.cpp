@@ -5,7 +5,7 @@
 #include "SkipListNode.h"
 
 template<class T>
-SkipListNode<T>::SkipListNode(T obj, double score) {
+SkipListNode<T>::SkipListNode(T *obj, double score) {
     this->obj = obj;
     this->score = score;
     this->previous = NULL;
@@ -39,7 +39,7 @@ bool SkipListNode<T>::scoreInRange(SkipListRange range) {
 }
 
 template<class T>
-T& SkipListNode<T>::getObj() const {
+T* SkipListNode<T>::getObj() const {
     return obj;
 }
 

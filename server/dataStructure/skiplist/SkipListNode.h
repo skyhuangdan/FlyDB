@@ -7,7 +7,6 @@
 
 #include <string>
 #include <vector>
-#include "SkipListType.h"
 #include "SkipListDef.h"
 
 template<class T> class SkipListNode;
@@ -26,9 +25,9 @@ struct SkipListLevel {
 template<class T>
 class SkipListNode {
 public:
-    SkipListNode(T obj, double score);
+    SkipListNode(T *obj, double score);
     virtual ~SkipListNode();
-    T& getObj() const;
+    T* getObj() const;
     double getScore() const;
     SkipListNode<T> *getPrevious() const;
     void setPrevious(SkipListNode<T> *previous);
@@ -38,7 +37,7 @@ public:
     bool scoreInRange(SkipListRange range);
 
 private:
-    T obj;
+    T *obj;
     double score;
     std::vector<SkipListLevel<T>> levels;
     SkipListNode<T> *previous;
