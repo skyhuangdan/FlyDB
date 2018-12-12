@@ -5,8 +5,11 @@
 #ifndef FLYDB_FLYDB_H
 #define FLYDB_FLYDB_H
 
-#include "../dataStructure/dict/Dict.h"
+#include <string>
 #include "interface/AbstractFlyDB.h"
+
+template<class KEY, class VAL>
+class Dict;
 
 class FlyDB : public AbstractFlyDB {
 public:
@@ -16,8 +19,8 @@ public:
     int expandExpire(uint64_t size);
 
 private:
-    Dict* dict;
-    Dict* expires;
+    Dict<std::string, void>* dict;
+    Dict<std::string, void>* expires;
 };
 
 

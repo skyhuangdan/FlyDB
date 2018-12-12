@@ -7,26 +7,30 @@
 #include "../../log/FileLogHandler.h"
 #include "../../log/FileLogFactory.h"
 
-Dict::Dict(const DictType* type) : type(type) {
-    this->ht[0] = new HashTable(type, HASH_TABLE_INITIAL_SIZE);
+template<class KEY, class VAL>
+Dict<KEY, VAL>::Dict() {
+    this->ht[0] = new HashTable<KEY, VAL>(HASH_TABLE_INITIAL_SIZE);
     this->ht[1] = NULL;
     this->rehashIndex = -1;
 
     this->logHandler = logFactory->getLogger();
 }
 
-Dict::~Dict() {
+template<class KEY, class VAL>
+Dict<KEY, VAL>::~Dict() {
     delete this->ht[0];
     if (isRehashing()) {
         delete this->ht[1];
     }
 }
 
-bool Dict::isRehashing() const {
+template<class KEY, class VAL>
+bool Dict<KEY, VAL>::isRehashing() const {
    return this->rehashIndex >= 0;
 }
 
-int Dict::addEntry(void* key, void* val) {
+template<class KEY, class VAL>
+int Dict<KEY, VAL>::addEntry(KEY* key, VAL* val) {
     if (NULL == key || NULL == val) {
         this->logHandler->logWarning("key or value is NULL, key = %p, val = %p",
                                      key, val);
@@ -43,7 +47,7 @@ int Dict::addEntry(void* key, void* val) {
         if ((res = this->ht[0]->addEntry(key, val)) > 0) {
             if (this->ht[0]->needExpand()) {
                 this->ht[1] =
-                        new HashTable(this->type, this->ht[0]->getSize() * 2);
+                        new HashTable<KEY, VAL>(this->ht[0]->getSize() * 2);
                 this->rehashIndex = 0;
                 rehashSteps(1);
             }
@@ -54,7 +58,8 @@ int Dict::addEntry(void* key, void* val) {
     return res;
 }
 
-DictEntry* Dict::findEntry(void* key) {
+template<class KEY, class VAL>
+DictEntry<KEY, VAL>* Dict<KEY, VAL>::findEntry(KEY* key) {
     if (NULL == key) {
         return NULL;
     }
@@ -65,8 +70,8 @@ DictEntry* Dict::findEntry(void* key) {
     }
 
     // 先查找ht[0]
-    HashTable* ht = this->ht[0];
-    DictEntry* entry = ht->findEntry(key);
+    HashTable<KEY, VAL>* ht = this->ht[0];
+    DictEntry<KEY, VAL>* entry = ht->findEntry(key);
 
     // 如果ht[0]中没有找到，并且正在进行rehash，则查找ht[1]
     if (NULL == entry && isRehashing()) {
@@ -77,7 +82,8 @@ DictEntry* Dict::findEntry(void* key) {
     return entry;
 }
 
-void* Dict::fetchValue(void* key) {
+template<class KEY, class VAL>
+VAL* Dict<KEY, VAL>::fetchValue(KEY* key) {
     if (NULL == key) {
         this->logHandler->logWarning("key is NULL!");
         return NULL;
@@ -88,11 +94,12 @@ void* Dict::fetchValue(void* key) {
         rehashSteps(1);
     }
 
-    DictEntry* entry = findEntry(key);
+    DictEntry<KEY, VAL>* entry = findEntry(key);
     return NULL == entry ? NULL : entry->val;
 }
 
-int Dict::deleteEntry(void* key) {
+template<class KEY, class VAL>
+int Dict<KEY, VAL>::deleteEntry(KEY* key) {
     if (NULL == key) {
         this->logHandler->logWarning("key is NULL!");
         return -1;
@@ -107,7 +114,7 @@ int Dict::deleteEntry(void* key) {
     if ((this->ht[0]->deleteEntry(key)) > 0) {
         // 没有处于rehash过程中 && 需要缩容，则进行缩容
         if (!isRehashing() && this->ht[0]->needShrink()) {
-            this->ht[1] = new HashTable(this->type, this->ht[0]->getSize() / 2);
+            this->ht[1] = new HashTable<KEY, VAL>(this->ht[0]->getSize() / 2);
             this->rehashIndex = 0;
             rehashSteps(1);
         }
@@ -123,7 +130,8 @@ int Dict::deleteEntry(void* key) {
     return -1;
 }
 
-int Dict::replace(void* key, void* val) {
+template<class KEY, class VAL>
+int Dict<KEY, VAL>::replace(KEY* key, VAL* val) {
     if (NULL == key || NULL == val) {
         this->logHandler->logWarning("key or value is NULL, key = %p, val = %p",
                                      key, val);
@@ -141,15 +149,16 @@ int Dict::replace(void* key, void* val) {
     }
 
     // 如果插入失败，说明之前存在该key，需要替换value
-    DictEntry* entry = findEntry(key);
-    entry->val = this->type->valDup(val);
+    DictEntry<KEY, VAL>* entry = findEntry(key);
+    entry->val = val;
     return 1;
 }
 
-void Dict::rehashSteps(uint32_t steps) {
+template<class KEY, class VAL>
+void Dict<KEY, VAL>::rehashSteps(uint32_t steps) {
     for (uint32_t i = 0; i < steps && !this->ht[0]->isEmpty(); i++) {
         // 找到存在元素的index
-        DictEntry* entry = NULL;
+        DictEntry<KEY, VAL>* entry = NULL;
         while (NULL == entry && this->rehashIndex < this->ht[0]->getSize()) {
             entry = this->ht[0]->getEntryBy(this->rehashIndex++);
         }
@@ -173,13 +182,14 @@ void Dict::rehashSteps(uint32_t steps) {
     return;
 }
 
-uint32_t Dict::dictScan(uint32_t cursor,
+template<class KEY, class VAL>
+uint32_t Dict<KEY, VAL>::dictScan(uint32_t cursor,
                         uint32_t steps,
-                        scanProc proc,
+                        void (*scanProc)(void* priv, KEY *key, VAL *val),
                         void *priv) {
     uint32_t nextCursor = cursor;
     for (uint32_t i = 0; i < steps; i++) {
-        nextCursor = dictScanOneStep(nextCursor, proc, priv);
+        nextCursor = dictScanOneStep(nextCursor, scanProc, priv);
         if (0 == nextCursor) {
             return nextCursor;
         }
@@ -188,20 +198,24 @@ uint32_t Dict::dictScan(uint32_t cursor,
     return nextCursor;
 }
 
-uint32_t Dict::dictScanOneStep(uint32_t cursor, scanProc proc, void *priv) {
-    HashTable* ht0 = this->ht[0];
-    HashTable* ht1 = this->ht[1];
+template<class KEY, class VAL>
+uint32_t Dict<KEY, VAL>::dictScanOneStep(
+        uint32_t cursor,
+        void (*scanProc)(void* priv, KEY *key, VAL *val),
+        void *priv) {
+    HashTable<KEY, VAL>* ht0 = this->ht[0];
+    HashTable<KEY, VAL>* ht1 = this->ht[1];
     if (isRehashing()) {
         // 确保ht0保存小的hashtable
         if (ht0->getSize() > ht1->getSize()) {
-            HashTable* tmp = ht0;
+            HashTable<KEY, VAL>* tmp = ht0;
             ht0 = ht1;
             ht1 = tmp;
         }
 
         // scan ht0
         uint32_t index = ht0->getIndex(cursor);
-        ht0->scanEntries(index, proc, priv);
+        ht0->scanEntries(index, scanProc, priv);
 
         /**
          * scan ht1: 由于ht1 > ht0, 所以ht1的大小是ht0的二倍
@@ -213,14 +227,14 @@ uint32_t Dict::dictScanOneStep(uint32_t cursor, scanProc proc, void *priv) {
          * 3.ht1中的第二个scan就是将index的第二位置1, 以遍历相应的第二个桶
          */
         index = ht1->getIndex(cursor);
-        ht1->scanEntries(index, proc, priv);
+        ht1->scanEntries(index, scanProc, priv);
         index |= (~ht0->getMask() & ht1->getMask())
                 | (ht0->getMask() & ~ht1->getMask());
-        ht1->scanEntries(index, proc, priv);
+        ht1->scanEntries(index, scanProc, priv);
     } else {
         // 如果未处于rehash, 只访问ht[0]就可以了
         uint32_t index = ht0->getIndex(cursor);
-        ht0->scanEntries(index, proc, priv);
+        ht0->scanEntries(index, scanProc, priv);
     }
 
     cursor |= ~ht0->getMask();
@@ -232,8 +246,10 @@ uint32_t Dict::dictScanOneStep(uint32_t cursor, scanProc proc, void *priv) {
 }
 
 // reserve bit位， 例如：b1 b2 b3 b4，经过reserve后变成b4 b3 b2 b1
-uint32_t Dict::revBits(uint32_t bits) {
-    uint32_t s = 8 * sizeof(bits); // bit size; must be power of 2
+template<class KEY, class VAL>
+uint32_t Dict<KEY, VAL>::revBits(uint32_t bits) {
+    // bit size; must be power of 2
+    uint32_t s = 8 * sizeof(bits);
     uint32_t mask = ~0;
     while ((s >>= 1) > 0) {
         mask ^= (mask << s);
@@ -242,7 +258,8 @@ uint32_t Dict::revBits(uint32_t bits) {
     return bits;
 }
 
-int Dict::expand(uint32_t size) {
+template<class KEY, class VAL>
+int Dict<KEY, VAL>::expand(uint32_t size) {
     uint32_t expandSize = nextPower(size);
     // 如果正在rehash, 或者扩容大小 < 目前已使用空间
     if (isRehashing() || expandSize < this->ht[0]->getUsed()) {
@@ -255,14 +272,15 @@ int Dict::expand(uint32_t size) {
     }
 
     // 扩(缩)容，并执行rehash
-    this->ht[1] = new HashTable(this->type, expandSize);
+    this->ht[1] = new HashTable<KEY, VAL>(expandSize);
     this->rehashIndex = 0;
     rehashSteps(1);
 
     return 1;
 }
 
-uint32_t Dict::nextPower(uint32_t num) {
+template<class KEY, class VAL>
+uint32_t Dict<KEY, VAL>::nextPower(uint32_t num) {
     int i = HASH_TABLE_INITIAL_SIZE;
 
     // 如果num大于32位数字中最大的power，则返回maxPower
@@ -281,45 +299,3 @@ uint32_t Dict::nextPower(uint32_t num) {
 
     return i;
 }
-
-
-unsigned int dictGenHashFunction(const char *buf, int len) {
-    unsigned int hash = 5381;
-
-    while (len--)
-        hash = ((hash << 5) + hash) + (*buf++); /* hash * 33 + c */
-    return hash;
-}
-
-uint64_t dictStrHash(const void *key) {
-    if (NULL == key) {
-        return 0;
-    }
-    return dictGenHashFunction(
-            reinterpret_cast<const std::string*>(key)->c_str(),
-            reinterpret_cast<const std::string*>(key)->length());
-}
-
-int dictStrKeyCompare(const void *key1, const void *key2) {
-    if (NULL == key1 && NULL == key2) {
-        return 0;
-    }
-    if (NULL == key1) {
-        return -1;
-    }
-    if (NULL == key2) {
-        return 1;
-    }
-
-    const std::string *str1 = reinterpret_cast<const std::string*>(key1);
-    return str1->compare(*reinterpret_cast<const std::string*>(key2));
-}
-
-void dictStrDestructor(void *val) {
-    if (NULL == val) {
-        return;
-    }
-
-    delete reinterpret_cast<std::string*>(val);
-}
-

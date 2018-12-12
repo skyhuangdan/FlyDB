@@ -2,13 +2,15 @@
 // Created by 赵立伟 on 2018/9/20.
 //
 #include <iostream>
+#include <functional>
 #include "HashTable.h"
 #include "../../log/FileLogHandler.h"
 #include "../../log/FileLogFactory.h"
 #include "../../../def.h"
 
-HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(size) {
-    this->table = new DictEntry*[size];
+template<class KEY, class VAL>
+HashTable<KEY, VAL>::HashTable(uint32_t size) : size(size) {
+    this->table = new DictEntry<KEY, VAL>*[size];
     for (uint32_t i = 0; i < size; i++) {
         this->table[i] = NULL;
     }
@@ -18,28 +20,36 @@ HashTable::HashTable(const DictType* type, uint32_t size) : type(type), size(siz
     this->logHandler = logFactory->getLogger();
 }
 
-HashTable::~HashTable() {
+template<class KEY, class VAL>
+HashTable<KEY, VAL>::~HashTable() {
     delete this->table;
 }
 
-uint32_t HashTable::getIndex(void* key) const {
-    return this->type->hashFunction(key) & this->mask;
+template<class KEY, class VAL>
+uint32_t HashTable<KEY, VAL>::getIndexWithKey(KEY* key) const {
+    return std::hash<KEY>()(*key) & this->mask;
 }
 
-uint32_t HashTable::getIndex(uint32_t cursor) const {
+template<class KEY, class VAL>
+uint32_t HashTable<KEY, VAL>::getIndex(uint32_t cursor) const {
     return cursor & this->mask;
 }
 
-void HashTable::scanEntries(uint32_t index, scanProc proc, void* priv) {
-    DictEntry* entry = this->getEntryBy(index);
+template<class KEY, class VAL>
+void HashTable<KEY, VAL>::scanEntries(
+        uint32_t index,
+        void (*scanProc)(void* priv, KEY *key, VAL *val),
+        void* priv) {
+    DictEntry<KEY, VAL>* entry = this->getEntryBy(index);
     while (NULL != entry) {
-        proc(priv, entry->getKey(), entry->getVal());
+        scanProc(priv, entry->getKey(), entry->getVal());
         entry = entry->next;
     }
 }
 
-int HashTable::addEntry(void* key, void* val) {
-    uint32_t index = getIndex(key);
+template<class KEY, class VAL>
+int HashTable<KEY, VAL>::addEntry(KEY* key, VAL* val) {
+    uint32_t index = getIndexWithKey(key);
 
     // 判断是否已经有相同的键，如果有，则不能继续插入
     if (hasKey(key)) {
@@ -48,8 +58,8 @@ int HashTable::addEntry(void* key, void* val) {
     }
 
     // 将该entry插入头部
-    DictEntry* entry = new DictEntry(key, val, this->type);
-    DictEntry* head = this->table[index];
+    DictEntry<KEY, VAL>* entry = new DictEntry<KEY, VAL>(key, val);
+    DictEntry<KEY, VAL>* head = this->table[index];
     this->table[index] = entry;
     entry->next = head;
 
@@ -57,11 +67,12 @@ int HashTable::addEntry(void* key, void* val) {
     return 1;
 }
 
-DictEntry* HashTable::findEntry(void* key) {
-    uint32_t index = getIndex(key);
-    DictEntry* node = this->table[index];
+template<class KEY, class VAL>
+DictEntry<KEY, VAL>* HashTable<KEY, VAL>::findEntry(KEY* key) {
+    uint32_t index = getIndexWithKey(key);
+    DictEntry<KEY, VAL>* node = this->table[index];
     while (node != NULL) {
-        if (this->type->keyCompare(node->key, key) == 0) {
+        if (*(node->key) == *key) {
            return node;
         }
         node = node->next;
@@ -69,12 +80,13 @@ DictEntry* HashTable::findEntry(void* key) {
     return NULL;
 }
 
-int HashTable::deleteEntry(void* key) {
-    uint32_t index = getIndex(key);
-    DictEntry* node = this->table[index];
+template<class KEY, class VAL>
+int HashTable<KEY, VAL>::deleteEntry(KEY* key) {
+    uint32_t index = getIndexWithKey(key);
+    DictEntry<KEY, VAL>* node = this->table[index];
     if (node != NULL) {
         // 如果要删除的key是头结点
-        if (this->type->keyCompare(node->key, key)) {
+        if (*(node->key) == *key) {
             this->table[index] = node->next;
             delete node;
             this->used--;
@@ -83,8 +95,8 @@ int HashTable::deleteEntry(void* key) {
 
         // 如果不是头结点，则查找链表中是否有该节点
         while (node->next != NULL) {
-            if (this->type->keyCompare(node->next->key, key)) {
-                DictEntry* tmp = node->next;
+            if (*(node->next->key) == *key) {
+                DictEntry<KEY, VAL>* tmp = node->next;
                 node->next = node->next->next;
                 delete tmp;
                 this->used--;
@@ -97,34 +109,42 @@ int HashTable::deleteEntry(void* key) {
     return -1;
 }
 
-bool HashTable::hasKey(void* key) {
+template<class KEY, class VAL>
+bool HashTable<KEY, VAL>::hasKey(KEY* key) {
     return this->findEntry(key) != NULL;
 }
 
-bool HashTable::needExpand() const {
+template<class KEY, class VAL>
+bool HashTable<KEY, VAL>::needExpand() const {
     return this->used >= this->size * NEED_REHASH_RATIO;
 }
 
-bool HashTable::needShrink() const {
+template<class KEY, class VAL>
+bool HashTable<KEY, VAL>::needShrink() const {
     return this->used * NEED_REHASH_RATIO <= this->size;
 }
 
-uint32_t HashTable::getSize() const {
+template<class KEY, class VAL>
+uint32_t HashTable<KEY, VAL>::getSize() const {
     return this->size;
 }
 
-uint32_t HashTable::getUsed() const {
+template<class KEY, class VAL>
+uint32_t HashTable<KEY, VAL>::getUsed() const {
     return this->used;
 }
 
-bool HashTable::isEmpty() const {
+template<class KEY, class VAL>
+bool HashTable<KEY, VAL>::isEmpty() const {
     return 0 == this->used;
 }
 
-DictEntry* HashTable::getEntryBy(uint32_t index) const {
+template<class KEY, class VAL>
+DictEntry<KEY, VAL>* HashTable<KEY, VAL>::getEntryBy(uint32_t index) const {
     return this->table[index];
 }
 
-uint32_t HashTable::getMask() const {
+template<class KEY, class VAL>
+uint32_t HashTable<KEY, VAL>::getMask() const {
     return this->mask;
 }

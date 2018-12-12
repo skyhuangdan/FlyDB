@@ -4,37 +4,38 @@
 #ifndef FLYDB_HASHTABLE_H
 #define FLYDB_HASHTABLE_H
 
-#include "DictEntry.h"
-#include "Dict.h"
+#include "DictEntry.cpp"
 #include "DictDef.h"
 #include "../../log/interface/AbstractLogHandler.h"
 
+template<class KEY, class VAL>
 class HashTable {
  public:
-    HashTable(const DictType* type, uint32_t size);
+    HashTable(uint32_t size);
     virtual ~HashTable();
 
-    int addEntry(void* key, void* val);
-    DictEntry* findEntry(void* key);
-    int deleteEntry(void* key);
+    int addEntry(KEY* key, VAL* val);
+    DictEntry<KEY, VAL>* findEntry(KEY* key);
+    int deleteEntry(KEY* key);
     bool needExpand() const;
     bool needShrink() const;
-    bool hasKey(void* key);
-    uint32_t getIndex(void* key) const;
+    bool hasKey(KEY* key);
+    uint32_t getIndexWithKey(KEY* key) const;
     uint32_t getIndex(uint32_t cursor) const;
     uint32_t getSize() const;
     uint32_t getUsed() const;
     bool isEmpty() const;
-    DictEntry* getEntryBy(uint32_t index) const;
-    void scanEntries(uint32_t index, scanProc proc, void* priv);
+    DictEntry<KEY, VAL>* getEntryBy(uint32_t index) const;
+    void scanEntries(uint32_t index,
+                     void (*scanProc)(void* priv, KEY *key, VAL *val),
+                     void* priv);
     uint32_t getMask() const;
 
 private:
-    DictEntry** table;
+    DictEntry<KEY, VAL>** table;
     uint32_t size;
     uint32_t used;
     uint32_t mask;
-    const DictType* type;
 
     AbstractLogHandler *logHandler;
 };

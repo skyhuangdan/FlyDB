@@ -7,39 +7,39 @@
 
 #include <map>
 #include <array>
-#include "HashTable.h"
+#include "HashTable.cpp"
 #include "DictDef.h"
 #include "../../log/interface/AbstractLogFactory.h"
 
-uint64_t dictStrHash(const void *key);
-void dictStrDestructor(void *val);
-int dictStrKeyCompare(const void *key1, const void *key2);
-
+template<class KEY, class VAL>
 class Dict {
 public:
-    Dict(const DictType* type);
+    Dict();
     virtual ~Dict();
 
-    int addEntry(void* key, void* val);
-    int replace(void* key, void* val);
-    DictEntry* findEntry(void* key);
-    void* fetchValue(void* key);
-    int deleteEntry(void* key);
+    int addEntry(KEY* key, VAL* val);
+    int replace(KEY* key, VAL* val);
+    DictEntry<KEY, VAL>* findEntry(KEY* key);
+    VAL* fetchValue(KEY* key);
+    int deleteEntry(KEY* key);
     bool isRehashing() const;
     void rehashSteps(uint32_t steps);
-    uint32_t dictScan(uint32_t cursor, uint32_t steps, scanProc proc, void *priv);
-    uint32_t dictScanOneStep(uint32_t cursor, scanProc proc, void *priv);
+    uint32_t dictScan(uint32_t cursor,
+                      uint32_t steps,
+                      void (*scanProc)(void* priv, KEY *key, VAL *val),
+                      void *priv);
+    uint32_t dictScanOneStep(uint32_t cursor,
+                             void (*scanProc)(void* priv, KEY *key, VAL *val),
+                             void *priv);
     int expand(uint32_t size);              // 扩容/缩容
     
 private:
     uint32_t nextPower(uint32_t num);
     uint32_t revBits(uint32_t bits);
-    std::array<class HashTable*, 2> ht;
-    const DictType* type;
+    std::array<HashTable<KEY, VAL>*, 2> ht;
     int64_t rehashIndex = -1;
 
     AbstractLogHandler *logHandler;
 };
-
 
 #endif //FLYDB_DICT_H

@@ -5,10 +5,11 @@
 #ifndef FLYDB_COMMANDTABLE_H
 #define FLYDB_COMMANDTABLE_H
 
-
-#include "../dataStructure/dict/Dict.h"
 #include "../flyClient/FlyClient.h"
 #include "../log/FileLogHandler.h"
+
+template<class KEY, class VAL>
+class Dict;
 
 class CommandTable {
 public:
@@ -18,7 +19,7 @@ public:
 
 private:
     const AbstractCoordinator* coordinator;
-    Dict* commands;
+    Dict<std::string, CommandEntry>* commands;
     AbstractLogHandler *logHandler;
 };
 

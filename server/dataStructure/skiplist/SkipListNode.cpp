@@ -60,4 +60,5 @@ void SkipListNode<T>::setPrevious(SkipListNode<T> *previous) {
 
 template<class T>
 SkipListNode<T>::~SkipListNode() {
+    delete this->obj;
 }

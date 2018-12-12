@@ -3,12 +3,11 @@
 //
 
 #include "FlyDB.h"
-#include "../dataStructure/dict/dictTypeImpl/DBDictType.h"
-#include "../dataStructure/dict/dictTypeImpl/KeyPtrDictType.h"
+#include "../dataStructure/dict/Dict.cpp"
 
 FlyDB::FlyDB() {
-    this->dict = new Dict(DBDictType::getInstance());
-    this->expires = new Dict(KeyPtrDictType::getInstance());
+    this->dict = new Dict<std::string, void>();
+    this->expires = new Dict<std::string, void>();
 }
 
 FlyDB::~FlyDB() {

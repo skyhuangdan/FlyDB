@@ -4,13 +4,13 @@
 
 #include <iostream>
 #include "CommandTable.h"
-#include "../dataStructure/dict/dictTypeImpl/CommandDictType.h"
 #include "CommandEntry.h"
 #include "../utils/MiscTool.h"
 #include "../log/FileLogFactory.h"
+#include "../dataStructure/dict/Dict.cpp"
 
 CommandTable::CommandTable(const AbstractCoordinator* coordinator) {
-    this->commands = new Dict(CommandDictType::getInstance());
+    this->commands = new Dict<std::string, CommandEntry>();
     this->commands->addEntry(new std::string("version"),
                              new CommandEntry(versionProc, 0));
     this->logHandler = logFactory->getLogger();
@@ -22,14 +22,15 @@ CommandTable::~CommandTable() {
 }
 
 int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
-    char *command = reinterpret_cast<char*>(flyClient->getArgv()[0]->getPtr());
-    DictEntry* dictEntry = this->commands->findEntry(
-            flyClient->getArgv()[0]->getPtr());
+    std::string *command = reinterpret_cast<std::string*>
+            (flyClient->getArgv()[0]->getPtr());
+    DictEntry<std::string, CommandEntry>* dictEntry =
+            this->commands->findEntry(command);
     if (NULL == dictEntry) {
         this->logHandler->logDebug("wrong command type: %s", command);
         return -1;
     }
-    reinterpret_cast<CommandEntry*>(dictEntry->getVal())->proc(
+    dictEntry->getVal()->proc(
             this->coordinator->getFlyServer(), flyClient);
 
     return 1;

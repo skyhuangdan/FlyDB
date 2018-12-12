@@ -4,21 +4,27 @@
 
 #include "DictEntry.h"
 
-DictEntry::DictEntry(void *key, void *val, const DictType* type) : key(key), val(val), type(type) {}
+template<class KEY, class VAL>
+DictEntry<KEY, VAL>::DictEntry(KEY *key, VAL *val)
+        : key(key), val(val) {}
 
-DictEntry::~DictEntry() {
-    type->keyDestructor(this->key);
-    type->valDestructor(this->val);
+template<class KEY, class VAL>
+DictEntry<KEY, VAL>::~DictEntry() {
+    delete this->key;
+    delete this->val;
 }
 
-void *DictEntry::getKey() const {
+template<class KEY, class VAL>
+KEY *DictEntry<KEY, VAL>::getKey() const {
     return this->key;
 }
 
-void *DictEntry::getVal() const {
+template<class KEY, class VAL>
+VAL *DictEntry<KEY, VAL>::getVal() const {
     return this->val;
 }
 
-void DictEntry::setVal(void *val) {
-    this->val = type->valDup(val);
+template<class KEY, class VAL>
+void DictEntry<KEY, VAL>::setVal(void *val) {
+    this->val = val;
 }
