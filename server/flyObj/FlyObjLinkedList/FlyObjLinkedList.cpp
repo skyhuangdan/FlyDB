@@ -13,13 +13,6 @@ FlyObjLinkedList::FlyObjLinkedList(FlyObjType type) : FlyObj(type) {
 FlyObjLinkedList::FlyObjLinkedList(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
 }
 
-void FlyObjLinkedList::decrRefCount() {
-    this->refCount--;
-    if (0 == this->refCount) {
-        delete reinterpret_cast<std::list<std::string> *> (ptr);
-    }
-}
-
 FlyObjEncode FlyObjLinkedList::getEncode() {
     return FLY_ENCODING_LINKEDLIST;
 }

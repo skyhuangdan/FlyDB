@@ -14,7 +14,6 @@ class FlyObjInt : public FlyObj {
 public:
     FlyObjInt(void *ptr, FlyObjType type);
     FlyObjInt(FlyObjType type);
-    void decrRefCount();
     FlyObjEncode getEncode();
 };
 

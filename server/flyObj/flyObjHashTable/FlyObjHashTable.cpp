@@ -13,13 +13,6 @@ FlyObjHashTable::FlyObjHashTable(void *ptr, FlyObjType type) : FlyObj(ptr, type)
 
 }
 
-void FlyObjHashTable::decrRefCount() {
-    this->refCount--;
-    if (0 == this->refCount) {
-        //delete reinterpret_cast<Dict *> (ptr);
-    }
-}
-
 FlyObjEncode FlyObjHashTable::getEncode() {
     return FLY_ENCODING_HT;
 }

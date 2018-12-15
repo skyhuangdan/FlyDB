@@ -7,6 +7,7 @@
 
 #include <string>
 #include "interface/AbstractFlyDB.h"
+#include "../flyObj/interface/FlyObj.h"
 
 template<class KEY, class VAL>
 class Dict;
@@ -17,10 +18,12 @@ public:
     ~FlyDB();
     int expandDict(uint64_t size);
     int expandExpire(uint64_t size);
+    void add(std::string *key, FlyObj *val);
+    void addExpire(std::string *key, FlyObj *val, uint64_t expire);
 
 private:
-    Dict<std::string, void>* dict;
-    Dict<std::string, void>* expires;
+    Dict<std::string, FlyObj>* dict;
+    Dict<std::string, uint64_t>* expires;
 };
 
 

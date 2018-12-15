@@ -9,6 +9,7 @@
 #include "../log/FileLogHandler.h"
 #include "../flyObj/interface/FlyObj.h"
 #include "../log/FileLogFactory.h"
+#include "../utils/EndianConvTool.h"
 
 #define fdbExitReportCorrupt(...) checkThenExit(__LINE__,__VA_ARGS__)
 
@@ -19,6 +20,8 @@ FDBHandler::FDBHandler(const AbstractCoordinator *coordinator,
     this->filename = filename;
     this->maxProcessingChunk = maxProcessingChunk;
     this->logHandler = logFactory->getLogger();
+    this->cksum = 0;
+    this->endianConvTool = EndianConvTool::getInstance();
 }
 
 int FDBHandler::load(FDBSaveInfo &fdbSaveInfo) {
@@ -50,8 +53,9 @@ int FDBHandler::loadFromFile(FILE *fp, FDBSaveInfo &saveInfo) {
 }
 
 int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
+    int version = 0;
     // 检查FDB文件头部
-    if (-1 == checkHeader(fio)) {
+    if (-1 == (version = checkHeader(fio))) {
         return -1;
     }
 
@@ -161,16 +165,48 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
             auxval->decrRefCount();
             continue;
         } else if (FDB_OPCODE_EOF == type) {
-            return 1;
+            break;
         }
 
-        FlyObj *key = NULL, *val = NULL;
+        // load key-value, and insert into flydb
+        std::string *key = NULL;
+        FlyObj *val = NULL;
         if (NULL ==
-            (key = reinterpret_cast<FlyObj *>(loadStringObject(fio)))) {
+            (key = reinterpret_cast<std::string *>(loadStringPlain(fio)))) {
             fdbExitReportCorrupt("Unexpected EOF reading RDB file");
             return -1;
         }
+
+        if (NULL == (val = loadObject(type, fio))) {
+            fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+            return -1;
+        }
+
+        if (expireTime != -1 && expireTime < time(NULL)) {
+            val->decrRefCount();
+            continue;
+        }
+
+        flyDB->addExpire(key, val, expireTime);
     }
+
+    // check sum
+    uint64_t cksum;
+    if (0 == fio->read(&cksum, 8)) {
+        fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+        return -1;
+    }
+    this->endianConvTool->memrev32ifbe(&cksum);
+    if (0 == cksum) {
+        this->logHandler->logWarning(
+                "RDB file was saved with checksum disabled: "
+                "no check performed.");
+    } else if (this->cksum != cksum) {
+        this->logHandler->logWarning("Wrong RDB checksum. Aborting now.");
+        fdbExitReportCorrupt("FDB CRC error");
+    }
+
+    return 1;
 
 }
 
@@ -218,21 +254,6 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
         return NULL;
     }
 
-    // 如果是自定义类型，则按照自定义类型获取
-    if (0 != encoded) {
-        switch (len) {
-            case FDB_ENC_INT8:
-            case FDB_ENC_INT16:
-            case FDB_ENC_INT32:
-                return loadIntegerObject(fio, len, flag, lenptr);
-            case FDB_ENC_LZF:
-                return loadLzfStringObject(fio, flag, lenptr);
-            default:
-                fdbExitReportCorrupt(
-                        "Unknown FDB string encoding type %d", len);
-        }
-    }
-
     // len <= 0
     if (len <= 0) {
         this->logHandler->logWarning("the len <= 0! len = %d", len);
@@ -248,7 +269,7 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
 
     // 根据flag返回FlyObj或者直接返回string
     if (flag & FDB_LOAD_OBJECT) {
-        return this->coordinator->getFlyObjStringFactory()->getObject();
+        return this->coordinator->getFlyObjStringFactory()->getObject(str);
     } else {
         return str;
     }
@@ -379,6 +400,9 @@ int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
     return 1;
 }
 
+FlyObj* FDBHandler::loadObject(int type, Fio *fio) {
+}
+
 int FDBHandler::checkHeader(Fio *fio) {
     // 读取头部字节
     char buf[1024];
@@ -402,7 +426,7 @@ int FDBHandler::checkHeader(Fio *fio) {
         return -1;
     }
 
-    return 1;
+    return version;
 }
 
 void FDBHandler::checkThenExit(int linenum, char *reason, ...) {

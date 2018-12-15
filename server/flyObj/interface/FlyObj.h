@@ -14,6 +14,7 @@ public:
     FlyObj(void *ptr, FlyObjType type);
     virtual ~FlyObj();
     void incrRefCount();
+    void decrRefCount();
     void resetRefCount();
     FlyObjType getType() const;
     void setType(FlyObjType type);
@@ -23,7 +24,6 @@ public:
     void setLru(uint16_t lru);
     void *getPtr() const;
     void setPtr(void *ptr);
-    virtual void decrRefCount() {};
 
 protected:
     FlyObjType type;

@@ -23,11 +23,22 @@ FlyObj::FlyObj(void *ptr, FlyObjType type) {
 }
 
 FlyObj::~FlyObj() {
-    delete this->ptr;
+    this->refCount--;
+    if (0 == this->refCount) {
+        delete this->ptr;
+    }
 }
 
 void FlyObj::incrRefCount() {
     this->refCount++;
+}
+
+void FlyObj::decrRefCount() {
+    this->refCount--;
+    if (0 == this->refCount) {
+        delete ptr;
+        ptr = NULL;
+    }
 }
 
 void FlyObj::resetRefCount() {

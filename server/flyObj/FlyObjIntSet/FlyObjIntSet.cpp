@@ -13,13 +13,6 @@ FlyObjIntSet::FlyObjIntSet(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
 
 }
 
-void FlyObjIntSet::decrRefCount() {
-    this->refCount--;
-    if (0 == this->refCount) {
-        delete reinterpret_cast<IntSet *> (ptr);
-    }
-}
-
 FlyObjEncode FlyObjIntSet::getEncode() {
     return FLY_ENCODING_INTSET;
 }

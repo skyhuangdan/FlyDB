@@ -12,6 +12,7 @@
 #include "interface/AbstractFDBHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 #include "../log/interface/AbstractLogHandler.h"
+#include "../utils/EndianConvTool.h"
 
 class FDBHandler : public AbstractFDBHandler {
 public:
@@ -37,6 +38,7 @@ private:
     void* loadLzfStringObject(Fio *fio, int flag, size_t *lenptr);
     int checkHeader(Fio *fio);
     void checkThenExit(int linenum, char *reason, ...);
+    FlyObj* loadObject(int type, Fio *fio);
 
     char *filename;
     bool loading = false;
@@ -44,9 +46,11 @@ private:
     uint64_t loadBytes = 0;
     uint64_t loadTotalBytes = 0;
     off_t maxProcessingChunk = 0;
+    uint64_t cksum = 0;
 
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;
+    EndianConvTool *endianConvTool;
 };
 
 

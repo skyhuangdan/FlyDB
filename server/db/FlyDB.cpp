@@ -6,8 +6,8 @@
 #include "../dataStructure/dict/Dict.cpp"
 
 FlyDB::FlyDB() {
-    this->dict = new Dict<std::string, void>();
-    this->expires = new Dict<std::string, void>();
+    this->dict = new Dict<std::string, FlyObj>();
+    this->expires = new Dict<std::string, uint64_t>();
 }
 
 FlyDB::~FlyDB() {
@@ -21,4 +21,15 @@ int FlyDB::expandDict(uint64_t size) {
 
 int FlyDB::expandExpire(uint64_t size) {
     this->expires->expand(size);
+}
+
+void FlyDB::add(std::string *key, FlyObj *val) {
+    this->dict->addEntry(key, val);
+}
+
+void FlyDB::addExpire(std::string *key, FlyObj *val, uint64_t expire) {
+    this->add(key, val);
+    if (expire != -1) {
+        this->expires->addEntry(key, new uint64_t(expire));
+    }
 }

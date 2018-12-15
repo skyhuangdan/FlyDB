@@ -45,6 +45,7 @@ private:
     AbstractFlyObjFactory *flyObjSkipListFactory;
     AbstractFlyObjFactory *flyObjIntSetFactory;
     AbstractFlyObjFactory *flyObjStringFactory;
+    ConfigCache *configCache;
 
 };
 

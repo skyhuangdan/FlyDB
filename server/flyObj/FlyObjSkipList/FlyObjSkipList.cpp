@@ -20,13 +20,6 @@ FlyObjSkipList::~FlyObjSkipList() {
     }
 }
 
-void FlyObjSkipList::decrRefCount() {
-    this->refCount--;
-    if (0 == this->refCount) {
-        delete ptr;
-        ptr = NULL;
-    }
-}
 
 FlyObjEncode FlyObjSkipList::getEncode() {
     return FLY_ENCODING_SKIPLIST;

@@ -21,7 +21,7 @@ Coordinator::Coordinator() {
     /** 加载config **/
     std::string configfile = "fly.conf";                    /** 配置文件名字 */
     AbstractConfigReader *configReader = new TextConfigReader(configfile);
-    ConfigCache *configCache = configReader->loadConfig();
+    this->configCache = configReader->loadConfig();
 
     /** client factory **/
     this->flyClientFactory = new FlyClientFactory();
