@@ -10,6 +10,8 @@
 #include "../flyObj/interface/FlyObj.h"
 #include "../log/FileLogFactory.h"
 #include "../utils/EndianConvTool.h"
+#include "../dataStructure/dict/Dict.cpp"
+#include "../dataStructure/skiplist/SkipList.cpp"
 
 #define fdbExitReportCorrupt(...) checkThenExit(__LINE__,__VA_ARGS__)
 
@@ -22,6 +24,10 @@ FDBHandler::FDBHandler(const AbstractCoordinator *coordinator,
     this->logHandler = logFactory->getLogger();
     this->cksum = 0;
     this->endianConvTool = EndianConvTool::getInstance();
+}
+
+int FDBHandler::save(FDBSaveInfo &fdbSaveInfo) {
+
 }
 
 int FDBHandler::load(FDBSaveInfo &fdbSaveInfo) {
@@ -121,12 +127,12 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
         } else if (FDB_OPCODE_AUX == type) {
             FlyObj *auxkey = NULL, *auxval = NULL;
             if (NULL ==
-                (auxkey = reinterpret_cast<FlyObj *>(loadStringObject(fio)))) {
+                (auxkey = loadStringObject(fio))) {
                 fdbExitReportCorrupt("Unexpected EOF reading RDB file");
                 return -1;
             }
             if (NULL ==
-                (auxval = reinterpret_cast<FlyObj *>(loadStringObject(fio)))) {
+                (auxval = loadStringObject(fio))) {
                 fdbExitReportCorrupt("Unexpected EOF reading RDB file");
                 return -1;
             }
@@ -207,7 +213,6 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
     }
 
     return 1;
-
 }
 
 void FDBHandler::startToLoad() {
@@ -230,13 +235,15 @@ char FDBHandler::loadChar(Fio *fio) {
 }
 
 // 返回FlyObj类型数据
-void* FDBHandler::loadStringObject(Fio *fio) {
-    return this->genericLoadStringObject(fio, FDB_LOAD_OBJECT, NULL);
+FlyObj* FDBHandler::loadStringObject(Fio *fio) {
+    return reinterpret_cast<FlyObj*>(
+            this->genericLoadStringObject(fio, FDB_LOAD_OBJECT, NULL));
 }
 
 // 返回string类型数据
-void* FDBHandler::loadStringPlain(Fio *fio) {
-    return this->genericLoadStringObject(fio, FDB_LOAD_STRING, NULL);
+std::string* FDBHandler::loadStringPlain(Fio *fio) {
+    return reinterpret_cast<std::string*>(
+            this->genericLoadStringObject(fio, FDB_LOAD_STRING, NULL));
 }
 
 /**
@@ -393,7 +400,6 @@ int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
         }
         *numptr = buf & 0x3F;
     } else {
-        // todo: rdbExitReportCorruptRDB
         return -1;
     }
 
@@ -401,14 +407,60 @@ int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
 }
 
 FlyObj* FDBHandler::loadObject(int type, Fio *fio) {
+    FlyObj *obj = NULL;
+    uint64_t len = 0;
+
+    if (FLY_TYPE_STRING == type) {
+        obj = loadStringObject(fio);
+    } else if (FLY_TYPE_HASH == type) {
+        if (-1 == (len = loadNum(fio, NULL))) {
+            return obj;
+        }
+
+        Dict<std::string, std::string> *dict =
+                new Dict<std::string, std::string>();
+        while (len--) {
+            std::string *key = NULL, *val = NULL;
+            if (NULL == (key = loadStringPlain(fio))) {
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return obj;
+            }
+            if (NULL == (key = loadStringPlain(fio))) {
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return obj;
+            }
+            dict->addEntry(key, val);
+        }
+        obj = coordinator->getFlyObjHashTableFactory()->getObject(dict);
+    } else if (FLY_TYPE_LIST == type) {
+        if (-1 == (len = loadNum(fio, NULL))) {
+            return obj;
+        }
+
+        SkipList<std::string> *list = new SkipList<std::string>();
+        while (len--) {
+            std::string *val = NULL;
+            if (NULL == (val = loadStringPlain(fio))) {
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return obj;
+            }
+
+            list->insertNode(0, val);
+        }
+        obj = coordinator->getFlyObjLinkedListFactory()->getObject(list);
+    }
+
+    return obj;
 }
 
 int FDBHandler::checkHeader(Fio *fio) {
     // 读取头部字节
     char buf[1024];
     if (0 == fio->read(buf, 9)) {
-        logHandler->logWarning("Short read or OOM loading DB. Unrecoverable error, aborting now.");
-        // todo rdbExitReportCorruptRDB
+        logHandler->logWarning(
+                "Short read or OOM loading DB. Unrecoverable error, "
+                "aborting now.");
+        fdbExitReportCorrupt("error to load header!");
         return -1;
     }
 

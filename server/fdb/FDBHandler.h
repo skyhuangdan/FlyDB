@@ -20,9 +20,10 @@ public:
                char *filename,
                uint64_t maxProcessingChunk);
     int load(FDBSaveInfo &fdbSaveInfo);
-    int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo);
+    int save(FDBSaveInfo &fdbSaveInfo);
 
 private:
+    int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo);
     void startToLoad();
     int loadFromFile(FILE *fp, FDBSaveInfo &fdbSaveInfo);
     void stopLoad();
@@ -31,8 +32,8 @@ private:
     uint64_t loadMillisecondTime(Fio *fio);
     int loadNum(Fio *fio, int *encoded);
     int loadNumByRef(Fio *fio, int *encoded, uint64_t *lenptr);
-    void* loadStringObject(Fio *fio);
-    void* loadStringPlain(Fio *fio);
+    FlyObj* loadStringObject(Fio *fio);
+    std::string* loadStringPlain(Fio *fio);
     void* genericLoadStringObject(Fio *fio, int flag, size_t *lenptr);
     void* loadIntegerObject(Fio *fio, int encoding, int flag, size_t *lenptr);
     void* loadLzfStringObject(Fio *fio, int flag, size_t *lenptr);

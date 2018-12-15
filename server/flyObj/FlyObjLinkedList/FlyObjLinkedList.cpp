@@ -5,9 +5,10 @@
 #include <string>
 #include <list>
 #include "FlyObjLinkedList.h"
+#include "../../dataStructure/skiplist/SkipList.h"
 
 FlyObjLinkedList::FlyObjLinkedList(FlyObjType type) : FlyObj(type) {
-    this->ptr = new std::list<std::string>;
+    this->ptr = new SkipList<std::string>();
 }
 
 FlyObjLinkedList::FlyObjLinkedList(void *ptr, FlyObjType type) : FlyObj(ptr, type) {

@@ -9,8 +9,7 @@ enum FlyObjType {
     FLY_TYPE_STRING = 0,
     FLY_TYPE_LIST = 1,
     FLY_TYPE_HASH = 2,
-    FLY_TYPE_SET = 3,
-    FLY_TYPE_ZSET = 4
+    FLY_TYPE_SET = 3
 };
 
 enum FlyObjEncode {

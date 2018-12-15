@@ -6,11 +6,10 @@
 #include "../../dataStructure/dict/Dict.h"
 
 FlyObjHashTable::FlyObjHashTable(FlyObjType type) : FlyObj(type) {
-    //this->ptr = new Dict();
+    this->ptr = new Dict<std::string, std::string>();
 }
 
 FlyObjHashTable::FlyObjHashTable(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
-
 }
 
 FlyObjEncode FlyObjHashTable::getEncode() {
