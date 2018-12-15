@@ -6,15 +6,15 @@
 #define FLYDB_FDBDEF_H
 
 #include <string>
+#include "../../def.h"
 
 struct FDBSaveInfo {
     // load和save时都有使用
     int replStreamDB;
 
     // 仅用于load
-    int replIDIsSet;                        // 标记replication id是否被设置了
-    std::string replID;                     // replication id
-    //char replID[CONFIG_RUN_ID_SIZE+1];    // Replication ID
+    int replIDIsSet = 0;                        // 标记replication id是否被设置了
+    char replID[CONFIG_RUN_ID_SIZE + 1];    // Replication ID
     long long replOffset;                   // replication offset
 };
 

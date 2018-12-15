@@ -13,6 +13,7 @@
 
 FlyObj::FlyObj(FlyObjType type) {
     this->type = type;
+    this->refCount = 1;
 }
 
 FlyObj::FlyObj(void *ptr, FlyObjType type) {

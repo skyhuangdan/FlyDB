@@ -23,7 +23,6 @@ public:
     void setLru(uint16_t lru);
     void *getPtr() const;
     void setPtr(void *ptr);
-    virtual FlyObjEncode getEncode() {};
     virtual void decrRefCount() {};
 
 protected:

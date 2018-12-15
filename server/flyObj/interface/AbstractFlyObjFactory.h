@@ -7,6 +7,12 @@
 
 #include "FlyObj.h"
 
+/**
+ *  抽象工厂： FlyObj有两个变化维度：type和encoding，目前每个type只对应一个encoding，后续再扩展
+ *           其中type基本固定，encoding后续会扩展，所以以encoding纬度作为具体工厂扩展，
+ *           后续增加encoding只需要扩展一个工厂即可，无需修改工厂。
+ *
+ **/
 class AbstractFlyObjFactory {
 public:
     virtual FlyObj* getObject() = 0;

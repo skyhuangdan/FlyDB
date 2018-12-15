@@ -64,42 +64,49 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
         if (FDB_OPCODE_EXPIRETIME == type) {
             // 获取过期时间
             if (-1 == (expireTime = loadTime(fio))) {
-                goto err;
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
             }
             // exchange to millisecond
             expireTime *= 1000;
 
             // 重新获取类型字段
             if (-1 == (type = loadChar(fio))) {
-                goto err;
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
             }
         } else if (FDB_OPCODE_EXPIRETIME_MS == type) {
             if (-1 == (expireTime = loadMillisecondTime(fio))) {
-                goto err;
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
             }
 
             // 重新获取类型字段
             if (-1 == (type = loadChar(fio))) {
-                goto err;
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
             }
         } else if (FDB_OPCODE_RESIZEDB == type) {
             // 读取dbSize和expireSize
             uint64_t dbSize = 0, expireSize = 0;
             if (-1 == (dbSize = loadNum(fio, NULL))) {
-                goto err;
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
             }
             if (-1 == (expireSize = loadNum(fio, NULL))) {
-                goto err;
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
             }
 
             // 分别为dict和expire扩容
             flyDB->expandDict(dbSize);
             flyDB->expandExpire(expireSize);
-            break;
+            continue;
         } else if (FDB_OPCODE_SELECTDB == type) {
             int64_t dbId = 0;
             if (-1 == (dbId = loadNum(fio, NULL))) {
-                goto err;
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
             }
 
             AbstractFlyDB *temp = NULL;
@@ -108,17 +115,62 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
             }
             continue;
         } else if (FDB_OPCODE_AUX == type) {
+            FlyObj *auxkey = NULL, *auxval = NULL;
+            if (NULL ==
+                (auxkey = reinterpret_cast<FlyObj *>(loadStringObject(fio)))) {
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
+            }
+            if (NULL ==
+                (auxval = reinterpret_cast<FlyObj *>(loadStringObject(fio)))) {
+                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                return -1;
+            }
 
+            // 如果开头是'%' 说明是information字段，使用notice打日志
+            if ('%' == ((std::string *)auxkey->getPtr())->at(0)) {
+                this->logHandler->logNotice("FDB '%s': %s",
+                                            auxkey->getPtr(),
+                                            auxval->getPtr());
+
+            } else if (strcasecmp(((std::string *)auxkey->getPtr())->c_str(),
+                                  "repl-stream-db")) {
+                saveInfo.replStreamDB =
+                        atoi(((std::string *)auxval->getPtr())->c_str());
+            } else if (strcasecmp(((std::string *)auxkey->getPtr())->c_str(),
+                                  "repl-id")) {
+                if (CONFIG_RUN_ID_SIZE ==
+                    ((std::string *)auxval->getPtr())->length()) {
+                    memcpy(saveInfo.replID,
+                           auxval->getPtr(),
+                           CONFIG_RUN_ID_SIZE + 1);
+                    saveInfo.replIDIsSet = 1;
+                }
+            } else if (strcasecmp(((std::string *)auxkey->getPtr())->c_str(),
+                                  "repl-offset")) {
+                saveInfo.replOffset = strtoll(
+                        ((std::string *)auxval->getPtr())->c_str(),
+                        NULL,
+                        10);
+            } else {
+                this->logHandler->logDebug("Unrecognized RDB AUX field: '%s'",
+                                           auxkey->getPtr());
+            }
+
+            auxkey->decrRefCount();
+            auxval->decrRefCount();
             continue;
         } else if (FDB_OPCODE_EOF == type) {
             return 1;
         }
+
+        FlyObj *key = NULL, *val = NULL;
+        if (NULL ==
+            (key = reinterpret_cast<FlyObj *>(loadStringObject(fio)))) {
+            fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+            return -1;
+        }
     }
-err:
-    logHandler->logWarning("Short read or OOM loading DB. "
-                           "Unrecoverable error, aborting now.");
-    // todo: rdbExitReportCorruptRDB
-    return -1;
 
 }
 
@@ -142,13 +194,13 @@ char FDBHandler::loadChar(Fio *fio) {
 }
 
 // 返回FlyObj类型数据
-void* FDBHandler::loadStringObject(Fio *fio, int flag, size_t *lenptr) {
-    return this->genericLoadStringObject(fio, FDB_LOAD_OBJECT, lenptr);
+void* FDBHandler::loadStringObject(Fio *fio) {
+    return this->genericLoadStringObject(fio, FDB_LOAD_OBJECT, NULL);
 }
 
 // 返回string类型数据
-void* FDBHandler::loadStringPlain(Fio *fio, int flag, size_t *lenptr) {
-    return this->genericLoadStringObject(fio, FDB_LOAD_STRING, lenptr);
+void* FDBHandler::loadStringPlain(Fio *fio) {
+    return this->genericLoadStringObject(fio, FDB_LOAD_STRING, NULL);
 }
 
 /**
@@ -172,11 +224,12 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
             case FDB_ENC_INT8:
             case FDB_ENC_INT16:
             case FDB_ENC_INT32:
-                return loadIntegerObject(fio, len, lenptr);
+                return loadIntegerObject(fio, len, flag, lenptr);
             case FDB_ENC_LZF:
                 return loadLzfStringObject(fio, flag, lenptr);
             default:
-                fdbExitReportCorrupt("Unknown FDB string encoding type %d", len);
+                fdbExitReportCorrupt(
+                        "Unknown FDB string encoding type %d", len);
         }
     }
 
@@ -188,23 +241,61 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
 
     // 根据len从fio中读取字符串
     std::string *str = new std::string();
-    if (-1 == fio->read((void*) str->c_str(), len)) {
+    if (-1 == fio->read((void*)(str->c_str()), len)) {
         this->logHandler->logWarning("error to load string from fio!");
         delete str;
     }
 
     // 根据flag返回FlyObj或者直接返回string
     if (flag & FDB_LOAD_OBJECT) {
-        return new FlyObj(str, FLY_TYPE_STRING);
+        return this->coordinator->getFlyObjStringFactory()->getObject();
     } else {
         return str;
     }
 }
 
-void* FDBHandler::loadIntegerObject(Fio *fio, int flag, size_t *lenptr) {
+void* FDBHandler::loadIntegerObject(Fio *fio,
+                                    int encode,
+                                    int flag,
+                                    size_t *lenptr) {
+    unsigned char enc[4];
+    long long val;
 
+    switch (encode) {
+        case FDB_ENC_INT8:
+            if (fio->read(enc, 1) == 0) {
+                return NULL;
+            }
+            val = (signed char) (enc[0]);
+            break;
+        case FDB_ENC_INT16:
+            if (fio->read(enc, 2) == 0) {
+                return NULL;
+            }
+            val = enc[0] | (enc[1] << 8);
+            break;
+        case FDB_ENC_INT32:
+            if (fio->read(enc, 4) == 0) {
+                return NULL;
+            }
+            val = enc[0] | enc[1] << 8 | enc[2] << 16 | enc[3] << 24;
+            break;
+        default:
+            val = 0;
+            fdbExitReportCorrupt("Unknown RDB integer encoding type %d", encode);
+    }
+
+    void *res = new std::string(std::to_string(val));
+    if (FDB_LOAD_OBJECT == flag) {
+        res = this->coordinator->getFlyObjStringFactory()->getObject(res);
+    }
+
+    return res;
 }
 
+/**
+ * 暂时先不支持压缩
+ */
 void* FDBHandler::loadLzfStringObject(Fio *fio, int flag, size_t *lenptr) {
 
 }
@@ -240,7 +331,7 @@ int FDBHandler::loadNum(Fio *fio, int *encoded) {
 
 int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
     char buf;
-    if(-1 == fio->read(&buf, 1)) {
+    if (-1 == fio->read(&buf, 1)) {
         this->logHandler->logWarning("error to load len from fio!");
         return -1;
     }
@@ -259,7 +350,7 @@ int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
         *numptr = (buf & 0x3F << 8) + low;
     } else if (FDB_32BITLEN == buf) {
         uint32_t num;
-        if(-1 == fio->read(&num, 4)) {
+        if (-1 == fio->read(&num, 4)) {
             this->logHandler->logWarning("error to load len from fio!");
             return -1;
         }
@@ -268,7 +359,7 @@ int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
         *numptr = ntohl(num);
     } else if (FDB_64BITLEN == buf) {
         uint64_t len;
-        if(-1 == fio->read(&len, 8)) {
+        if (-1 == fio->read(&len, 8)) {
             this->logHandler->logWarning("error to load len from fio!");
             return -1;
         }
