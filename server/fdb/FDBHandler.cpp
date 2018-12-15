@@ -12,6 +12,7 @@
 #include "../utils/EndianConvTool.h"
 #include "../dataStructure/dict/Dict.cpp"
 #include "../dataStructure/skiplist/SkipList.cpp"
+#include "../dataStructure/intset/IntSet.h"
 
 #define fdbExitReportCorrupt(...) checkThenExit(__LINE__,__VA_ARGS__)
 
@@ -441,13 +442,28 @@ FlyObj* FDBHandler::loadObject(int type, Fio *fio) {
         while (len--) {
             std::string *val = NULL;
             if (NULL == (val = loadStringPlain(fio))) {
-                fdbExitReportCorrupt("Unexpected EOF reading RDB file");
+                fdbExitReportCorrupt("error to read RDB file");
                 return obj;
             }
 
             list->insertNode(0, val);
         }
         obj = coordinator->getFlyObjLinkedListFactory()->getObject(list);
+    } else if (FLY_TYPE_SET == type) {
+        if (-1 == (len = loadNum(fio, NULL))) {
+            return obj;
+        }
+
+        IntSet *intset = new IntSet();
+        int num;
+        while (len--) {
+            if (-1 == (num = loadNum(fio, NULL))) {
+                fdbExitReportCorrupt("error to read RDB file");
+            }
+            intset->add(num);
+        }
+
+        obj = coordinator->getFlyObjIntSetFactory()->getObject(intset);
     }
 
     return obj;
