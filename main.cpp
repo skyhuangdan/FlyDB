@@ -11,6 +11,7 @@
  */
 
 AbstractLogFactory *logFactory = new FileLogFactory();
+MiscTool *miscTool = MiscTool::getInstance();
 
 int main(int argc, char **argv) {
     std::cout << "Hello, flyDB. Wish you be better!" << std::endl;

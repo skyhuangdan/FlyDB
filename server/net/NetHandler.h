@@ -64,7 +64,6 @@ private:
     void addReplyErrorFormat(AbstractFlyClient *flyClient, const char *fmt, ...);
     int addReplyError(AbstractFlyClient *flyClient, const char *err);
 
-    MiscTool *miscTool;
     AbstractLogHandler *logHandler;
 };
 

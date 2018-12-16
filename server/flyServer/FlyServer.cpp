@@ -23,7 +23,7 @@ FlyServer::FlyServer(const AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
     
     // fly db factory
-    this->flyDBFactory = new FlyDBFactory();
+    this->flyDBFactory = new FlyDBFactory(this->coordinator);
 
     // init db array
     for (int i = 0; i < DB_NUM; i++) {
@@ -47,8 +47,6 @@ FlyServer::FlyServer(const AbstractCoordinator *coordinator) {
     // 当前时间
     this->nowt = time(NULL);
     this->clientMaxQuerybufLen = PROTO_MAX_QUERYBUF_LEN;
-
-    this->miscTool = MiscTool::getInstance();
 }
 
 FlyServer::~FlyServer() {

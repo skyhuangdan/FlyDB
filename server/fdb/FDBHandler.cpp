@@ -75,11 +75,8 @@ int FDBHandler::save(FDBSaveInfo &fdbSaveInfo) {
         unlink(tmpfile);
         return -1;
     }
-}
 
-void FDBHandler::scanProc(void* priv, std::string *key, FlyObj *val) {
-
-
+    return 1;
 }
 
 int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
@@ -99,7 +96,58 @@ int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
     for (int i = 0; i < dbCount; i++) {
         AbstractFlyDB *flyDB = this->coordinator->getFlyServer()->getFlyDB(i);
 
+        flyDB->dictScan(fio, scanProc);
     }
+
+    return 1;
+}
+
+void FDBHandler::scanProc(void* priv, std::string *key, FlyObj *val) {
+    FioAndflyDB *fioAndflyDB = reinterpret_cast<FioAndflyDB *>(priv);
+    AbstractFlyDB *flyDB = fioAndflyDB->flyDB;
+    uint64_t expireTime = flyDB->getExpire(key);
+
+    flyDB->getCoordinator()->getFdbHandler()->saveKeyValuePair(
+            fioAndflyDB->fio, *key, val, expireTime);
+}
+
+int FDBHandler::saveKeyValuePair(Fio *fio,
+                                 std::string &key,
+                                 FlyObj *val,
+                                 int64_t expireTime) {
+    // 如果是过期键，则存入过期时间
+    if (-1 != expireTime) {
+        if (expireTime < miscTool->mstime()) {
+            return 0;
+        }
+
+        if (-1 == saveType(fio, FDB_OPCODE_EXPIRETIME_MS)) {
+            return -1;
+        }
+
+        if (-1 == saveMillisecondTime(fio, expireTime)) {
+            return -1;
+        }
+    }
+
+    // 存入value类型
+    if (-1 == saveType(fio, val->getType())) {
+        return -1;
+    }
+
+    // 存入key
+    if (-1 == saveRawString(fio, key)) {
+        return -1;
+    }
+
+    if (-1 == saveObject(fio, val)) {
+        return -1;
+    }
+
+    return 1;
+}
+
+int FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
 
 }
 
@@ -177,6 +225,10 @@ int FDBHandler::saveAuxField(Fio *fio,
     }
 
     return 1;
+}
+
+int FDBHandler::saveMillisecondTime(Fio *fio, int64_t t) {
+    return fio->write(&t, 8);
 }
 
 int FDBHandler::saveType(Fio *fio, unsigned char type) {
@@ -396,7 +448,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
         std::string *key = NULL;
         FlyObj *val = NULL;
         if (NULL ==
-            (key = reinterpret_cast<std::string *>(loadStringPlain(fio)))) {
+            (key = loadStringPlain(fio))) {
             fdbExitReportCorrupt("Unexpected EOF reading RDB file");
             return -1;
         }
@@ -406,7 +458,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
             return -1;
         }
 
-        if (expireTime != -1 && expireTime < time(NULL)) {
+        if (expireTime != -1 && expireTime < miscTool->mstime()) {
             val->decrRefCount();
             continue;
         }
@@ -559,7 +611,8 @@ time_t FDBHandler::loadTime(Fio *fio) {
 uint64_t FDBHandler::loadMillisecondTime(Fio *fio) {
     uint64_t res;
     if (-1 == fio->read(&res, 8)) {
-        this->logHandler->logWarning("error to load millisecond time from fio!");
+        this->logHandler->logWarning(
+                "error to load millisecond time from fio!");
         return -1;
     }
 

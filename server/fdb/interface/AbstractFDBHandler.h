@@ -8,12 +8,21 @@
 #include "../FDBDef.h"
 #include "../../io/interface/Fio.h"
 
+class FlyObj;
+
 class AbstractFDBHandler {
 public:
 
     virtual int load(FDBSaveInfo &fdbSaveInfo) = 0;
 
     virtual int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) = 0;
+
+    virtual int save(FDBSaveInfo &fdbSaveInfo) = 0;
+
+    virtual int saveKeyValuePair(Fio *fio,
+                                 std::string &key,
+                                 FlyObj *val,
+                                 int64_t expireTime) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFDBHANDLER_H

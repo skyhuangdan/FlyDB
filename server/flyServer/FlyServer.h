@@ -121,7 +121,6 @@ private:
      * */
     AOFState aofState;
 
-    MiscTool *miscTool;
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;
 };

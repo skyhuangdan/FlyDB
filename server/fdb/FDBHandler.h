@@ -21,11 +21,16 @@ public:
                uint64_t maxProcessingChunk);
     int load(FDBSaveInfo &fdbSaveInfo);
     int save(FDBSaveInfo &fdbSaveInfo);
-
+    int saveKeyValuePair(Fio *fio,
+                         std::string &key,
+                         FlyObj *val,
+                         int64_t expireTime);
 private:
     static void scanProc(void* priv, std::string *key, FlyObj *val);
     int saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo);
     size_t saveLen(Fio *fio, uint64_t len);
+    int saveObject(Fio *fio, FlyObj *obj);
+    int saveObjectType(Fio *fio, FlyObj *obj);
     int saveInfoAuxFields(Fio *fio,
                           int flags,
                           FDBSaveInfo &saveInfo);
@@ -38,6 +43,7 @@ private:
     int saveAuxField(Fio *fio,
                      const std::string &key,
                      const std::string &val);
+    int saveMillisecondTime(Fio *fio, int64_t t);
     int saveType(Fio *fio, unsigned char type);
     ssize_t saveRawString(Fio *fio, const std::string &str);
     int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo);

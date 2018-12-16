@@ -7,8 +7,21 @@
 
 #include <cstdint>
 #include <string>
+#include "../../io/interface/Fio.h"
 
 class FlyObj;
+class AbstractFlyDB;
+class AbstractCoordinator;
+
+struct FioAndflyDB {
+    FioAndflyDB(Fio *fio, AbstractFlyDB *flyDB) {
+        this->fio = fio;
+        this->flyDB = flyDB;
+    }
+
+    Fio *fio;
+    AbstractFlyDB *flyDB;
+};
 
 class AbstractFlyDB {
 public:
@@ -24,9 +37,12 @@ public:
                            int64_t expire) = 0;
 
     virtual void dictScan(
+            Fio *fio,
             void (*scanProc)(void* priv, std::string *key, FlyObj *val)) = 0;
 
     virtual int64_t getExpire(std::string *key) = 0;
+
+    virtual const AbstractCoordinator* getCoordinator() const = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYDB_H

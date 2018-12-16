@@ -28,7 +28,6 @@
 #include "../log/FileLogFactory.h"
 
 NetHandler::NetHandler() {
-    this->miscTool = MiscTool::getInstance();
     this->logHandler = logFactory->getLogger();
 }
 

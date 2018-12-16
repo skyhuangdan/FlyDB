@@ -7,8 +7,8 @@
 
 #include <cstdio>
 #include <sys/socket.h>
+#include "../../coordinator/interface/AbstractCoordinator.h"
 
-class AbstractCoordinator;
 class AbstractFlyClient;
 
 class AbstractNetHandler {

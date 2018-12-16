@@ -5,6 +5,10 @@
 #include "FlyDBFactory.h"
 #include "FlyDB.h"
 
+FlyDBFactory::FlyDBFactory(const AbstractCoordinator *coordinator) {
+    this->coordinator = coordinator;
+}
+
 AbstractFlyDB* FlyDBFactory::getFlyDB() {
-    return new FlyDB();
+    return new FlyDB(this->coordinator);
 }

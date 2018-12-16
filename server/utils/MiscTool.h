@@ -9,6 +9,7 @@
 #include <vector>
 #include <zconf.h>
 #include <sstream>
+#include <sys/time.h>
 
 class MiscTool {
 public:
@@ -109,6 +110,20 @@ public:
         } else return -1;
     }
 
+    uint64_t ustime(void) {
+        struct timeval tv;
+        uint64_t ust;
+
+        gettimeofday(&tv, NULL);
+        ust = ((uint64_t)tv.tv_sec) * 1000000;
+        ust += tv.tv_usec;
+        return ust;
+    }
+
+    // Return the UNIX time in milliseconds
+    uint64_t mstime(void) {
+        return ustime() / 1000;
+    }
 private:
     MiscTool() {
     }
