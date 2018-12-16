@@ -77,17 +77,28 @@ int FDBHandler::save(FDBSaveInfo &fdbSaveInfo) {
     }
 }
 
+void FDBHandler::scanProc(void* priv, std::string *key, FlyObj *val) {
+
+
+}
+
 int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
     char magic[10];
     snprintf(magic, sizeof(magic), "FLYDB%04d", FDB_VERSION);
     if (-1 == fio->write(magic, 9)) {
-        // todo: goto err;
+        this->logHandler->logWarning("error to save FDB_VERSION\n");
         return -1;
     }
 
     if (-1 == saveInfoAuxFields(fio, flag, saveInfo)) {
-        // todo: goto err;
+        this->logHandler->logWarning("error to save aux fields\n");
         return -1;
+    }
+
+    int dbCount = this->coordinator->getFlyServer()->getFlyDBCount();
+    for (int i = 0; i < dbCount; i++) {
+        AbstractFlyDB *flyDB = this->coordinator->getFlyServer()->getFlyDB(i);
+
     }
 
 }
@@ -272,7 +283,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
         return -1;
     }
 
-    uint64_t expireTime;
+    int64_t expireTime;
     AbstractFlyDB *flyDB = coordinator->getFlyServer()->getFlyDB(0);
 
     while (1) {

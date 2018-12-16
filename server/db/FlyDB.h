@@ -19,11 +19,14 @@ public:
     int expandDict(uint64_t size);
     int expandExpire(uint64_t size);
     void add(std::string *key, FlyObj *val);
-    void addExpire(std::string *key, FlyObj *val, uint64_t expire);
+    void addExpire(std::string *key, FlyObj *val, int64_t expire);
+    void dictScan(
+            void (*scanProc)(void* priv, std::string *key, FlyObj *val));
+    int64_t getExpire(std::string *key);
 
 private:
     Dict<std::string, FlyObj>* dict;
-    Dict<std::string, uint64_t>* expires;
+    Dict<std::string, int64_t>* expires;
 };
 
 

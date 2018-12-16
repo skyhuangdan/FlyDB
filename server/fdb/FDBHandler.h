@@ -23,6 +23,7 @@ public:
     int save(FDBSaveInfo &fdbSaveInfo);
 
 private:
+    static void scanProc(void* priv, std::string *key, FlyObj *val);
     int saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo);
     size_t saveLen(Fio *fio, uint64_t len);
     int saveInfoAuxFields(Fio *fio,

@@ -21,7 +21,12 @@ public:
 
     virtual void addExpire(std::string *key,
                            FlyObj *val,
-                           uint64_t expire) = 0;
+                           int64_t expire) = 0;
+
+    virtual void dictScan(
+            void (*scanProc)(void* priv, std::string *key, FlyObj *val)) = 0;
+
+    virtual int64_t getExpire(std::string *key) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYDB_H
