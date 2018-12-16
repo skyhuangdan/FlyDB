@@ -23,6 +23,22 @@ public:
     int save(FDBSaveInfo &fdbSaveInfo);
 
 private:
+    int saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo);
+    size_t saveLen(Fio *fio, uint64_t len);
+    int saveInfoAuxFields(Fio *fio,
+                          int flags,
+                          FDBSaveInfo &saveInfo);
+    int saveAuxFieldStrStr(Fio *fio,
+                           const std::string &key,
+                           const std::string &val);
+    int saveAuxFieldStrInt(Fio *fio,
+                           const std::string &key,
+                           int64_t val);
+    int saveAuxField(Fio *fio,
+                     const std::string &key,
+                     const std::string &val);
+    int saveType(Fio *fio, unsigned char type);
+    ssize_t saveRawString(Fio *fio, const std::string &str);
     int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo);
     void startToLoad();
     int loadFromFile(FILE *fp, FDBSaveInfo &fdbSaveInfo);

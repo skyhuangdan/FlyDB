@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <cerrno>
+#include <sys/param.h>
 #include "FDBHandler.h"
 #include "../io/FileFio.h"
 #include "../log/FileLogHandler.h"
@@ -28,7 +29,212 @@ FDBHandler::FDBHandler(const AbstractCoordinator *coordinator,
 }
 
 int FDBHandler::save(FDBSaveInfo &fdbSaveInfo) {
+    char tmpfile[256];
+    char cwd[MAXPATHLEN];
 
+    snprintf(tmpfile, sizeof(tmpfile), "temp-%d.rdb", getpid());
+    FILE *fp = fopen(tmpfile, "w");
+    if (NULL == fp) {
+        char *cwdp = getcwd(cwd, MAXPATHLEN);
+        this->logHandler->logWarning(
+                "Failed opening the RDB file %s (in server root dir %s)."
+                " for saving: %s",
+                filename,
+                cwdp != NULL ? cwdp : "unknown",
+                strerror(errno));
+        return -1;
+    }
+
+    Fio *fio = new FileFio(fp, this->maxProcessingChunk);
+    if (-1 == saveToFio(fio, 0, fdbSaveInfo)) {
+        this->logHandler->logWarning("Write error saving DB on disk: %s",
+                                     strerror(errno));
+        fclose(fp);
+        unlink(tmpfile);
+        return -1;
+    }
+
+    // 刷新至磁盘中
+    if (EOF == fflush(fp) || -1 == fsync(fileno(fp)) || EOF == fclose(fp)) {
+        this->logHandler->logWarning("Write error saving DB on disk: %s",
+                                     strerror(errno));
+        fclose(fp);
+        unlink(tmpfile);
+        return -1;
+    }
+
+    if (-1 == rename(tmpfile, this->filename)) {
+        char *cwdp = getcwd(cwd, MAXPATHLEN);
+        this->logHandler->logWarning(
+                "Error moving temp DB file %s on the final "
+                "destination %s (in server root dir %s): %s",
+                tmpfile,
+                filename,
+                cwdp != NULL ? cwdp : "unknown",
+                strerror(errno));
+        unlink(tmpfile);
+        return -1;
+    }
+}
+
+int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
+    char magic[10];
+    snprintf(magic, sizeof(magic), "FLYDB%04d", FDB_VERSION);
+    if (-1 == fio->write(magic, 9)) {
+        // todo: goto err;
+        return -1;
+    }
+
+    if (-1 == saveInfoAuxFields(fio, flag, saveInfo)) {
+        // todo: goto err;
+        return -1;
+    }
+
+}
+
+int FDBHandler::saveInfoAuxFields(Fio *fio,
+                                  int flags,
+                                  FDBSaveInfo &saveInfo) {
+    int redis_bits = (sizeof(void*) == 8) ? 64 : 32;
+    int aof_preamble = (flags & RDB_SAVE_AOF_PREAMBLE) != 0;
+
+    /* Add a few fields about the state when the RDB was created. */
+    if (-1 == saveAuxFieldStrStr(fio, "redis-ver", VERSION)) {
+        return -1;
+    }
+
+    if (-1 == saveAuxFieldStrInt(fio, "redis-bits", redis_bits)) {
+        return -1;
+    }
+
+    if (-1 == saveAuxFieldStrInt(fio, "ctime", time(NULL))) {
+        return -1;
+    }
+
+    /* Handle saving options that generate aux fields. */
+    if (-1 == saveAuxFieldStrInt(fio,
+                                 "repl-stream-db",
+                                 saveInfo.replStreamDB)) {
+        return -1;
+    }
+
+    /*
+    if (-1 == saveAuxFieldStrStr(fio,
+                                 "repl-id",
+                                 this->coordinator->getFlyServer())) {
+        return -1;
+    }
+
+    if (-1 == saveAuxFieldStrInt(fio, "repl-offset", server.master_repl_offset)) {
+        return -1;
+    }
+    */
+
+    if (-1 == saveAuxFieldStrInt(fio, "aof-preamble", aof_preamble)) {
+        return -1;
+    }
+
+    return 1;
+}
+
+int FDBHandler::saveAuxFieldStrStr(Fio *fio,
+                                   const std::string &key,
+                                   const std::string &val) {
+    return saveAuxField(fio, key, val);
+}
+
+int FDBHandler::saveAuxFieldStrInt(Fio *fio,
+                                   const std::string &key,
+                                   int64_t val) {
+    std::string valStr = std::to_string(val);
+    return saveAuxField(fio, key, valStr);
+}
+
+int FDBHandler::saveAuxField(Fio *fio,
+                             const std::string &key,
+                             const std::string &val) {
+    if (-1 == saveType(fio, FDB_OPCODE_AUX)) {
+        return -1;
+    }
+
+    if (-1 == saveRawString(fio, key)) {
+        return -1;
+    }
+
+    if (-1 == saveRawString(fio, val)) {
+        return -1;
+    }
+
+    return 1;
+}
+
+int FDBHandler::saveType(Fio *fio, unsigned char type) {
+    return fio->write(&type, 1);
+}
+
+ssize_t FDBHandler::saveRawString(Fio *fio, const std::string &str) {
+    ssize_t written = 0;
+    ssize_t n;
+    if (-1 == (n = saveLen(fio, str.length()))) {
+        return -1;
+    }
+    written += n;
+
+    if (str.length() > 0) {
+        if (-1 == fio->write(str.c_str(), str.length())) {
+            return -1;
+        }
+        written += n;
+    }
+
+    return written;
+}
+
+size_t FDBHandler::saveLen(Fio *fio, uint64_t len) {
+    unsigned char buf[2];
+    size_t nwritten;
+
+    if (len < (1 << 6)) {
+        /* Save a 6 bit len */
+        buf[0] = (len & 0xFF) | (FDB_6BITLEN << 6);
+        if (-1 == fio->write(buf, 1)) {
+            return -1;
+        }
+        nwritten = 1;
+    } else if (len < (1<<14)) {
+        /* Save a 14 bit len */
+        buf[0] = ((len >> 8) & 0xFF) | (FDB_14BITLEN << 6);
+        buf[1] = len & 0xFF;
+        if (-1 == fio->write(buf, 2)) {
+            return -1;
+        }
+        nwritten = 2;
+    } else if (len <= UINT32_MAX) {
+        /* Save a 32 bit len */
+        buf[0] = FDB_32BITLEN;
+        if (-1 == fio->write(buf, 1)) {
+            return -1;
+        }
+        uint32_t len32 = htonl(len);
+        if (-1 == fio->write(&len32, 4)) {
+            return -1;
+        }
+        nwritten = 1 + 4;
+    } else {
+        /* Save a 64 bit len */
+        buf[0] = FDB_64BITLEN;
+        if (-1 == fio->write(buf, 1)) {
+            return -1;
+        }
+
+        len = htonll(len);
+        if (-1 == fio->write(&len, 8)) {
+            return -1;
+        }
+        nwritten = 1 + 8;
+    }
+
+    return nwritten;
 }
 
 int FDBHandler::load(FDBSaveInfo &fdbSaveInfo) {

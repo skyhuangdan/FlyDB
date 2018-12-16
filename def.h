@@ -70,7 +70,7 @@ const std::string CONFIG_DEFAULT_FDB_FILENAME = "dump.fdb";
 const int CONFIG_DEFAULT_FDB_COMPRESSION = 1;
 const int CONFIG_DEFAULT_FDB_CHECKSUM = 1;
 const int CONFIG_LOADING_INTERVAL_BYTES = 2 * 1024 * 1024;
-
+const int LONG_STR_SIZE = 21;         // Bytes needed for long -> str + '\0'
 
 
 #endif //FLYDB_CONFIG_H
