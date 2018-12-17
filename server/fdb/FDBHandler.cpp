@@ -147,8 +147,33 @@ int FDBHandler::saveKeyValuePair(Fio *fio,
     return 1;
 }
 
-int FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
+ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
+    ssize_t written = 0;
+    ssize_t n = 0;
+    if (FLY_TYPE_STRING == obj->getType()) {
+        written += saveRawString(
+                fio,
+                *reinterpret_cast<std::string*>(obj->getPtr()));
+    } else if (FLY_TYPE_LIST == obj->getType()) {
+        SkipList<std::string> *sl = (SkipList<std::string> *)obj->getPtr();
+        sl->getLength();
+        if (-1 == (n = saveLen(fio, sl->getLength()))) {
+            return -1;
+        }
+        written += n;
+    } else if (FLY_TYPE_HASH == obj->getType()) {
+        Dict<std::string, FlyObj> *dict =
+                (Dict<std::string, FlyObj> *)obj->getPtr();
+        if (-1 == (n = saveLen(fio, dict->size()))) {
+            return -1;
+        }
+        written += n;
 
+    } else if (FLY_TYPE_SET == obj->getType()) {
+
+    }
+
+    return written;
 }
 
 int FDBHandler::saveInfoAuxFields(Fio *fio,
@@ -253,7 +278,7 @@ ssize_t FDBHandler::saveRawString(Fio *fio, const std::string &str) {
     return written;
 }
 
-size_t FDBHandler::saveLen(Fio *fio, uint64_t len) {
+ssize_t FDBHandler::saveLen(Fio *fio, uint64_t len) {
     unsigned char buf[2];
     size_t nwritten;
 

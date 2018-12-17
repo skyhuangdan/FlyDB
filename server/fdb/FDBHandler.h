@@ -28,8 +28,8 @@ public:
 private:
     static void scanProc(void* priv, std::string *key, FlyObj *val);
     int saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo);
-    size_t saveLen(Fio *fio, uint64_t len);
-    int saveObject(Fio *fio, FlyObj *obj);
+    ssize_t saveLen(Fio *fio, uint64_t len);
+    ssize_t saveObject(Fio *fio, FlyObj *obj);
     int saveObjectType(Fio *fio, FlyObj *obj);
     int saveInfoAuxFields(Fio *fio,
                           int flags,

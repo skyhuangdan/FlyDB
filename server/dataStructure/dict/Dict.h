@@ -32,6 +32,7 @@ public:
                              void (*scanProc)(void* priv, KEY *key, VAL *val),
                              void *priv);
     int expand(uint32_t size);              // 扩容/缩容
+    uint32_t size() const;
     
 private:
     uint32_t nextPower(uint32_t num);

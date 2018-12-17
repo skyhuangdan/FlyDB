@@ -280,6 +280,11 @@ int Dict<KEY, VAL>::expand(uint32_t size) {
 }
 
 template<class KEY, class VAL>
+uint32_t Dict<KEY, VAL>::size() const {
+    return this->ht[0]->getSize() + this->ht[1]->getSize();
+}
+
+template<class KEY, class VAL>
 uint32_t Dict<KEY, VAL>::nextPower(uint32_t num) {
     int i = HASH_TABLE_INITIAL_SIZE;
 
