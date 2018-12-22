@@ -2,6 +2,7 @@
 
 #include "def.h"
 #include "server/coordinator/Coordinator.h"
+#include "server/fdb/FDBHandler.h"
 
 /**
  * flyDB，取名fly有两层含义：
@@ -17,6 +18,11 @@ int main(int argc, char **argv) {
     std::cout << "Hello, flyDB. Wish you be better!" << std::endl;
 
     AbstractCoordinator *coordinator = new Coordinator();
+    AbstractFDBHandler *fdbHandler =
+            new FDBHandler(coordinator, "flyDB-fdb", 1);
+    FDBSaveInfo saveInfo = FDBSaveInfo();
+    fdbHandler->save(saveInfo);
+
     coordinator->getEventLoop()->eventMain();
 
     delete coordinator;

@@ -13,7 +13,7 @@ struct FDBSaveInfo {
     int replStreamDB;
 
     // 仅用于load
-    int replIDIsSet = 0;                        // 标记replication id是否被设置了
+    int replIDIsSet = 0;                    // 标记replication id是否被设置了
     char replID[CONFIG_RUN_ID_SIZE + 1];    // Replication ID
     long long replOffset;                   // replication offset
 };

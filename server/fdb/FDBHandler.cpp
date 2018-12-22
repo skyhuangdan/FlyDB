@@ -96,13 +96,14 @@ int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
     for (int i = 0; i < dbCount; i++) {
         AbstractFlyDB *flyDB = this->coordinator->getFlyServer()->getFlyDB(i);
 
-        if (-1 == saveType(fio, FDB_OPCODE_SELECTDB)) {
+        if (-1 == saveType(fio, FDB_OPCODE_SELECTDB)
+            || -1 == saveLen(fio, i)) {
             return -1;
         }
 
         if (-1 == saveType(fio, FDB_OPCODE_RESIZEDB)
-            || saveLen(fio, flyDB->dictSize())
-            || saveLen(fio, flyDB->expireSize())) {
+            || -1 == saveLen(fio, flyDB->dictSize())
+            || -1 == saveLen(fio, flyDB->expireSize())) {
             return -1;
         }
 
@@ -223,11 +224,11 @@ int FDBHandler::saveInfoAuxFields(Fio *fio,
     int aof_preamble = (flags & RDB_SAVE_AOF_PREAMBLE) != 0;
 
     /* Add a few fields about the state when the RDB was created. */
-    if (-1 == saveAuxFieldStrStr(fio, "redis-ver", VERSION)) {
+    if (-1 == saveAuxFieldStrStr(fio, "flyDB-verison", VERSION)) {
         return -1;
     }
 
-    if (-1 == saveAuxFieldStrInt(fio, "redis-bits", redis_bits)) {
+    if (-1 == saveAuxFieldStrInt(fio, "flyDB-bits", redis_bits)) {
         return -1;
     }
 
@@ -242,17 +243,15 @@ int FDBHandler::saveInfoAuxFields(Fio *fio,
         return -1;
     }
 
-    /*
     if (-1 == saveAuxFieldStrStr(fio,
                                  "repl-id",
-                                 this->coordinator->getFlyServer())) {
+                                 saveInfo.replID)) {
         return -1;
     }
 
-    if (-1 == saveAuxFieldStrInt(fio, "repl-offset", server.master_repl_offset)) {
+    if (-1 == saveAuxFieldStrInt(fio, "repl-offset", saveInfo.replOffset)) {
         return -1;
     }
-    */
 
     if (-1 == saveAuxFieldStrInt(fio, "aof-preamble", aof_preamble)) {
         return -1;
