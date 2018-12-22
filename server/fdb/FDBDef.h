@@ -59,6 +59,6 @@ enum FDBLoadType {
 const int RDB_SAVE_NONE = 0;
 const int RDB_SAVE_AOF_PREAMBLE = 1 << 0;
 
-const int FDB_VERSION = 8;
+const int FDB_VERSION = 1;
 
 #endif //FLYDB_FDBDEF_H

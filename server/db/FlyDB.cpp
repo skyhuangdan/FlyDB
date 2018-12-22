@@ -55,3 +55,11 @@ int64_t FlyDB::getExpire(std::string *key) {
 const AbstractCoordinator* FlyDB::getCoordinator() const {
     return this->coordinator;
 }
+
+uint32_t FlyDB::dictSize() const {
+    return dict->size();
+}
+
+uint32_t FlyDB::expireSize() const {
+    return expires->size();
+}

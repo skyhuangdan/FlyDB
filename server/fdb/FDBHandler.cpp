@@ -96,7 +96,21 @@ int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
     for (int i = 0; i < dbCount; i++) {
         AbstractFlyDB *flyDB = this->coordinator->getFlyServer()->getFlyDB(i);
 
+        if (-1 == saveType(fio, FDB_OPCODE_SELECTDB)) {
+            return -1;
+        }
+
+        if (-1 == saveType(fio, FDB_OPCODE_RESIZEDB)
+            || saveLen(fio, flyDB->dictSize())
+            || saveLen(fio, flyDB->expireSize())) {
+            return -1;
+        }
+
         flyDB->dictScan(fio, dbScan);
+    }
+
+    if (-1 == saveType(fio, FDB_OPCODE_EOF)) {
+        return -1;
     }
 
     return 1;
@@ -747,7 +761,7 @@ FlyObj* FDBHandler::loadObject(int type, Fio *fio) {
                 fdbExitReportCorrupt("Unexpected EOF reading RDB file");
                 return obj;
             }
-            if (NULL == (key = loadStringPlain(fio))) {
+            if (NULL == (val = loadStringPlain(fio))) {
                 fdbExitReportCorrupt("Unexpected EOF reading RDB file");
                 return obj;
             }

@@ -53,6 +53,10 @@ public:
     virtual int64_t getExpire(std::string *key) = 0;
 
     virtual const AbstractCoordinator* getCoordinator() const = 0;
+
+    virtual uint32_t dictSize() const = 0;
+
+    virtual uint32_t expireSize() const = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYDB_H

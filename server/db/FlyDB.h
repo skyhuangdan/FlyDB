@@ -26,6 +26,8 @@ public:
             void (*scanProc)(void* priv, std::string *key, FlyObj *val));
     int64_t getExpire(std::string *key);
     const AbstractCoordinator* getCoordinator() const;
+    uint32_t dictSize() const;
+    uint32_t expireSize() const;
 
 private:
     Dict<std::string, FlyObj>* dict;
