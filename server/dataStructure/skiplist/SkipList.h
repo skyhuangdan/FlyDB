@@ -27,6 +27,8 @@ public:
     uint32_t deleteRangeByScore(SkipListRange range);
     uint32_t deleteRangeByRank(uint32_t start, uint32_t end);
     int deleteNode(SkipListNode<T>* node); // 会释放节点
+    void scanAll(void (*scanProc)(void* priv, T *obj),
+                 void *priv);
 
 private:
     uint8_t randomLevel();

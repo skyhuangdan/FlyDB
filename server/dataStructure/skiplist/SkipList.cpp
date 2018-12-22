@@ -384,6 +384,16 @@ uint32_t SkipList<T>::deleteRangeByRank(uint32_t start, uint32_t end) {
 }
 
 template<class T>
+void SkipList<T>::scanAll(void (*scanProc)(void* priv, T *obj),
+                          void *priv) {
+    SkipListNode<T> *node = this->tailer;
+    while (node != this->header) {
+        scanProc(priv, node->getObj());
+        node = node->getPrevious();
+    }
+}
+
+template<class T>
 int SkipList<T>::deleteNode(SkipListNode<T>* node) {
     if (NULL == node) {
         return -1;

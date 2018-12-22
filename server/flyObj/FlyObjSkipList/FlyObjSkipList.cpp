@@ -14,10 +14,7 @@ FlyObjSkipList::FlyObjSkipList(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
 }
 
 FlyObjSkipList::~FlyObjSkipList() {
-    this->refCount = 0;
-    if (NULL != ptr) {
-        delete this->ptr;
-    }
+    delete this->ptr;
 }
 
 

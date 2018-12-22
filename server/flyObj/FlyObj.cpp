@@ -13,37 +13,17 @@
 
 FlyObj::FlyObj(FlyObjType type) {
     this->type = type;
-    this->refCount = 1;
 }
 
 FlyObj::FlyObj(void *ptr, FlyObjType type) {
     this->ptr = ptr;
     this->type = type;
-    this->refCount = 1;
 }
 
 FlyObj::~FlyObj() {
-    this->refCount--;
-    if (0 == this->refCount) {
-        delete this->ptr;
-    }
+    delete this->ptr;
 }
 
-void FlyObj::incrRefCount() {
-    this->refCount++;
-}
-
-void FlyObj::decrRefCount() {
-    this->refCount--;
-    if (0 == this->refCount) {
-        delete ptr;
-        ptr = NULL;
-    }
-}
-
-void FlyObj::resetRefCount() {
-    this->refCount = 0;
-}
 
 FlyObjType FlyObj::getType() const {
     return this->type;
@@ -51,14 +31,6 @@ FlyObjType FlyObj::getType() const {
 
 void FlyObj::setType(FlyObjType type) {
     this->type = type;
-}
-
-uint32_t FlyObj::getRefCount() const {
-    return this->refCount;
-}
-
-void FlyObj::setRefCount(uint32_t refCount) {
-    this->refCount = refCount;
 }
 
 uint16_t FlyObj::getLru() const {

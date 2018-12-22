@@ -25,8 +25,11 @@ public:
                          std::string &key,
                          FlyObj *val,
                          int64_t expireTime);
+    ssize_t saveRawString(Fio *fio, const std::string &str);
 private:
-    static void scanProc(void* priv, std::string *key, FlyObj *val);
+    static void dbScan(void *priv, std::string *key, FlyObj *val);
+    static void dictSaveScan(void *priv, std::string *key, FlyObj *val);
+    static void skipListSaveProc(void *priv, std::string *obj);
     int saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo);
     ssize_t saveLen(Fio *fio, uint64_t len);
     ssize_t saveObject(Fio *fio, FlyObj *obj);
@@ -45,7 +48,6 @@ private:
                      const std::string &val);
     int saveMillisecondTime(Fio *fio, int64_t t);
     int saveType(Fio *fio, unsigned char type);
-    ssize_t saveRawString(Fio *fio, const std::string &str);
     int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo);
     void startToLoad();
     int loadFromFile(FILE *fp, FDBSaveInfo &fdbSaveInfo);

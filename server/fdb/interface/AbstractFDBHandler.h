@@ -23,6 +23,8 @@ public:
                                  std::string &key,
                                  FlyObj *val,
                                  int64_t expireTime) = 0;
+
+    virtual ssize_t saveRawString(Fio *fio, const std::string &str) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFDBHANDLER_H

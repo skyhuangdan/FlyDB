@@ -96,19 +96,35 @@ int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
     for (int i = 0; i < dbCount; i++) {
         AbstractFlyDB *flyDB = this->coordinator->getFlyServer()->getFlyDB(i);
 
-        flyDB->dictScan(fio, scanProc);
+        flyDB->dictScan(fio, dbScan);
     }
 
     return 1;
 }
 
-void FDBHandler::scanProc(void* priv, std::string *key, FlyObj *val) {
+void FDBHandler::dbScan(void *priv, std::string *key, FlyObj *val) {
     FioAndflyDB *fioAndflyDB = reinterpret_cast<FioAndflyDB *>(priv);
     AbstractFlyDB *flyDB = fioAndflyDB->flyDB;
     uint64_t expireTime = flyDB->getExpire(key);
 
     flyDB->getCoordinator()->getFdbHandler()->saveKeyValuePair(
             fioAndflyDB->fio, *key, val, expireTime);
+}
+
+void FDBHandler::dictSaveScan(void *priv, std::string *key, FlyObj *val) {
+    FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
+
+    fioAndCoord->coord->getFdbHandler()->saveRawString(fioAndCoord->fio, *key);
+    fioAndCoord->coord->getFdbHandler()->saveRawString(
+            fioAndCoord->fio,
+            *(reinterpret_cast<std::string *>(val->getPtr())));
+}
+
+void FDBHandler::skipListSaveProc(void *priv, std::string *obj) {
+    FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
+
+    // 存入key
+    fioAndCoord->coord->getFdbHandler()->saveRawString(fioAndCoord->fio, *obj);
 }
 
 int FDBHandler::saveKeyValuePair(Fio *fio,
@@ -161,6 +177,8 @@ ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
             return -1;
         }
         written += n;
+
+        sl->scanAll(skipListSaveProc, new FioAndCoord(fio, this->coordinator));
     } else if (FLY_TYPE_HASH == obj->getType()) {
         Dict<std::string, FlyObj> *dict =
                 (Dict<std::string, FlyObj> *)obj->getPtr();
@@ -169,6 +187,14 @@ ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
         }
         written += n;
 
+        uint32_t nextCur = 0;
+        do {
+            nextCur = dict->dictScan(
+                    nextCur,
+                    1,
+                    dictSaveScan,
+                    new FioAndCoord(fio, this->coordinator));
+        } while (nextCur != 0);
     } else if (FLY_TYPE_SET == obj->getType()) {
 
     }
@@ -462,8 +488,8 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
                                            auxkey->getPtr());
             }
 
-            auxkey->decrRefCount();
-            auxval->decrRefCount();
+            delete auxkey;
+            delete auxval;
             continue;
         } else if (FDB_OPCODE_EOF == type) {
             break;
@@ -484,7 +510,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
         }
 
         if (expireTime != -1 && expireTime < miscTool->mstime()) {
-            val->decrRefCount();
+            delete val;
             continue;
         }
 

@@ -23,6 +23,16 @@ struct FioAndflyDB {
     AbstractFlyDB *flyDB;
 };
 
+struct FioAndCoord {
+    FioAndCoord(Fio *fio, const AbstractCoordinator *coord) {
+        this->fio = fio;
+        this->coord = coord;
+    }
+
+    Fio *fio;
+    const AbstractCoordinator *coord;
+};
+
 class AbstractFlyDB {
 public:
 
