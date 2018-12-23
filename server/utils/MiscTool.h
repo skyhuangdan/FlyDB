@@ -124,6 +124,7 @@ public:
     uint64_t mstime(void) {
         return ustime() / 1000;
     }
+
 private:
     MiscTool() {
     }

@@ -310,7 +310,7 @@ int NetHandler::tcpGenericConnect(char *err,
         }
 
         // reuse address
-        if (-1 == setReuseAddr(err,s)) {
+        if (-1 == setReuseAddr(err, s)) {
             goto error;
 
         }
@@ -322,7 +322,11 @@ int NetHandler::tcpGenericConnect(char *err,
         if (NULL != source_addr) {
             int bound = 0;
             // 获得source地址
-            if ((rv = getaddrinfo(source_addr, NULL, &hints, &bservinfo)) != 0) {
+            if ((rv = getaddrinfo(
+                    source_addr,
+                    NULL,
+                    &hints,
+                    &bservinfo)) != 0) {
                 setError(err, "%s", gai_strerror(rv));
                 goto error;
             }
@@ -367,7 +371,10 @@ int NetHandler::tcpGenericConnect(char *err,
     end:
     freeaddrinfo(servinfo);
 
-    // 处理best effort binding: 如果传递了source_addr, 但是创建socket失败，则使用不传递source_addr的方式重试一次
+    /**
+     * 处理best effort binding: 如果传递了source_addr,
+     * 但是创建socket失败，则使用不传递source_addr的方式重试一次
+     */
     if (-1 == s && source_addr && (flags & NET_CONNECT_BE_BINDING)) {
         return tcpGenericConnect(err, addr, port, NULL, flags);
     } else {
@@ -743,7 +750,7 @@ int NetHandler::analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos) {
 int NetHandler::analyseMultiBulk(AbstractFlyClient *flyClient, size_t &pos) {
     int64_t multiBulkLen = flyClient->getMultiBulkLen();
     for (int i = flyClient->getArgc(); i < multiBulkLen; i++) {
-        if(-1 == analyseBulk(flyClient)) {
+        if (-1 == analyseBulk(flyClient)) {
             return -1;
         }
     }
@@ -800,14 +807,18 @@ int NetHandler::analyseBulk(AbstractFlyClient *flyClient) {
 
     // 设置flyClient argv参数
     flyClient->addArgv(new FlyObj(new std::string(
-            flyClient->getQueryBuf().substr(begin, pos - begin)), FLY_TYPE_STRING));
+            flyClient->getQueryBuf().substr(begin, pos - begin)),
+            FLY_TYPE_STRING));
 
     // 截取此次读取
     flyClient->trimQueryBuf(pos + 2, -1);
     return 1;
 }
 
-int NetHandler::setProtocolError(char *err, AbstractFlyClient *flyClient, size_t pos) {
+int NetHandler::setProtocolError(
+        char *err,
+        AbstractFlyClient *flyClient,
+        size_t pos) {
     // 打印log
     char buf[256];
     snprintf(buf, sizeof(buf), "Query buffer during protocol error: '%s'",

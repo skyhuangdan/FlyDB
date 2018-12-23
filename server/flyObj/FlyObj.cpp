@@ -33,11 +33,11 @@ void FlyObj::setType(FlyObjType type) {
     this->type = type;
 }
 
-uint16_t FlyObj::getLru() const {
+uint64_t FlyObj::getLru() const {
     return this->lru;
 }
 
-void FlyObj::setLru(uint16_t lru) {
+void FlyObj::setLru(uint64_t lru) {
     this->lru = lru;
 }
 

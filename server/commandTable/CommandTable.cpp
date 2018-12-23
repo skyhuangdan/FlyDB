@@ -12,7 +12,7 @@
 CommandTable::CommandTable(const AbstractCoordinator* coordinator) {
     this->commands = new Dict<std::string, CommandEntry>();
     this->commands->addEntry(new std::string("version"),
-                             new CommandEntry(versionProc, 0));
+                             new CommandEntry(versionCommand, 0));
     this->logHandler = logFactory->getLogger();
     this->coordinator = coordinator;
 }
@@ -30,7 +30,7 @@ int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
         this->logHandler->logDebug("wrong command type: %s", command);
         return -1;
     }
-    dictEntry->getVal()->proc(
+    dictEntry->getVal()->getProc()(
             this->coordinator->getFlyServer(), flyClient);
 
     return 1;

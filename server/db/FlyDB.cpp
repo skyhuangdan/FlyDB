@@ -63,3 +63,15 @@ uint32_t FlyDB::dictSize() const {
 uint32_t FlyDB::expireSize() const {
     return expires->size();
 }
+
+FlyObj* FlyDB::lookupKey(std::string *key) {
+    DictEntry<std::string, FlyObj> *entry = this->dict->findEntry(key);
+    if (NULL == entry) {
+        return NULL;
+    }
+
+    FlyObj *obj = entry->getVal();
+    obj->setLru(miscTool->mstime());
+
+    return obj;
+}

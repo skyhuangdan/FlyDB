@@ -74,5 +74,9 @@ const int CONFIG_DEFAULT_FDB_CHECKSUM = 1;
 const int CONFIG_LOADING_INTERVAL_BYTES = 2 * 1024 * 1024;
 const int LONG_STR_SIZE = 21;         // Bytes needed for long -> str + '\0'
 
+// LRU
+const int LRU_BITS = 24;
+const uint32_t LRU_CLOCK_MAX = (1 << LRU_BITS) - 1;     /** Max value of obj->lru */
+const int LRU_CLOCK_RESOLUTION = 1000;                  /** LRU clock resolution in ms */
 
 #endif //FLYDB_CONFIG_H

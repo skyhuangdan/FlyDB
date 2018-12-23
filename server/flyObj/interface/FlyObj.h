@@ -15,14 +15,14 @@ public:
     virtual ~FlyObj();
     FlyObjType getType() const;
     void setType(FlyObjType type);
-    uint16_t getLru() const;
-    void setLru(uint16_t lru);
+    uint64_t getLru() const;
+    void setLru(uint64_t lru);
     void *getPtr() const;
     void setPtr(void *ptr);
 
 protected:
     FlyObjType type;
-    uint16_t lru;
+    uint64_t lru;
     void* ptr;
 };
 

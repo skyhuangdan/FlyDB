@@ -28,6 +28,7 @@ public:
     const AbstractCoordinator* getCoordinator() const;
     uint32_t dictSize() const;
     uint32_t expireSize() const;
+    FlyObj* lookupKey(std::string *key);
 
 private:
     Dict<std::string, FlyObj>* dict;
