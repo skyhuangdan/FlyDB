@@ -12,18 +12,67 @@ void versionCommand(AbstractFlyServer* server, AbstractFlyClient *client) {
     }
 
     char buf[1024];
-    sprintf(buf, "FlyDB version: %s", server->getVersion().c_str());
+    snprintf(buf, sizeof(buf), "FlyDB version: %s",
+             server->getVersion().c_str());
     client->addReply(buf, strlen(buf));
 }
 
 void getCommand(AbstractFlyServer* flyServer,
                 AbstractFlyClient* flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
 
+    // 如果参数数量<2，直接返回
+    if (flyClient->getArgc() < 2) {
+        char buf[100];
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    // 获取到key
+    std::string *key = reinterpret_cast<std::string*>
+    (flyClient->getArgv()[1]->getPtr());
+
+    // 查看key是否已经过期
+    AbstractFlyDB *flyDB = flyClient->getFlyDB();
+    uint64_t expireTime = flyDB->getExpire(key);
+    if (expireTime != -1 && expireTime < time(NULL)) {
+        flyDB->delKey(key);
+    }
+
+    // 返回结果
+    std::string* val = reinterpret_cast<std::string*>(
+            flyDB->lookupKey(key)->getPtr());
+    flyClient->addReply(val->c_str(), val->length());
 }
 
 void setCommand(AbstractFlyServer* flyServer,
                 AbstractFlyClient* flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
 
+    // 如果参数数量<2，直接返回
+    if (flyClient->getArgc() < 3) {
+        char buf[100];
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    // 获取到key和val
+    std::string *key = reinterpret_cast<std::string*>
+    (flyClient->getArgv()[1]->getPtr());
+    FlyObj *val = flyClient->getArgv()[2];
+
+    // 将key和val添加到flydb中
+    flyClient->getFlyDB()->add(key, val);
+
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "status OK: key-%s, val-%s", key, val->getPtr());
+    flyClient->addReply(buf, strlen(buf));
 }
 
 void expireCommand(AbstractFlyServer* flyServer,

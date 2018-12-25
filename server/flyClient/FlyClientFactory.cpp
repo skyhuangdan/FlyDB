@@ -5,7 +5,8 @@
 #include "FlyClientFactory.h"
 #include "FlyClient.h"
 
-AbstractFlyClient* FlyClientFactory::getFlyClient(
-        int fd, const AbstractCoordinator *coordinator) {
-    return new FlyClient(fd, coordinator);
+AbstractFlyClient* FlyClientFactory::getFlyClient(int fd, 
+                                                  const AbstractCoordinator *coordinator, 
+                                                  AbstractFlyDB *flyDB) {
+    return new FlyClient(fd, coordinator, flyDB);
 }

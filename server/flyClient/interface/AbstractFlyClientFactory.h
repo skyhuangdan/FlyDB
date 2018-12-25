@@ -7,10 +7,13 @@
 
 #include "../../coordinator/interface/AbstractCoordinator.h"
 
+class AbstractFlyDB;
+
 class AbstractFlyClientFactory {
 public:
-    virtual AbstractFlyClient* getFlyClient(
-            int fd, const AbstractCoordinator *coordinator) = 0;
+    virtual AbstractFlyClient* getFlyClient(int fd,
+                                            const AbstractCoordinator *coordinator,
+                                            AbstractFlyDB *flyDB) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYCLIENTFACTORY_H

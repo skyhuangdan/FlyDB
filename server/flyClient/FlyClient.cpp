@@ -6,7 +6,9 @@
 #include "../net/NetDef.h"
 #include "ClientDef.h"
 
-FlyClient::FlyClient(int fd, const AbstractCoordinator *coordinator) {
+FlyClient::FlyClient(int fd,
+                     const AbstractCoordinator *coordinator,
+                     AbstractFlyDB *flyDB) {
     this->coordinator = coordinator;
     this->id = 0;
     this->fd = fd;
@@ -24,6 +26,7 @@ FlyClient::FlyClient(int fd, const AbstractCoordinator *coordinator) {
     this->multiBulkLen = 0;
     this->bulkLen = 0;
     this->sendLen = 0;
+    this->flyDB = flyDB;
 }
 
 FlyClient::~FlyClient() {
@@ -311,5 +314,13 @@ void FlyClient::setSendLen(size_t sentLen) {
 
 void FlyClient::addSendLen(size_t sentLen) {
     this->sendLen += sentLen;
+}
+
+AbstractFlyDB *FlyClient::getFlyDB() const {
+    return this->flyDB;
+}
+
+void FlyClient::setFlyDB(AbstractFlyDB *flyDB) {
+    this->flyDB = flyDB;
 }
 

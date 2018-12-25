@@ -9,8 +9,9 @@
 
 class FlyClientFactory : public AbstractFlyClientFactory {
 public:
-    AbstractFlyClient* getFlyClient(
-            int fd, const AbstractCoordinator *coordinator);
+    AbstractFlyClient* getFlyClient(int fd, 
+                                    const AbstractCoordinator *coordinator, 
+                                    AbstractFlyDB *flyDB);
 
 };
 

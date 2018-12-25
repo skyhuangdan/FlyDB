@@ -75,3 +75,8 @@ FlyObj* FlyDB::lookupKey(std::string *key) {
 
     return obj;
 }
+
+void FlyDB::delKey(std::string *key) {
+    this->expires->deleteEntry(key);
+    this->dict->deleteEntry(key);
+}

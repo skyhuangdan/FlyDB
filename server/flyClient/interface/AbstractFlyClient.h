@@ -11,6 +11,8 @@
 #include <list>
 #include "../../flyObj/interface/FlyObj.h"
 
+class AbstractFlyDB;
+
 class AbstractFlyClient {
 public:
 
@@ -113,6 +115,10 @@ public:
     virtual void setSendLen(size_t sentLen) = 0;
 
     virtual void addSendLen(size_t sentLen) = 0;
+
+    AbstractFlyDB *getFlyDB() const;
+
+    void setFlyDB(AbstractFlyDB *flyDB);
 };
 
 #endif //FLYDB_ABSTRACTFLYCLIENT_H

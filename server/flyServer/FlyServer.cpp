@@ -301,7 +301,7 @@ AbstractFlyClient* FlyServer::createClient(int fd) {
     // create FlyClient
     AbstractFlyClient *flyClient = this->coordinator
             ->getFlyClientFactory()
-            ->getFlyClient(fd, coordinator);
+            ->getFlyClient(fd, coordinator, this->getFlyDB(0));
     uint64_t clientId = 0;
     atomicGetIncr(this->nextClientId, clientId, 1);
     flyClient->setId(clientId);

@@ -59,6 +59,8 @@ public:
     virtual uint32_t expireSize() const = 0;
 
     virtual FlyObj* lookupKey(std::string *key) = 0;
+
+    virtual void delKey(std::string *key) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYDB_H
