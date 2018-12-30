@@ -9,7 +9,7 @@
 
 class FlyObjIntSetFactory : public AbstractFlyObjFactory {
 public:
-
+    ~FlyObjIntSetFactory();
     FlyObj* getObject();
     FlyObj* getObject(void *ptr);
 };

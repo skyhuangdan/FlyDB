@@ -9,7 +9,7 @@
 
 class FlyObjLinkedListFactory : public AbstractFlyObjFactory {
 public:
-
+    ~FlyObjLinkedListFactory();
     FlyObj* getObject();
     FlyObj* getObject(void *ptr);
 };

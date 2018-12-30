@@ -48,13 +48,25 @@ void getCommand(AbstractFlyServer* flyServer,
     flyClient->addReply(val->c_str(), val->length());
 }
 
+void setGenericCommand(AbstractFlyClient *flyClient,
+                       std::string *key,
+                       FlyObj *val,
+                       int64_t expireMilli) {
+    // 将key和val添加到flydb中
+    flyClient->getFlyDB()->addExpire(key, val, expireMilli);
+
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "set OK!");
+    flyClient->addReply(buf, strlen(buf));
+}
+
 void setCommand(AbstractFlyServer* flyServer,
                 AbstractFlyClient* flyClient) {
     if (NULL == flyClient) {
         return;
     }
 
-    // 如果参数数量<2，直接返回
+    // 如果参数数量 < 2，直接返回
     if (flyClient->getArgc() < 3) {
         char buf[100];
         snprintf(buf, sizeof(buf), "missing parameters!");
@@ -67,17 +79,62 @@ void setCommand(AbstractFlyServer* flyServer,
     (flyClient->getArgv()[1]->getPtr());
     FlyObj *val = flyClient->getArgv()[2];
 
-    // 将key和val添加到flydb中
-    flyClient->getFlyDB()->add(key, val);
+    setGenericCommand(flyClient, key, val, -1);
+}
 
-    char buf[1024];
-    snprintf(buf, sizeof(buf), "status OK: key-%s, val-%s", key, val->getPtr());
-    flyClient->addReply(buf, strlen(buf));
+void setExCommand(AbstractFlyServer* flyServer,
+                AbstractFlyClient* flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
+
+    // 如果参数数量 < 3，直接返回
+    if (flyClient->getArgc() < 4) {
+        char buf[100];
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    // 获取到key和val
+    std::string *key =
+            reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
+    FlyObj *val = flyClient->getArgv()[2];
+
+    // 获取超时时间
+    int64_t expireSeconds =
+            *(reinterpret_cast<int*>(flyClient->getArgv()[3]->getPtr()));
+    int64_t expireMilli = (-1 == expireSeconds ? -1 : expireSeconds * 1000);
+
+    setGenericCommand(flyClient, key, val, expireMilli);
+}
+
+void psetExCommand(AbstractFlyServer* flyServer,
+                  AbstractFlyClient* flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
+
+    // 如果参数数量 < 3，直接返回
+    if (flyClient->getArgc() < 4) {
+        char buf[100];
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    // 获取到key和val
+    std::string *key =
+            reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
+    FlyObj *val = flyClient->getArgv()[2];
+    int64_t expireMilli =
+            *(reinterpret_cast<int*>(flyClient->getArgv()[3]->getPtr()));
+
+    setGenericCommand(flyClient, key, val, expireMilli);
 }
 
 void expireCommand(AbstractFlyServer* flyServer,
                    AbstractFlyClient* flyClient) {
-
 }
 
 void expireatCommand(AbstractFlyServer* flyServer,
@@ -90,9 +147,53 @@ void mgetCommand(AbstractFlyServer* flyServer,
 
 }
 
+enum PushLocation {
+    LIST_HEAD,
+    LIST_TAIL
+};
+
+void pushGenericCommand(AbstractFlyServer* flyServer,
+                        AbstractFlyClient* flyClient,
+                        PushLocation location) {
+    if (NULL == flyClient) {
+        return;
+    }
+
+    // 如果参数数量 < 2，直接返回
+    if (flyClient->getArgc() < 3) {
+        char buf[100];
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    // 获取到list
+    std::string *key =
+            reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
+    AbstractFlyDB *flyDB = flyClient->getFlyDB();
+    std::list<std::string*> *list = reinterpret_cast<std::list<std::string*> *>
+    (flyDB->lookupKey(key)->getPtr());
+    if (NULL == list) {
+        list = new std::list<std::string*>();
+    }
+
+    for (int j = 2; j < flyClient->getArgc(); j++) {
+        if (LIST_HEAD == location) {
+            list->push_front(reinterpret_cast<std::string*>
+                             (flyClient->getArgv()[1]->getPtr()));
+        } else {
+            list->push_back(reinterpret_cast<std::string*>
+                             (flyClient->getArgv()[1]->getPtr()));
+        }
+    }
+
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "push OK!");
+    flyClient->addReply(buf, strlen(buf));
+}
+
 void rpushCommand(AbstractFlyServer* flyServer,
                   AbstractFlyClient* flyClient) {
-
 }
 
 void lpushCommand(AbstractFlyServer* flyServer,

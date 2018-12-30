@@ -5,6 +5,10 @@
 #include "FlyObjLinkedListFactory.h"
 #include "FlyObjLinkedList.h"
 
+FlyObjLinkedListFactory::~FlyObjLinkedListFactory() {
+
+}
+
 FlyObj* FlyObjLinkedListFactory::getObject() {
     return new FlyObjLinkedList(FLY_TYPE_LIST);
 }

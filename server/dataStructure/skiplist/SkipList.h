@@ -17,6 +17,7 @@ public:
     SkipListNode<T> *getTailer() const;
     uint32_t getLength() const;
     uint32_t getLevel() const;
+    void insertNode(T *obj);
     void insertNode(double score, T *obj);
     int deleteNode(double score, T *obj, SkipListNode<T>** res);
     uint32_t getRank(double score, T *obj);

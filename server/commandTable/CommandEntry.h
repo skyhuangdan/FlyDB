@@ -128,6 +128,9 @@ void bgsaveCommand(AbstractFlyServer*, AbstractFlyClient*);
 struct CommandEntry redisCommandTable[] = {
         {"get",         getCommand,         2, "rF",  0, NULL, 1, 1, 1, 0, 0},
         {"set",         setCommand,        -3, "wm",  0, NULL, 1, 1, 1, 0, 0},
+        {"setnx",       setnxCommand,       3, "wmF", 0, NULL, 1, 1, 1, 0, 0},
+        {"setex",       setexCommand,       4, "wm",  0, NULL, 1, 1, 1, 0, 0},
+        {"psetex",      psetexCommand,      4, "wm",  0, NULL, 1, 1, 1, 0, 0},
         {"expire",      expireCommand,      3, "wF",  0, NULL, 1, 1, 1, 0, 0},
         {"expireat",    expireatCommand,    3, "wF",  0, NULL, 1, 1, 1, 0, 0},
         {"mget",        mgetCommand,       -2, "rF",  0, NULL, 1,-1, 1, 0, 0},

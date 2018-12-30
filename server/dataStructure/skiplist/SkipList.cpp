@@ -46,6 +46,11 @@ uint32_t SkipList<T>::getLevel() const {
 }
 
 template<class T>
+void SkipList<T>::insertNode(T *obj) {
+    this->insertNode(0, obj);
+}
+
+template<class T>
 void SkipList<T>::insertNode(double score, T *obj) {
     // 随机获取level
     uint8_t randLevel = randomLevel();

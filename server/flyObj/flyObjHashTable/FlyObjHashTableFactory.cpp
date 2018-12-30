@@ -5,6 +5,10 @@
 #include "FlyObjHashTableFactory.h"
 #include "FlyObjHashTable.h"
 
+FlyObjHashTableFactory::~FlyObjHashTableFactory() {
+
+}
+
 FlyObj* FlyObjHashTableFactory::getObject() {
     return new FlyObjHashTable(FLY_TYPE_HASH);
 }

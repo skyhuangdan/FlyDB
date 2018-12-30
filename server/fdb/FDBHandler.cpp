@@ -28,6 +28,10 @@ FDBHandler::FDBHandler(const AbstractCoordinator *coordinator,
     this->endianConvTool = EndianConvTool::getInstance();
 }
 
+FDBHandler::~FDBHandler() {
+
+}
+
 int FDBHandler::save(FDBSaveInfo &fdbSaveInfo) {
     char tmpfile[256];
     char cwd[MAXPATHLEN];

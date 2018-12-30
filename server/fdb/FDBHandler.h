@@ -19,6 +19,7 @@ public:
     FDBHandler(const AbstractCoordinator *coordinator,
                char *filename,
                uint64_t maxProcessingChunk);
+    ~FDBHandler();
     int load(FDBSaveInfo &fdbSaveInfo);
     int save(FDBSaveInfo &fdbSaveInfo);
     int saveKeyValuePair(Fio *fio,

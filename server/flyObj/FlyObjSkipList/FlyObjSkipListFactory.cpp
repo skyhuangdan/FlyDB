@@ -5,6 +5,10 @@
 #include "FlyObjSkipListFactory.h"
 #include "FlyObjSkipList.h"
 
+FlyObjSkipListFactory::~FlyObjSkipListFactory() {
+
+}
+
 FlyObj* FlyObjSkipListFactory::getObject() {
     return new FlyObjSkipList(FLY_TYPE_LIST);
 }

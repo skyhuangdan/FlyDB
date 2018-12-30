@@ -24,7 +24,9 @@
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
 
-int serverCron(const AbstractCoordinator *coordinator, uint64_t id, void *clientData);
+int serverCron(const AbstractCoordinator *coordinator, 
+               uint64_t id, 
+               void *clientData);
 
 class CommandTable;
 

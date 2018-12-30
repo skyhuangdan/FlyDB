@@ -19,6 +19,7 @@ void sendReplyToClient(const AbstractCoordinator *coordinator, int fd, void *cli
 
 class NetHandler : public AbstractNetHandler {
 public:
+    ~NetHandler();
     static NetHandler* getInstance();
     int setV6Only(char *err, int fd);
     int setSendTimeout(char *err, int fd, long long ms);

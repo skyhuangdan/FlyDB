@@ -40,7 +40,8 @@ public:
 
     virtual void setQueryBuf(const std::string &queryBuf) = 0;
 
-    virtual void addToQueryBuf(const std::string &str) = 0;             // 向输入缓冲中添加数据
+    /** 向输入缓冲中添加数据 */
+    virtual void addToQueryBuf(const std::string &str) = 0;
 
     virtual void trimQueryBuf(int begin, int end) = 0;
 
@@ -116,9 +117,9 @@ public:
 
     virtual void addSendLen(size_t sentLen) = 0;
 
-    AbstractFlyDB *getFlyDB() const;
+    virtual AbstractFlyDB *getFlyDB() const = 0;
 
-    void setFlyDB(AbstractFlyDB *flyDB);
+    virtual void setFlyDB(AbstractFlyDB *flyDB) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYCLIENT_H

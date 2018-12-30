@@ -31,6 +31,10 @@ NetHandler::NetHandler() {
     this->logHandler = logFactory->getLogger();
 }
 
+NetHandler::~NetHandler() {
+
+}
+
 NetHandler* NetHandler::getInstance() {
     static NetHandler* instance;
     if (NULL == instance) {

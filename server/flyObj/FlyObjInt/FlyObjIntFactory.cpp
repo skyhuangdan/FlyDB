@@ -5,6 +5,10 @@
 #include "FlyObjIntFactory.h"
 #include "FlyObjInt.h"
 
+FlyObjIntFactory::~FlyObjIntFactory() {
+
+}
+
 FlyObj* FlyObjIntFactory::getObject() {
     return new FlyObjInt(FLY_TYPE_STRING);
 }

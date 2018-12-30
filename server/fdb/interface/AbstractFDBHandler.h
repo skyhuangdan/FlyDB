@@ -12,7 +12,6 @@ class FlyObj;
 
 class AbstractFDBHandler {
 public:
-
     virtual int load(FDBSaveInfo &fdbSaveInfo) = 0;
 
     virtual int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) = 0;

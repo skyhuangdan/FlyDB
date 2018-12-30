@@ -9,6 +9,7 @@
 
 class FlyObjHashTableFactory : public AbstractFlyObjFactory {
 public:
+    ~FlyObjHashTableFactory();
     FlyObj* getObject();
     FlyObj* getObject(void *ptr);
 

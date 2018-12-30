@@ -5,6 +5,10 @@
 #include "FlyObjIntSetFactory.h"
 #include "FlyObjIntSet.h"
 
+FlyObjIntSetFactory::~FlyObjIntSetFactory() {
+
+}
+
 FlyObj* FlyObjIntSetFactory::getObject() {
     return new FlyObjIntSet(FLY_TYPE_SET);
 }

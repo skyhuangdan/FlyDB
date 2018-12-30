@@ -9,7 +9,7 @@
 
 class FlyObjSkipListFactory : public AbstractFlyObjFactory {
 public:
-
+    ~FlyObjSkipListFactory();
     FlyObj* getObject();
     FlyObj* getObject(void *ptr);
 };

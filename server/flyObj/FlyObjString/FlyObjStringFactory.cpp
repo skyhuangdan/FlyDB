@@ -5,6 +5,10 @@
 #include "FlyObjStringFactory.h"
 #include "FlyObjString.h"
 
+FlyObjStringFactory::~FlyObjStringFactory() {
+
+}
+
 FlyObj* FlyObjStringFactory::getObject(void *ptr) {
     return new FlyObjString(ptr, FLY_TYPE_STRING);
 }
