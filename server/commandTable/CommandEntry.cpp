@@ -6,18 +6,19 @@
 #include "CommandEntry.h"
 #include "../flyServer/interface/AbstractFlyServer.h"
 
-void versionCommand(AbstractFlyServer* server, AbstractFlyClient *client) {
-    if (NULL == server || NULL == client) {
+void versionCommand(const AbstractCoordinator* coordinator,
+                    AbstractFlyClient *client) {
+    if (NULL == client) {
         return;
     }
 
     char buf[1024];
     snprintf(buf, sizeof(buf), "FlyDB version: %s",
-             server->getVersion().c_str());
+             coordinator->getFlyServer()->getVersion().c_str());
     client->addReply(buf, strlen(buf));
 }
 
-void getCommand(AbstractFlyServer* flyServer,
+void getCommand(const AbstractCoordinator* coordinator,
                 AbstractFlyClient* flyClient) {
     if (NULL == flyClient) {
         return;
@@ -60,7 +61,7 @@ void setGenericCommand(AbstractFlyClient *flyClient,
     flyClient->addReply(buf, strlen(buf));
 }
 
-void setCommand(AbstractFlyServer* flyServer,
+void setCommand(const AbstractCoordinator* coordinator,
                 AbstractFlyClient* flyClient) {
     if (NULL == flyClient) {
         return;
@@ -82,8 +83,8 @@ void setCommand(AbstractFlyServer* flyServer,
     setGenericCommand(flyClient, key, val, -1);
 }
 
-void setExCommand(AbstractFlyServer* flyServer,
-                AbstractFlyClient* flyClient) {
+void setExCommand(const AbstractCoordinator* coordinator,
+                  AbstractFlyClient* flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -109,8 +110,8 @@ void setExCommand(AbstractFlyServer* flyServer,
     setGenericCommand(flyClient, key, val, expireMilli);
 }
 
-void psetExCommand(AbstractFlyServer* flyServer,
-                  AbstractFlyClient* flyClient) {
+void psetExCommand(const AbstractCoordinator* coordinator,
+                   AbstractFlyClient* flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -133,16 +134,16 @@ void psetExCommand(AbstractFlyServer* flyServer,
     setGenericCommand(flyClient, key, val, expireMilli);
 }
 
-void expireCommand(AbstractFlyServer* flyServer,
+void expireCommand(const AbstractCoordinator* coordinator,
                    AbstractFlyClient* flyClient) {
 }
 
-void expireatCommand(AbstractFlyServer* flyServer,
+void expireatCommand(const AbstractCoordinator* coordinator,
                      AbstractFlyClient* flyClient) {
 
 }
 
-void mgetCommand(AbstractFlyServer* flyServer,
+void mgetCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
 
 }
@@ -152,7 +153,7 @@ enum PushLocation {
     LIST_TAIL
 };
 
-void pushGenericCommand(AbstractFlyServer* flyServer,
+void pushGenericCommand(const AbstractCoordinator* coordinator,
                         AbstractFlyClient* flyClient,
                         PushLocation location) {
     if (NULL == flyClient) {
@@ -174,7 +175,9 @@ void pushGenericCommand(AbstractFlyServer* flyServer,
     std::list<std::string*> *list = reinterpret_cast<std::list<std::string*> *>
     (flyDB->lookupKey(key)->getPtr());
     if (NULL == list) {
-        list = new std::list<std::string*>();
+        FlyObj *obj = coordinator->getFlyObjLinkedListFactory()
+                ->getObject(list = new std::list<std::string*>());
+        flyDB->add(key, obj);
     }
 
     for (int j = 2; j < flyClient->getArgc(); j++) {
@@ -192,56 +195,57 @@ void pushGenericCommand(AbstractFlyServer* flyServer,
     flyClient->addReply(buf, strlen(buf));
 }
 
-void rpushCommand(AbstractFlyServer* flyServer,
+void rpushCommand(const AbstractCoordinator* coordinator,
                   AbstractFlyClient* flyClient) {
+    pushGenericCommand(coordinator, flyClient, LIST_HEAD);
 }
 
-void lpushCommand(AbstractFlyServer* flyServer,
+void lpushCommand(const AbstractCoordinator* coordinator,
                   AbstractFlyClient* flyClient) {
-
+    pushGenericCommand(coordinator, flyClient, LIST_TAIL);
 }
 
-void lpushxCommand(AbstractFlyServer* flyServer,
+void lpushxCommand(const AbstractCoordinator* coordinator,
                    AbstractFlyClient* flyClient) {
 
 }
 
-void linsertCommand(AbstractFlyServer* flyServer,
+void linsertCommand(const AbstractCoordinator* coordinator,
                     AbstractFlyClient* flyClient) {
 
 }
 
-void rpopCommand(AbstractFlyServer* flyServer,
+void rpopCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
 
 }
 
-void lpopCommand(AbstractFlyServer* flyServer,
+void lpopCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
 
 }
 
-void brpopCommand(AbstractFlyServer* flyServer,
+void brpopCommand(const AbstractCoordinator* coordinator,
                   AbstractFlyClient* flyClient) {
 
 }
 
-void hsetCommand(AbstractFlyServer* flyServer,
+void hsetCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
 
 }
 
-void hmgetCommand(AbstractFlyServer* flyServer,
+void hmgetCommand(const AbstractCoordinator* coordinator,
                   AbstractFlyClient* flyClient) {
 
 }
 
-void saveCommand(AbstractFlyServer* flyServer,
+void saveCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
 
 }
 
-void bgsaveCommand(AbstractFlyServer* flyServer,
+void bgsaveCommand(const AbstractCoordinator* coordinator,
                    AbstractFlyClient* flyClient) {
 
 }

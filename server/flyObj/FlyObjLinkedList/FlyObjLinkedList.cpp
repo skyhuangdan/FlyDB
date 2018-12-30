@@ -8,7 +8,7 @@
 #include "../../dataStructure/skiplist/SkipList.h"
 
 FlyObjLinkedList::FlyObjLinkedList(FlyObjType type) : FlyObj(type) {
-    this->ptr = new SkipList<std::string>();
+    this->ptr = new std::list<std::string>();
 }
 
 FlyObjLinkedList::FlyObjLinkedList(void *ptr, FlyObjType type) : FlyObj(ptr, type) {

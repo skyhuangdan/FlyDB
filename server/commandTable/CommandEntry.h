@@ -10,7 +10,7 @@
 #include "../flyClient/interface/AbstractFlyClient.h"
 #include "../flyServer/interface/AbstractFlyServer.h"
 
-typedef void (*commandProc)(AbstractFlyServer*, AbstractFlyClient*);
+typedef void (*commandProc)(const AbstractCoordinator*, AbstractFlyClient*);
 typedef int (*getKeysProc)(struct CommandEntry *cmd,
                            FlyObj **argv,
                            int argc,
@@ -106,23 +106,23 @@ private:
     uint64_t microseconds, calls;
 };
 
-void versionCommand(AbstractFlyServer*, AbstractFlyClient*);
-void getCommand(AbstractFlyServer*, AbstractFlyClient*);
-void setCommand(AbstractFlyServer*, AbstractFlyClient*);
-void expireCommand(AbstractFlyServer*, AbstractFlyClient*);
-void expireatCommand(AbstractFlyServer*, AbstractFlyClient*);
-void mgetCommand(AbstractFlyServer*, AbstractFlyClient*);
-void rpushCommand(AbstractFlyServer*, AbstractFlyClient*);
-void lpushCommand(AbstractFlyServer*, AbstractFlyClient*);
-void lpushxCommand(AbstractFlyServer*, AbstractFlyClient*);
-void linsertCommand(AbstractFlyServer*, AbstractFlyClient*);
-void rpopCommand(AbstractFlyServer*, AbstractFlyClient*);
-void lpopCommand(AbstractFlyServer*, AbstractFlyClient*);
-void brpopCommand(AbstractFlyServer*, AbstractFlyClient*);
-void hsetCommand(AbstractFlyServer*, AbstractFlyClient*);
-void hmgetCommand(AbstractFlyServer*, AbstractFlyClient*);
-void saveCommand(AbstractFlyServer*, AbstractFlyClient*);
-void bgsaveCommand(AbstractFlyServer*, AbstractFlyClient*);
+void versionCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void getCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void setCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void expireCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void expireatCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void mgetCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void rpushCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void lpushCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void lpushxCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void linsertCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void rpopCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void lpopCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void brpopCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void hsetCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void hmgetCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void saveCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void bgsaveCommand(const AbstractCoordinator*, AbstractFlyClient*);
 
 /**
 struct CommandEntry redisCommandTable[] = {

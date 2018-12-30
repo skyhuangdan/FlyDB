@@ -30,8 +30,7 @@ int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
         this->logHandler->logDebug("wrong command type: %s", command);
         return -1;
     }
-    dictEntry->getVal()->getProc()(
-            this->coordinator->getFlyServer(), flyClient);
+    dictEntry->getVal()->getProc()(this->coordinator, flyClient);
 
     return 1;
 }
