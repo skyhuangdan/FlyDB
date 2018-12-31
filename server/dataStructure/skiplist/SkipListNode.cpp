@@ -5,6 +5,11 @@
 #include "SkipListNode.h"
 
 template<class T>
+SkipListNode<T>::SkipListNode() {
+
+}
+
+template<class T>
 SkipListNode<T>::SkipListNode(T *obj, double score) {
     this->obj = obj;
     this->score = score;

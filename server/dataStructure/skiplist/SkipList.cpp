@@ -146,6 +146,18 @@ uint8_t SkipList<T>::randomLevel() {
 }
 
 template<class T>
+int SkipList<T>::deleteNode(T *obj) {
+    SkipListNode<T> *node = new SkipListNode<T>();
+    return this->deleteNode(0, obj);
+}
+
+template<class T>
+int SkipList<T>::deleteNode(double score, T *obj) {
+    SkipListNode<T> *node = new SkipListNode<T>();
+    return this->deleteNode(score, obj, &node);
+}
+
+template<class T>
 int SkipList<T>::deleteNode(double score, T *obj, SkipListNode<T>** res) {
     // forward找到待查节点的前节点
     std::vector<SkipListNode<T>*> forwards(this->level);

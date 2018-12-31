@@ -25,6 +25,7 @@ struct SkipListLevel {
 template<class T>
 class SkipListNode {
 public:
+    SkipListNode();
     SkipListNode(T *obj, double score);
     virtual ~SkipListNode();
     T* getObj() const;

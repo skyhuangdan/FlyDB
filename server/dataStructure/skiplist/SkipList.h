@@ -19,6 +19,8 @@ public:
     uint32_t getLevel() const;
     void insertNode(T *obj);
     void insertNode(double score, T *obj);
+    int deleteNode(T *obj);
+    int deleteNode(double score, T *obj);
     int deleteNode(double score, T *obj, SkipListNode<T>** res);
     uint32_t getRank(double score, T *obj);
     SkipListNode<T>* getNodeByRank(uint32_t rank);

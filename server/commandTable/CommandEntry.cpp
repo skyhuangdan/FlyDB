@@ -5,6 +5,7 @@
 #include <iostream>
 #include "CommandEntry.h"
 #include "../flyServer/interface/AbstractFlyServer.h"
+#include "../dataStructure/skiplist/SkipList.cpp"
 
 void versionCommand(const AbstractCoordinator* coordinator,
                     AbstractFlyClient *client) {
@@ -148,14 +149,14 @@ void mgetCommand(const AbstractCoordinator* coordinator,
 
 }
 
-enum PushLocation {
+enum ListLocation {
     LIST_HEAD,
     LIST_TAIL
 };
 
 void pushGenericCommand(const AbstractCoordinator* coordinator,
                         AbstractFlyClient* flyClient,
-                        PushLocation location) {
+                        ListLocation location) {
     if (NULL == flyClient) {
         return;
     }
@@ -205,24 +206,117 @@ void lpushCommand(const AbstractCoordinator* coordinator,
     pushGenericCommand(coordinator, flyClient, LIST_TAIL);
 }
 
-void lpushxCommand(const AbstractCoordinator* coordinator,
-                   AbstractFlyClient* flyClient) {
+void pushSortCommand(const AbstractCoordinator* coordinator,
+                     AbstractFlyClient *flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
 
+    // 如果参数数量 < 2，直接返回
+    if (flyClient->getArgc() < 3) {
+        char buf[100];
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    // 获取到list
+    std::string *key =
+            reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
+    AbstractFlyDB *flyDB = flyClient->getFlyDB();
+    SkipList<std::string> *list = reinterpret_cast<SkipList<std::string> *>
+    (flyDB->lookupKey(key)->getPtr());
+    if (NULL == list) {
+        FlyObj *obj = coordinator->getFlyObjLinkedListFactory()
+                ->getObject(list = new SkipList<std::string>());
+        flyDB->add(key, obj);
+    }
+
+    for (int j = 2; j < flyClient->getArgc(); j++) {
+        list->insertNode(reinterpret_cast<std::string*>
+                         (flyClient->getArgv()[1]->getPtr()));
+    }
+
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "push OK!");
+    flyClient->addReply(buf, strlen(buf));
 }
 
-void linsertCommand(const AbstractCoordinator* coordinator,
-                    AbstractFlyClient* flyClient) {
+void popSortCommand(const AbstractCoordinator* coordinator,
+                  AbstractFlyClient *flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
 
+    // 如果参数数量 < 2，直接返回
+    if (flyClient->getArgc() < 3) {
+        char buf[100];
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    char buf[100];
+    std::string *key =
+            reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
+    FlyObj *val = flyClient->getFlyDB()->lookupKey(key);
+    if (NULL == val) {
+        snprintf(buf, sizeof(buf), "don`t have key: %s", key);
+        flyClient->addReply(buf, strlen(buf));
+    }
+
+    SkipList<std::string> *list =
+            reinterpret_cast<SkipList<std::string> *>(val->getPtr());
+    list->deleteNode(
+            reinterpret_cast<std::string *>(flyClient->getArgv()[3]->getPtr()));
+
+    snprintf(buf, sizeof(buf), "status OK!");
+    flyClient->addReply(buf, strlen(buf));
+}
+
+void popGenericCommand(AbstractFlyClient *flyClient,
+                       ListLocation location) {
+    if (NULL == flyClient) {
+        return;
+    }
+
+    // 如果参数数量 < 2，直接返回
+    if (flyClient->getArgc() < 2) {
+        char buf[100];
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    char buf[100];
+    std::string *key =
+            reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
+    FlyObj *val = flyClient->getFlyDB()->lookupKey(key);
+    if (NULL == val) {
+        snprintf(buf, sizeof(buf), "don`t have key: %s", key);
+        flyClient->addReply(buf, strlen(buf));
+    }
+
+    std::list<std::string *> *list =
+            reinterpret_cast<std::list<std::string *> *>(val->getPtr());
+    if (LIST_HEAD == location) {
+        list->pop_front();
+    } else {
+        list->pop_back();
+    }
+
+    snprintf(buf, sizeof(buf), "status OK!");
+    flyClient->addReply(buf, strlen(buf));
 }
 
 void rpopCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
-
+    popGenericCommand(flyClient, LIST_HEAD);
 }
 
 void lpopCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
-
+    popGenericCommand(flyClient, LIST_TAIL);
 }
 
 void brpopCommand(const AbstractCoordinator* coordinator,
