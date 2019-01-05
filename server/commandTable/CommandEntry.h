@@ -118,9 +118,8 @@ void rpopCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void lpopCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void pushSortCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void popSortCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void brpopCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void hsetCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void hmgetCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void hgetCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void saveCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void bgsaveCommand(const AbstractCoordinator*, AbstractFlyClient*);
 
@@ -140,9 +139,8 @@ struct CommandEntry redisCommandTable[] = {
         {"rpop",        rpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0},
         {"lpop",        lpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0},
         {"sortPop",     popSortCommand,     2, "wF",  0, NULL, 1, 1, 1, 0, 0},
-        {"brpop",       brpopCommand,      -3, "ws",  0, NULL, 1,-2, 1, 0, 0},
-        {"hmset",       hsetCommand,       -4, "wmF", 0, NULL, 1, 1, 1, 0, 0},
-        {"hmget",       hmgetCommand,      -3, "rF",  0, NULL, 1, 1, 1, 0, 0},
+        {"hset",        hsetCommand,       -4, "wmF", 0, NULL, 1, 1, 1, 0, 0},
+        {"hget",        hgetCommand,        3, "rF",  0, NULL, 1, 1, 1, 0, 0},
         {"save",        saveCommand,        1, "as",  0, NULL, 0, 0, 0, 0, 0},
         {"bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0}
 };

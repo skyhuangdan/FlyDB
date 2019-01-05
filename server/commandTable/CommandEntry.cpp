@@ -6,6 +6,7 @@
 #include "CommandEntry.h"
 #include "../flyServer/interface/AbstractFlyServer.h"
 #include "../dataStructure/skiplist/SkipList.cpp"
+#include "../dataStructure/dict/Dict.cpp"
 
 void versionCommand(const AbstractCoordinator* coordinator,
                     AbstractFlyClient *client) {
@@ -319,19 +320,79 @@ void lpopCommand(const AbstractCoordinator* coordinator,
     popGenericCommand(flyClient, LIST_TAIL);
 }
 
-void brpopCommand(const AbstractCoordinator* coordinator,
-                  AbstractFlyClient* flyClient) {
-
-}
-
 void hsetCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
 
+    // 如果参数数量 != 2n+1，直接返回
+    char buf[100];
+    uint8_t argc = flyClient->getArgc();
+    if (argc < 2 || argc % 2 == 1) {
+        snprintf(buf, sizeof(buf), "parameters error!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    std::string *table =
+            reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
+    FlyObj *val = flyClient->getFlyDB()->lookupKey(table);
+    if (NULL == val) {
+        val = coordinator->getFlyObjHashTableFactory()->getObject();
+    }
+
+    Dict<std::string, std::string> *dict =
+            reinterpret_cast<Dict<std::string, std::string> *>(val->getPtr());
+    for (int i = 2; i < argc; i = i + 2) {
+        std::string *key = reinterpret_cast<std::string *>
+                (flyClient->getArgv()[i]->getPtr());
+        std::string *val = reinterpret_cast<std::string *>
+        (flyClient->getArgv()[i + 1]->getPtr());
+        dict->addEntry(key, val);
+    }
+
+    snprintf(buf, sizeof(buf), "status OK!");
+    flyClient->addReply(buf, strlen(buf));
 }
 
-void hmgetCommand(const AbstractCoordinator* coordinator,
+void hgetCommand(const AbstractCoordinator* coordinator,
                   AbstractFlyClient* flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
 
+    // 如果参数数量 < 2，直接返回
+    char buf[100];
+    if (flyClient->getArgc() < 3) {
+        snprintf(buf, sizeof(buf), "missing parameters!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    std::string *tableName =
+            reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
+    FlyObj *table = flyClient->getFlyDB()->lookupKey(tableName);
+    if (NULL == table) {
+        snprintf(buf, sizeof(buf), "Don`t have this talbe: %s", tableName);
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    Dict<std::string, std::string> *dict =
+            reinterpret_cast<Dict<std::string, std::string> *>(table->getPtr());
+    std::string *key =
+            reinterpret_cast<std::string *>(flyClient->getArgv()[2]->getPtr());
+    std::string *val = dict->fetchValue(key);
+    if (NULL == val) {
+        snprintf(buf, sizeof(buf), "Don`t have key : %s", key);
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
+    snprintf(buf, sizeof(buf), "value: %s", val);
+    flyClient->addReply(buf, strlen(buf));
+    return;
 }
 
 void saveCommand(const AbstractCoordinator* coordinator,
