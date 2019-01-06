@@ -10,8 +10,5 @@ FlyObjString::FlyObjString(FlyObjType type) : FlyObj(type) {
 }
 
 FlyObjString::FlyObjString(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
-}
 
-FlyObjEncode FlyObjString::getEncode() {
-    return FLY_ENCODING_STRING;
 }

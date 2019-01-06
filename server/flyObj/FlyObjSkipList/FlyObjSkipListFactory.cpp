@@ -10,9 +10,9 @@ FlyObjSkipListFactory::~FlyObjSkipListFactory() {
 }
 
 FlyObj* FlyObjSkipListFactory::getObject() {
-    return new FlyObjSkipList(FLY_TYPE_LIST);
+    return new FlyObjSkipList(FLY_TYPE_SKIPLIST);
 }
 
 FlyObj* FlyObjSkipListFactory::getObject(void *ptr) {
-    return new FlyObjSkipList(ptr, FLY_TYPE_LIST);
+    return new FlyObjSkipList(ptr, FLY_TYPE_SKIPLIST);
 }

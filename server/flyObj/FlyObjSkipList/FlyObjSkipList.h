@@ -14,7 +14,6 @@ public:
     FlyObjSkipList(FlyObjType type);
     FlyObjSkipList(void *ptr, FlyObjType type);
     ~FlyObjSkipList();
-    FlyObjEncode getEncode();
 };
 
 

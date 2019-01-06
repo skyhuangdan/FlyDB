@@ -12,7 +12,6 @@ class FlyObjHashTable : public FlyObj {
 public:
     FlyObjHashTable(FlyObjType type);
     FlyObjHashTable(void *ptr, FlyObjType type);
-    FlyObjEncode getEncode();
 };
 
 

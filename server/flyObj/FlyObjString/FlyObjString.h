@@ -14,7 +14,6 @@ class FlyObjString : public FlyObj {
 public:
     FlyObjString(FlyObjType type);
     FlyObjString(void *ptr, FlyObjType type);
-    FlyObjEncode getEncode();
 };
 
 

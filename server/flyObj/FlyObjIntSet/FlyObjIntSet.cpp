@@ -12,7 +12,3 @@ FlyObjIntSet::FlyObjIntSet(FlyObjType type) : FlyObj(type) {
 FlyObjIntSet::FlyObjIntSet(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
 
 }
-
-FlyObjEncode FlyObjIntSet::getEncode() {
-    return FLY_ENCODING_INTSET;
-}

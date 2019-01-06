@@ -11,7 +11,3 @@ FlyObjHashTable::FlyObjHashTable(FlyObjType type) : FlyObj(type) {
 
 FlyObjHashTable::FlyObjHashTable(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
 }
-
-FlyObjEncode FlyObjHashTable::getEncode() {
-    return FLY_ENCODING_HT;
-}

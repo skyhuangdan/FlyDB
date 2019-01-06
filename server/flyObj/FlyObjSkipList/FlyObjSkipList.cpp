@@ -16,8 +16,3 @@ FlyObjSkipList::FlyObjSkipList(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
 FlyObjSkipList::~FlyObjSkipList() {
     delete this->ptr;
 }
-
-
-FlyObjEncode FlyObjSkipList::getEncode() {
-    return FLY_ENCODING_SKIPLIST;
-}

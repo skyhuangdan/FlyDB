@@ -9,8 +9,5 @@ FlyObjInt::FlyObjInt(FlyObjType type) : FlyObj(type) {
 }
 
 FlyObjInt::FlyObjInt(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
-}
 
-FlyObjEncode FlyObjInt::getEncode() {
-    return FLY_ENCODING_INT;
 }
