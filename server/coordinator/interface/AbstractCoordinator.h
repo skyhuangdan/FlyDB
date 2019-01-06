@@ -35,7 +35,6 @@ public:
 
     /** fly object factory **/
     virtual AbstractFlyObjFactory *getFlyObjHashTableFactory() const = 0;
-    virtual AbstractFlyObjFactory *getFlyObjIntFactory() const = 0;
     virtual AbstractFlyObjFactory *getFlyObjLinkedListFactory() const = 0;
     virtual AbstractFlyObjFactory *getFlyObjSkipListFactory() const = 0;
     virtual AbstractFlyObjFactory *getFlyObjIntSetFactory() const = 0;

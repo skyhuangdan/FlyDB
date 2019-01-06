@@ -13,9 +13,18 @@
 #include "../log/interface/AbstractLogFactory.h"
 
 // 对应socket的绑定接口
-void acceptTcpHandler(const AbstractCoordinator *coordinator, int fd, void *clientdata, int mask);
-void readQueryFromClient(const AbstractCoordinator *coordinator, int fd, void *clientdata, int mask);
-void sendReplyToClient(const AbstractCoordinator *coordinator, int fd, void *clientdata, int mask);
+void acceptTcpHandler(const AbstractCoordinator *coordinator,
+                      int fd,
+                      void *clientdata,
+                      int mask);
+void readQueryFromClient(const AbstractCoordinator *coordinator,
+                         int fd,
+                         void *clientdata,
+                         int mask);
+void sendReplyToClient(const AbstractCoordinator *coordinator,
+                       int fd,
+                       void *clientdata,
+                       int mask);
 
 class NetHandler : public AbstractNetHandler {
 public:
@@ -23,7 +32,8 @@ public:
     static NetHandler* getInstance();
     int setV6Only(char *err, int fd);
     int setSendTimeout(char *err, int fd, long long ms);
-    int setTcpNoDelay(char *err, int fd, int val);               // val: 1-enbale no delay, 0-disable
+    // val: 1-enbale no delay, 0-disable
+    int setTcpNoDelay(char *err, int fd, int val);
     int setSendBuffer(char *err, int fd, int buffsize);
     int setTcpKeepAlive(char *err, int fd);
     int resolve(char *err, char *host, char *ipbuf, size_t ipbuf_len);
@@ -32,9 +42,19 @@ public:
     int keepAlive(char *err, int fd, int interval);
     int tcpConnect(char *err, char *addr, int port);
     int tcpNonBlockConnect(char *err, char *addr, int port);
-    int tcpNonBlockBindConnect(char *err, char *addr, int port, char *source_addr);
-    int tcpNonBlockBestEffortBindConnect(char *err, char *addr, int port, char *source_addr);
-    int setListen(char *err, int s, struct sockaddr *sa, socklen_t len, int backlog);
+    int tcpNonBlockBindConnect(char *err,
+                               char *addr,
+                               int port,
+                               char *source_addr);
+    int tcpNonBlockBestEffortBindConnect(char *err,
+                                         char *addr,
+                                         int port,
+                                         char *source_addr);
+    int setListen(char *err,
+                  int s,
+                  struct sockaddr *sa,
+                  socklen_t len,
+                  int backlog);
     int unixServer(char *err, const char *path, mode_t perm, int backlog);
     int tcpServer(char *err, int port, const char *bindaddr, int backlog);
     int tcp6Server(char *err, int port, const char *bindaddr, int backlog);
@@ -50,19 +70,36 @@ public:
 private:
     NetHandler();
     void setError(char *err, const char *fmt, ...);
-    int genericResolve(char *err, char *host, char *ipbuf, size_t ipbuf_len, int flags);
+    int genericResolve(char *err,
+                       char *host,
+                       char *ipbuf,
+                       size_t ipbuf_len,
+                       int flags);
     int setReuseAddr(char *err, int fd);
-    int tcpGenericConnect(char *err, char *addr, int port, char *source_addr, int flags);
-    int tcpGenericServer(char *err, int port, const char *bindaddr, int af, int backlog);
+    int tcpGenericConnect(char *err,
+                          char *addr,
+                          int port,
+                          char *source_addr,
+                          int flags);
+    int tcpGenericServer(char *err,
+                         int port,
+                         const char *bindaddr,
+                         int af,
+                         int backlog);
     int tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len);
     void dealError(int fd, struct addrinfo *servinfo);
     int processInlineBuffer(AbstractFlyClient *flyClient);
-    int processMultiBulkBuffer(AbstractFlyClient *flyClient);
+    int processMultiBulkBuffer(const AbstractCoordinator* coordinator,
+                               AbstractFlyClient *flyClient);
     int analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos);
-    int analyseMultiBulk(AbstractFlyClient *flyClient, size_t &pos);
-    int analyseBulk(AbstractFlyClient *flyClient);
+    int analyseMultiBulk(const AbstractCoordinator* coordinator,
+                         AbstractFlyClient *flyClient,
+                         size_t &pos);
+    int analyseBulk(const AbstractCoordinator* coordinator,
+                    AbstractFlyClient *flyClient);
     int setProtocolError(char *err, AbstractFlyClient *flyClient, size_t pos);
-    void addReplyErrorFormat(AbstractFlyClient *flyClient, const char *fmt, ...);
+    void addReplyErrorFormat(AbstractFlyClient *flyClient,
+                             const char *fmt, ...);
     int addReplyError(AbstractFlyClient *flyClient, const char *err);
 
     AbstractLogHandler *logHandler;

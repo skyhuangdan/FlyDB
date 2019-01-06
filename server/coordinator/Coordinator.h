@@ -25,7 +25,6 @@ public:
 
     /** fly object factory **/
     AbstractFlyObjFactory *getFlyObjHashTableFactory() const;
-    AbstractFlyObjFactory *getFlyObjIntFactory() const;
     AbstractFlyObjFactory *getFlyObjLinkedListFactory() const;
     AbstractFlyObjFactory *getFlyObjSkipListFactory() const;
     AbstractFlyObjFactory *getFlyObjIntSetFactory() const;
@@ -40,7 +39,6 @@ private:
     AbstractFDBHandler *fdbHandler;
     AbstractFlyClientFactory *flyClientFactory;
     AbstractFlyObjFactory *flyObjHashTableFactory;
-    AbstractFlyObjFactory *flyObjIntFactory;
     AbstractFlyObjFactory *flyObjLinkedListFactory;
     AbstractFlyObjFactory *flyObjSkipListFactory;
     AbstractFlyObjFactory *flyObjIntSetFactory;

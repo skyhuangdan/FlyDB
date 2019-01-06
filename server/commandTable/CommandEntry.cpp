@@ -177,8 +177,7 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
     std::list<std::string*> *list = reinterpret_cast<std::list<std::string*> *>
     (flyDB->lookupKey(key)->getPtr());
     if (NULL == list) {
-        FlyObj *obj = coordinator->getFlyObjLinkedListFactory()
-                ->getObject(list = new std::list<std::string*>());
+        FlyObj *obj = coordinator->getFlyObjLinkedListFactory()->getObject();
         flyDB->add(key, obj);
     }
 

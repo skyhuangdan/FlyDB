@@ -26,6 +26,7 @@
 #include "../log/FileLogHandler.h"
 #include "../flyObj/interface/FlyObj.h"
 #include "../log/FileLogFactory.h"
+#include "../flyObj/FlyObjString/FlyObjString.h"
 
 NetHandler::NetHandler() {
     this->logHandler = logFactory->getLogger();
@@ -236,7 +237,7 @@ int NetHandler::genericResolve(char *err,
     struct addrinfo hints, *info;
     int rv;
 
-    memset(&hints,0,sizeof(hints));
+    memset(&hints, 0, sizeof(hints));
     if (flags & NET_IP_ONLY) hints.ai_flags = AI_NUMERICHOST;
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;  /* specify socktype to avoid dups */
@@ -544,7 +545,7 @@ int NetHandler::processInputBuffer(const AbstractCoordinator* coordinator,
         if ('*' == flyClient->getFirstQueryChar()
             || flyClient->isMultiBulkType()) {
             // 读取失败，直接返回，不做命令处理, inline buffer同理
-            if (-1 == processMultiBulkBuffer(flyClient)) {
+            if (-1 == processMultiBulkBuffer(coordinator, flyClient)) {
                 return -1;
             }
         } else {
@@ -681,7 +682,8 @@ int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
  *  1.当前的query buffer中还不足以解析出一个完整的command，需要等待下次读取完
  *  2.当前协议解析失败，此时需要中断和客户端的连接
  */
-int NetHandler::processMultiBulkBuffer(AbstractFlyClient *flyClient) {
+int NetHandler::processMultiBulkBuffer(const AbstractCoordinator* coordinator,
+                                       AbstractFlyClient *flyClient) {
     size_t pos = 0;
     flyClient->setReqType(PROTO_REQ_MULTIBULK);
 
@@ -695,7 +697,7 @@ int NetHandler::processMultiBulkBuffer(AbstractFlyClient *flyClient) {
     }
 
     // 解析multi bulk
-    if (-1 == analyseMultiBulk(flyClient, pos)) {
+    if (-1 == analyseMultiBulk(coordinator, flyClient, pos)) {
         return -1;
     }
 
@@ -751,16 +753,19 @@ int NetHandler::analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos) {
     return 1;
 }
 
-int NetHandler::analyseMultiBulk(AbstractFlyClient *flyClient, size_t &pos) {
+int NetHandler::analyseMultiBulk(const AbstractCoordinator* coordinator,
+                                 AbstractFlyClient *flyClient,
+                                 size_t &pos) {
     int64_t multiBulkLen = flyClient->getMultiBulkLen();
     for (int i = flyClient->getArgc(); i < multiBulkLen; i++) {
-        if (-1 == analyseBulk(flyClient)) {
+        if (-1 == analyseBulk(coordinator, flyClient)) {
             return -1;
         }
     }
 }
 
-int NetHandler::analyseBulk(AbstractFlyClient *flyClient) {
+int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
+                            AbstractFlyClient *flyClient) {
     // 如果字符串为空，说明需要通过下次来读取，直接返回(但并不是协议错误)
     if (0 == flyClient->getQueryBuf().size()) {
         return -1;
@@ -810,9 +815,8 @@ int NetHandler::analyseBulk(AbstractFlyClient *flyClient) {
     }
 
     // 设置flyClient argv参数
-    flyClient->addArgv(new FlyObj(new std::string(
-            flyClient->getQueryBuf().substr(begin, pos - begin)),
-            FLY_TYPE_STRING));
+    flyClient->addArgv(coordinator->getFlyObjStringFactory()->getObject(
+            new std::string(flyClient->getQueryBuf().substr(begin, pos - begin))));
 
     // 截取此次读取
     flyClient->trimQueryBuf(pos + 2, -1);

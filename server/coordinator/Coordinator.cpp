@@ -11,7 +11,6 @@
 #include "../flyClient/FlyClient.h"
 #include "../flyClient/FlyClientFactory.h"
 #include "../flyObj/flyObjHashTable/FlyObjHashTableFactory.h"
-#include "../flyObj/FlyObjInt/FlyObjIntFactory.h"
 #include "../flyObj/FlyObjLinkedList/FlyObjLinkedListFactory.h"
 #include "../flyObj/FlyObjSkipList/FlyObjSkipListFactory.h"
 #include "../flyObj/FlyObjIntSet/FlyObjIntSetFactory.h"
@@ -28,7 +27,6 @@ Coordinator::Coordinator() {
 
     /** fly obj factory **/
     this->flyObjHashTableFactory = new FlyObjHashTableFactory();
-    this->flyObjIntFactory = new FlyObjIntFactory();
     this->flyObjLinkedListFactory = new FlyObjLinkedListFactory();
     this->flyObjSkipListFactory = new FlyObjSkipListFactory();
     this->flyObjIntSetFactory = new FlyObjIntSetFactory();
@@ -95,10 +93,6 @@ AbstractFlyClientFactory *Coordinator::getFlyClientFactory() const {
 
 AbstractFlyObjFactory *Coordinator::getFlyObjHashTableFactory() const {
     return flyObjHashTableFactory;
-}
-
-AbstractFlyObjFactory *Coordinator::getFlyObjIntFactory() const {
-    return flyObjIntFactory;
 }
 
 AbstractFlyObjFactory *Coordinator::getFlyObjLinkedListFactory() const {

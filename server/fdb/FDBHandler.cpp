@@ -185,13 +185,24 @@ int FDBHandler::saveKeyValuePair(Fio *fio,
 ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
     ssize_t written = 0;
     ssize_t n = 0;
+
     if (FLY_TYPE_STRING == obj->getType()) {
         written += saveRawString(
                 fio,
                 *reinterpret_cast<std::string*>(obj->getPtr()));
     } else if (FLY_TYPE_LIST == obj->getType()) {
+        std::list<std::string> *plist = (std::list<std::string> *)obj->getPtr();
+        if (-1 == (n = saveLen(fio, plist->size()))) {
+            return -1;
+        }
+        written += n;
+
+        std::list<std::string>::const_iterator iter = plist->begin();
+        for (iter; iter != plist->end(); iter++) {
+            written += saveRawString(fio, *iter);
+        }
+    } else if (FLY_TYPE_SKIPLIST == obj->getType()) {
         SkipList<std::string> *sl = (SkipList<std::string> *)obj->getPtr();
-        sl->getLength();
         if (-1 == (n = saveLen(fio, sl->getLength()))) {
             return -1;
         }
@@ -214,8 +225,6 @@ ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
                     dictSaveScan,
                     new FioAndCoord(fio, this->coordinator));
         } while (nextCur != 0);
-    } else if (FLY_TYPE_SET == obj->getType()) {
-
     }
 
     return written;
