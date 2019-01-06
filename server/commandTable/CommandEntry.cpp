@@ -8,6 +8,147 @@
 #include "../dataStructure/skiplist/SkipList.cpp"
 #include "../dataStructure/dict/Dict.cpp"
 
+std::vector<CommandEntry> flyDBCommandTable = {
+        {"get",         getCommand,         2, "rF",  0, NULL, 1, 1, 1, 0, 0 },
+        {"set",         setCommand,        -3, "wm",  0, NULL, 1, 1, 1, 0, 0 },
+        {"expire",      expireCommand,      3, "wF",  0, NULL, 1, 1, 1, 0, 0 },
+        {"expireat",    expireatCommand,    3, "wF",  0, NULL, 1, 1, 1, 0, 0 },
+        {"mget",        mgetCommand,       -2, "rF",  0, NULL, 1,-1, 1, 0, 0 },
+        {"rpush",       rpushCommand,      -3, "wmF", 0, NULL, 1, 1, 1, 0, 0 },
+        {"lpush",       lpushCommand,      -3, "wmF", 0, NULL, 1, 1, 1, 0, 0 },
+        {"sortpush",    pushSortCommand,   -3, "wmF", 0, NULL, 1, 1, 1, 0, 0 },
+        {"rpop",        rpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0 },
+        {"lpop",        lpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0 },
+        {"sortPop",     popSortCommand,     2, "wF",  0, NULL, 1, 1, 1, 0, 0 },
+        {"hset",        hsetCommand,       -4, "wmF", 0, NULL, 1, 1, 1, 0, 0 },
+        {"hget",        hgetCommand,        3, "rF",  0, NULL, 1, 1, 1, 0, 0 },
+        {"save",        saveCommand,        1, "as",  0, NULL, 0, 0, 0, 0, 0 },
+        {"bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0 }
+};
+
+
+CommandEntry::CommandEntry() {
+
+}
+
+CommandEntry::CommandEntry(commandProc proc, int flag) {
+    this->proc = proc;
+    this->flag = flag;
+}
+
+CommandEntry::CommandEntry(char *name,
+                           commandProc proc,
+                           int arity,
+                           const std::string &sflags,
+                           int flag,
+                           getKeysProc keysProc,
+                           int firstKey,
+                           int lastKey,
+                           int keyStep,
+                           uint64_t microseconds,
+                           uint64_t calls) {
+    this->name = name;
+    this->proc = proc;
+    this->arity = arity;
+    this->sflags = sflags;
+    this->flag = flag;
+    this->keysProc = keysProc;
+    this->firstKey = firstKey;
+    this->lastKey = lastKey;
+    this->keyStep = keyStep;
+    this->microseconds = microseconds;
+    this->calls = calls;
+}
+
+char *CommandEntry::getName() const {
+    return this->name;
+}
+
+void CommandEntry::setName(char *name) {
+    this->name = name;
+}
+
+commandProc CommandEntry::getProc() const {
+    return this->proc;
+}
+
+void CommandEntry::setProc(commandProc proc) {
+    this->proc = proc;
+}
+
+int CommandEntry::getArity() const {
+    return this->arity;
+}
+
+void CommandEntry::setArity(int arity) {
+    this->arity = arity;
+}
+
+const std::string &CommandEntry::getSflags() const {
+    return this->sflags;
+}
+
+void CommandEntry::setSflags(const std::string &sflags) {
+    this->sflags = sflags;
+}
+
+int CommandEntry::getFlag() const {
+    return this->flag;
+}
+
+void CommandEntry::setFlag(int flag) {
+    this->flag = flag;
+}
+
+void CommandEntry::addFlag(int flag) {
+    this->flag |= flag;
+
+}
+
+void CommandEntry::setKeysProc(getKeysProc proc) {
+    this->keysProc = keysProc;
+}
+
+uint64_t CommandEntry::getMicroseconds() const {
+    return this->microseconds;
+}
+
+void CommandEntry::setMicroseconds(uint64_t microseconds) {
+    this->microseconds = microseconds;
+}
+
+uint64_t CommandEntry::getCalls() const {
+    return this->calls;
+}
+
+void CommandEntry::setCalls(uint64_t calls) {
+    this->calls = calls;
+}
+
+int CommandEntry::getFirstKey() const {
+    return firstKey;
+}
+
+void CommandEntry::setFirstKey(int firstKey) {
+    CommandEntry::firstKey = firstKey;
+}
+
+int CommandEntry::getLastKey() const {
+    return lastKey;
+}
+
+void CommandEntry::setLastKey(int lastKey) {
+    CommandEntry::lastKey = lastKey;
+}
+
+int CommandEntry::getKeyStep() const {
+    return keyStep;
+}
+
+void CommandEntry::setKeyStep(int keyStep) {
+    CommandEntry::keyStep = keyStep;
+}
+
 void versionCommand(const AbstractCoordinator* coordinator,
                     AbstractFlyClient *client) {
     if (NULL == client) {
@@ -187,7 +328,7 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
                              (flyClient->getArgv()[1]->getPtr()));
         } else {
             list->push_back(reinterpret_cast<std::string*>
-                             (flyClient->getArgv()[1]->getPtr()));
+                            (flyClient->getArgv()[1]->getPtr()));
         }
     }
 
@@ -243,7 +384,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
 }
 
 void popSortCommand(const AbstractCoordinator* coordinator,
-                  AbstractFlyClient *flyClient) {
+                    AbstractFlyClient *flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -345,7 +486,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
             reinterpret_cast<Dict<std::string, std::string> *>(val->getPtr());
     for (int i = 2; i < argc; i = i + 2) {
         std::string *key = reinterpret_cast<std::string *>
-                (flyClient->getArgv()[i]->getPtr());
+        (flyClient->getArgv()[i]->getPtr());
         std::string *val = reinterpret_cast<std::string *>
         (flyClient->getArgv()[i + 1]->getPtr());
         dict->addEntry(key, val);
@@ -356,7 +497,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
 }
 
 void hgetCommand(const AbstractCoordinator* coordinator,
-                  AbstractFlyClient* flyClient) {
+                 AbstractFlyClient* flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -404,78 +545,3 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
 
 }
 
-char *CommandEntry::getName() const {
-    return this->name;
-}
-
-void CommandEntry::setName(char *name) {
-    this->name = name;
-}
-
-commandProc CommandEntry::getProc() const {
-    return this->proc;
-}
-
-void CommandEntry::setProc(commandProc proc) {
-    this->proc = proc;
-}
-
-int CommandEntry::getArity() const {
-    return this->arity;
-}
-
-void CommandEntry::setArity(int arity) {
-    this->arity = arity;
-}
-
-const std::string &CommandEntry::getSflags() const {
-    return this->sflags;
-}
-
-void CommandEntry::setSflags(const std::string &sflags) {
-    this->sflags = sflags;
-}
-
-int CommandEntry::getFlag() const {
-    return this->flag;
-}
-
-void CommandEntry::setFlag(int flag) {
-    this->flag = flag;
-}
-
-void CommandEntry::setKeysProc(getKeysProc proc) {
-    this->keysProc = keysProc;
-}
-
-bool CommandEntry::isFirstKey() const {
-    return this->firstKey;
-}
-
-void CommandEntry::setFirstKey(bool firstKey) {
-    this->firstKey = firstKey;
-}
-
-bool CommandEntry::isLastKey() const {
-    return this->lastKey;
-}
-
-void CommandEntry::setLastKey(bool lastKey) {
-    this->lastKey = lastKey;
-}
-
-uint64_t CommandEntry::getMicroseconds() const {
-    return this->microseconds;
-}
-
-void CommandEntry::setMicroseconds(uint64_t microseconds) {
-    this->microseconds = microseconds;
-}
-
-uint64_t CommandEntry::getCalls() const {
-    return this->calls;
-}
-
-void CommandEntry::setCalls(uint64_t calls) {
-    this->calls = calls;
-}

@@ -8,11 +8,61 @@
 #include "../utils/MiscTool.h"
 #include "../log/FileLogFactory.h"
 #include "../dataStructure/dict/Dict.cpp"
+#include "CommandTableDef.h"
 
 CommandTable::CommandTable(const AbstractCoordinator* coordinator) {
     this->commands = new Dict<std::string, CommandEntry>();
-    this->commands->addEntry(new std::string("version"),
-                             new CommandEntry(versionCommand, 0));
+    int num = flyDBCommandTable.size();
+    for (int i = 0; i < num; i++) {
+        CommandEntry &entry = flyDBCommandTable[i];
+        const char *f = entry.getSflags().c_str();
+        while (*f != '\0') {
+            switch (*f) {
+                case 'w':
+                    entry.addFlag(CMD_WRITE);
+                    break;
+                case 'r':
+                    entry.addFlag(CMD_READONLY);
+                    break;
+                case 'm':
+                    entry.addFlag(CMD_DENYOOM);
+                    break;
+                case 'a':
+                    entry.addFlag(CMD_ADMIN);
+                    break;
+                case 'p':
+                    entry.addFlag(CMD_PUBSUB);
+                    break;
+                case 's':
+                    entry.addFlag(CMD_NOSCRIPT);
+                    break;
+                case 'R':
+                   entry.addFlag(CMD_RANDOM);
+                   break;
+                case 'S':
+                    entry.addFlag(CMD_SORT_FOR_SCRIPT);
+                    break;
+                case 'l':
+                    entry.addFlag(CMD_LOADING);
+                    break;
+                case 't':
+                    entry.addFlag(CMD_STALE);
+                    break;
+                case 'M':
+                    entry.addFlag(CMD_SKIP_MONITOR); break;
+                case 'k':
+                    entry.addFlag(CMD_ASKING);
+                    break;
+                case 'F':
+                    entry.addFlag(CMD_FAST);
+                    break;
+                default:
+                    exit(1);
+            }
+            f++;
+        }
+        this->commands->addEntry(new std::string(entry.getName()), &entry);
+    }
     this->logHandler = logFactory->getLogger();
     this->coordinator = coordinator;
 }

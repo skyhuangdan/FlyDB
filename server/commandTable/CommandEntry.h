@@ -18,14 +18,19 @@ typedef int (*getKeysProc)(struct CommandEntry *cmd,
 
 class CommandEntry {
 public:
-    CommandEntry() {
-
-    }
-
-    CommandEntry(commandProc proc, int flag) {
-        this->proc = proc;
-        this->flag = flag;
-    };
+    CommandEntry();
+    CommandEntry(commandProc proc, int flag);
+    CommandEntry(char *name,
+                 commandProc proc,
+                 int arity,
+                 const std::string &sflags,
+                 int flag,
+                 getKeysProc keysProc,
+                 int firstKey,
+                 int lastKey,
+                 int keyStep,
+                 uint64_t microseconds,
+                 uint64_t calls);
 
     char *getName() const;
     void setName(char *name);
@@ -37,11 +42,14 @@ public:
     void setSflags(const std::string &sflags);
     int getFlag() const;
     void setFlag(int flag);
+    void addFlag(int flag);
     void setKeysProc(getKeysProc proc);
-    bool isFirstKey() const;
-    void setFirstKey(bool firstKey);
-    bool isLastKey() const;
-    void setLastKey(bool lastKey);
+    int getFirstKey() const;
+    void setFirstKey(int firstKey);
+    int getLastKey() const;
+    void setLastKey(int lastKey);
+    int getKeyStep() const;
+    void setKeyStep(int keyStep);
     uint64_t getMicroseconds() const;
     void setMicroseconds(uint64_t microseconds);
     uint64_t getCalls() const;
@@ -73,12 +81,16 @@ public:
             entry->setKeysProc(proc);
         }
 
-        void firstKey(bool fistKey) {
+        void firstKey(int fistKey) {
             entry->setFirstKey(fistKey);
         }
 
-        void lastKey(bool lastKey) {
+        void lastKey(int lastKey) {
             entry->setLastKey(lastKey);
+        }
+
+        void keyStep(int keyStep) {
+            entry->setKeyStep(keyStep);
         }
 
         void microseconds(uint64_t microseconds) {
@@ -101,8 +113,9 @@ private:
     std::string sflags;              /** 字符串形式的flag */
     int flag;
     getKeysProc keysProc;            /** 使用函数来确定所有的keys */
-    bool firstKey;                   /** 第一个参数是否是key */
-    bool lastKey;                    /** 最后一个参数是否是key */
+    int firstKey;                   /** 第一个参数是否是key */
+    int lastKey;                    /** 最后一个参数是否是key */
+    int keyStep;
     uint64_t microseconds, calls;
 };
 
@@ -123,27 +136,6 @@ void hgetCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void saveCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void bgsaveCommand(const AbstractCoordinator*, AbstractFlyClient*);
 
-/**
-struct CommandEntry redisCommandTable[] = {
-        {"get",         getCommand,         2, "rF",  0, NULL, 1, 1, 1, 0, 0},
-        {"set",         setCommand,        -3, "wm",  0, NULL, 1, 1, 1, 0, 0},
-        {"setnx",       setnxCommand,       3, "wmF", 0, NULL, 1, 1, 1, 0, 0},
-        {"setex",       setexCommand,       4, "wm",  0, NULL, 1, 1, 1, 0, 0},
-        {"psetex",      psetexCommand,      4, "wm",  0, NULL, 1, 1, 1, 0, 0},
-        {"expire",      expireCommand,      3, "wF",  0, NULL, 1, 1, 1, 0, 0},
-        {"expireat",    expireatCommand,    3, "wF",  0, NULL, 1, 1, 1, 0, 0},
-        {"mget",        mgetCommand,       -2, "rF",  0, NULL, 1,-1, 1, 0, 0},
-        {"rpush",       rpushCommand,      -3, "wmF", 0, NULL, 1, 1, 1, 0, 0},
-        {"lpush",       lpushCommand,      -3, "wmF", 0, NULL, 1, 1, 1, 0, 0},
-        {"sortpush",    pushSortCommand,   -3, "wmF", 0, NULL, 1, 1, 1, 0, 0},
-        {"rpop",        rpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0},
-        {"lpop",        lpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0},
-        {"sortPop",     popSortCommand,     2, "wF",  0, NULL, 1, 1, 1, 0, 0},
-        {"hset",        hsetCommand,       -4, "wmF", 0, NULL, 1, 1, 1, 0, 0},
-        {"hget",        hgetCommand,        3, "rF",  0, NULL, 1, 1, 1, 0, 0},
-        {"save",        saveCommand,        1, "as",  0, NULL, 0, 0, 0, 0, 0},
-        {"bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0}
-};
- */
+extern std::vector<CommandEntry> flyDBCommandTable;
 
 #endif //FLYDB_COMMANDENTRY_H
