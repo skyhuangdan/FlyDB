@@ -15,6 +15,7 @@ class CommandTable {
 public:
     CommandTable(const AbstractCoordinator* coordinator);
     ~CommandTable();
+    void populateCommand();
     int dealWithCommand(AbstractFlyClient *flyClient);
 
 private:

@@ -12,6 +12,16 @@
 
 CommandTable::CommandTable(const AbstractCoordinator* coordinator) {
     this->commands = new Dict<std::string, CommandEntry>();
+    this->logHandler = logFactory->getLogger();
+    this->coordinator = coordinator;
+    this->populateCommand();
+}
+
+CommandTable::~CommandTable() {
+    delete this->commands;
+}
+
+void CommandTable::populateCommand() {
     int num = flyDBCommandTable.size();
     for (int i = 0; i < num; i++) {
         CommandEntry &entry = flyDBCommandTable[i];
@@ -37,8 +47,8 @@ CommandTable::CommandTable(const AbstractCoordinator* coordinator) {
                     entry.addFlag(CMD_NOSCRIPT);
                     break;
                 case 'R':
-                   entry.addFlag(CMD_RANDOM);
-                   break;
+                    entry.addFlag(CMD_RANDOM);
+                    break;
                 case 'S':
                     entry.addFlag(CMD_SORT_FOR_SCRIPT);
                     break;
@@ -63,12 +73,6 @@ CommandTable::CommandTable(const AbstractCoordinator* coordinator) {
         }
         this->commands->addEntry(new std::string(entry.getName()), &entry);
     }
-    this->logHandler = logFactory->getLogger();
-    this->coordinator = coordinator;
-}
-
-CommandTable::~CommandTable() {
-    delete this->commands;
 }
 
 int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
