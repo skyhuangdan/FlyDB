@@ -9,6 +9,7 @@
 #include "../dataStructure/dict/Dict.cpp"
 
 std::vector<CommandEntry> flyDBCommandTable = {
+        {"version",     versionCommand,     1, "rF",  0, NULL, 1, 1, 1, 0, 0 },
         {"get",         getCommand,         2, "rF",  0, NULL, 1, 1, 1, 0, 0 },
         {"set",         setCommand,        -3, "wm",  0, NULL, 1, 1, 1, 0, 0 },
         {"expire",      expireCommand,      3, "wF",  0, NULL, 1, 1, 1, 0, 0 },

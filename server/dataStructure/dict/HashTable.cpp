@@ -27,7 +27,7 @@ HashTable<KEY, VAL>::~HashTable() {
 
 template<class KEY, class VAL>
 uint32_t HashTable<KEY, VAL>::getIndexWithKey(KEY* key) const {
-    return std::hash<void *>()(key) & this->mask;
+    return std::hash<KEY>()(*key) & this->mask;
 }
 
 template<class KEY, class VAL>
