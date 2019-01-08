@@ -49,7 +49,11 @@ void FlyDB::dictScan(
 }
 
 int64_t FlyDB::getExpire(std::string *key) {
-    return *(this->expires->fetchValue(key));
+    int64_t *ex = this->expires->fetchValue(key);
+    if (NULL == ex) {
+        return -1;
+    }
+    return *ex;
 }
 
 const AbstractCoordinator* FlyDB::getCoordinator() const {

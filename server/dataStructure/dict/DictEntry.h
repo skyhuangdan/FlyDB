@@ -16,6 +16,10 @@ struct DictEntry {
     VAL *getVal() const;
     void setVal(void *val);
 
+    /**
+     * 为了性能妥协而采取的丑陋的实现方式，
+     * 考虑以后参照std的实现方式去优化
+     **/
     KEY* key;
     VAL* val;
     DictEntry* next;
