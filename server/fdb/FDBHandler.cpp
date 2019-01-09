@@ -124,7 +124,7 @@ int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
 void FDBHandler::dbScan(void *priv, std::string *key, FlyObj *val) {
     FioAndflyDB *fioAndflyDB = reinterpret_cast<FioAndflyDB *>(priv);
     AbstractFlyDB *flyDB = fioAndflyDB->flyDB;
-    uint64_t expireTime = flyDB->getExpire(key);
+    int64_t expireTime = flyDB->getExpire(key);
 
     flyDB->getCoordinator()->getFdbHandler()->saveKeyValuePair(
             fioAndflyDB->fio, *key, val, expireTime);

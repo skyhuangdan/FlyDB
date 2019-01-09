@@ -18,12 +18,8 @@ int main(int argc, char **argv) {
     std::cout << "Hello, flyDB. Wish you be better!" << std::endl;
 
     AbstractCoordinator *coordinator = new Coordinator();
-    /*
-    AbstractFDBHandler *fdbHandler =
-            new FDBHandler(coordinator, "flyDB-fdb", 1);
-    FDBSaveInfo saveInfo = FDBSaveInfo();
-    fdbHandler->save(saveInfo);
-     */
+    FDBSaveInfo fdbSaveInfo = FDBSaveInfo();
+    coordinator->getFdbHandler()->load(fdbSaveInfo);
 
     coordinator->getEventLoop()->eventMain();
 

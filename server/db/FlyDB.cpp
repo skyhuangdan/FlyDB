@@ -24,20 +24,23 @@ int FlyDB::expandExpire(uint64_t size) {
     this->expires->expand(size);
 }
 
-void FlyDB::add(std::string *key, FlyObj *val) {
-    this->dict->addEntry(key, val);
+int FlyDB::add(std::string *key, FlyObj *val) {
+    return this->dict->addEntry(key, val);
 }
 
-void FlyDB::addExpire(std::string *key, FlyObj *val, int64_t expire) {
-    this->add(key, val);
+int FlyDB::addExpire(std::string *key, FlyObj *val, int64_t expire) {
+    if (-1 == this->add(key, val)) {
+        return -1;
+    }
+
     if (expire != -1) {
         this->expires->addEntry(key, new int64_t(expire));
     }
+
+    return 1;
 }
 
-void FlyDB::dictScan(
-        Fio *fio,
-        void (*scanProc)(void* priv, std::string *key, FlyObj *val)) {
+void FlyDB::dictScan(Fio *fio, scan scanProc) {
     uint32_t nextCur = 0;
     do {
         nextCur = this->dict->dictScan(

@@ -197,10 +197,14 @@ void setGenericCommand(AbstractFlyClient *flyClient,
                        std::string *key,
                        FlyObj *val,
                        int64_t expireMilli) {
-    // 将key和val添加到flydb中
-    flyClient->getFlyDB()->addExpire(key, val, expireMilli);
-
     char buf[1024];
+    // 将key和val添加到flydb中
+    if (-1 == flyClient->getFlyDB()->addExpire(key, val, expireMilli)) {
+        snprintf(buf, sizeof(buf), "set error!");
+        flyClient->addReply(buf, strlen(buf));
+        return;
+    }
+
     snprintf(buf, sizeof(buf), "set OK!");
     flyClient->addReply(buf, strlen(buf));
 }
@@ -538,7 +542,9 @@ void hgetCommand(const AbstractCoordinator* coordinator,
 
 void saveCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
-
+    AbstractFDBHandler *fdbHandler = coordinator->getFdbHandler();
+    FDBSaveInfo saveInfo = FDBSaveInfo();
+    fdbHandler->save(saveInfo);
 }
 
 void bgsaveCommand(const AbstractCoordinator* coordinator,
