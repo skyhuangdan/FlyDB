@@ -233,7 +233,7 @@ ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
 int FDBHandler::saveInfoAuxFields(Fio *fio,
                                   int flags,
                                   FDBSaveInfo &saveInfo) {
-    int redis_bits = (sizeof(void*) == 8) ? 64 : 32;
+    int bits = (sizeof(void*) == 8) ? 64 : 32;
     int aof_preamble = (flags & RDB_SAVE_AOF_PREAMBLE) != 0;
 
     /* Add a few fields about the state when the RDB was created. */
@@ -241,7 +241,7 @@ int FDBHandler::saveInfoAuxFields(Fio *fio,
         return -1;
     }
 
-    if (-1 == saveAuxFieldStrInt(fio, "flyDB-bits", redis_bits)) {
+    if (-1 == saveAuxFieldStrInt(fio, "flyDB-bits", bits)) {
         return -1;
     }
 
@@ -473,13 +473,11 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
             continue;
         } else if (FDB_OPCODE_AUX == type) {
             FlyObj *auxkey = NULL, *auxval = NULL;
-            if (NULL ==
-                (auxkey = loadStringObject(fio))) {
+            if (NULL == (auxkey = loadStringObject(fio))) {
                 fdbExitReportCorrupt("Unexpected EOF reading RDB file");
                 return -1;
             }
-            if (NULL ==
-                (auxval = loadStringObject(fio))) {
+            if (NULL == (auxval = loadStringObject(fio))) {
                 fdbExitReportCorrupt("Unexpected EOF reading RDB file");
                 return -1;
             }
@@ -828,7 +826,7 @@ int FDBHandler::checkHeader(Fio *fio) {
     }
 
     buf[9] = '\0';
-    if (memcpy(buf, "FLYDB", 5) != 0) {
+    if (memcmp(buf, "FLYDB", 5) != 0) {
         logHandler->logWarning("Wrong signature trying to load DB from file");
         errno = EINVAL;
         return -1;
