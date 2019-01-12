@@ -156,10 +156,8 @@ void versionCommand(const AbstractCoordinator* coordinator,
         return;
     }
 
-    char buf[1024];
-    snprintf(buf, sizeof(buf), "FlyDB version: %s",
-             coordinator->getFlyServer()->getVersion().c_str());
-    client->addReply(buf, strlen(buf));
+    client->addReply("FlyDB version: %s",
+                     coordinator->getFlyServer()->getVersion().c_str());
 }
 
 void getCommand(const AbstractCoordinator* coordinator,
@@ -171,8 +169,7 @@ void getCommand(const AbstractCoordinator* coordinator,
     // 如果参数数量<2，直接返回
     if (flyClient->getArgc() < 2) {
         char buf[100];
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -200,13 +197,11 @@ void setGenericCommand(AbstractFlyClient *flyClient,
     char buf[1024];
     // 将key和val添加到flydb中
     if (-1 == flyClient->getFlyDB()->addExpire(key, val, expireMilli)) {
-        snprintf(buf, sizeof(buf), "set error!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("set error!");
         return;
     }
 
-    snprintf(buf, sizeof(buf), "set OK!");
-    flyClient->addReply(buf, strlen(buf));
+    flyClient->addReply("set OK!");
 }
 
 void setCommand(const AbstractCoordinator* coordinator,
@@ -217,9 +212,7 @@ void setCommand(const AbstractCoordinator* coordinator,
 
     // 如果参数数量 < 2，直接返回
     if (flyClient->getArgc() < 3) {
-        char buf[100];
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -239,9 +232,7 @@ void setExCommand(const AbstractCoordinator* coordinator,
 
     // 如果参数数量 < 3，直接返回
     if (flyClient->getArgc() < 4) {
-        char buf[100];
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -266,9 +257,7 @@ void psetExCommand(const AbstractCoordinator* coordinator,
 
     // 如果参数数量 < 3，直接返回
     if (flyClient->getArgc() < 4) {
-        char buf[100];
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -310,9 +299,7 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
 
     // 如果参数数量 < 2，直接返回
     if (flyClient->getArgc() < 3) {
-        char buf[100];
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -338,8 +325,7 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
     }
 
     char buf[1024];
-    snprintf(buf, sizeof(buf), "push OK!");
-    flyClient->addReply(buf, strlen(buf));
+    flyClient->addReply("push OK!");
 }
 
 void rpushCommand(const AbstractCoordinator* coordinator,
@@ -360,9 +346,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
 
     // 如果参数数量 < 2，直接返回
     if (flyClient->getArgc() < 3) {
-        char buf[100];
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -383,9 +367,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
                          (flyClient->getArgv()[1]->getPtr()));
     }
 
-    char buf[1024];
-    snprintf(buf, sizeof(buf), "push OK!");
-    flyClient->addReply(buf, strlen(buf));
+    flyClient->addReply("push OK!");
 }
 
 void popSortCommand(const AbstractCoordinator* coordinator,
@@ -396,9 +378,7 @@ void popSortCommand(const AbstractCoordinator* coordinator,
 
     // 如果参数数量 < 2，直接返回
     if (flyClient->getArgc() < 3) {
-        char buf[100];
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -407,8 +387,7 @@ void popSortCommand(const AbstractCoordinator* coordinator,
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
     FlyObj *val = flyClient->getFlyDB()->lookupKey(key);
     if (NULL == val) {
-        snprintf(buf, sizeof(buf), "don`t have key: %s", key);
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("don`t have key: %s", key);
     }
 
     SkipList<std::string> *list =
@@ -416,8 +395,7 @@ void popSortCommand(const AbstractCoordinator* coordinator,
     list->deleteNode(
             reinterpret_cast<std::string *>(flyClient->getArgv()[3]->getPtr()));
 
-    snprintf(buf, sizeof(buf), "status OK!");
-    flyClient->addReply(buf, strlen(buf));
+    flyClient->addReply("status OK!");
 }
 
 void popGenericCommand(AbstractFlyClient *flyClient,
@@ -428,9 +406,7 @@ void popGenericCommand(AbstractFlyClient *flyClient,
 
     // 如果参数数量 < 2，直接返回
     if (flyClient->getArgc() < 2) {
-        char buf[100];
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -439,8 +415,7 @@ void popGenericCommand(AbstractFlyClient *flyClient,
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
     FlyObj *val = flyClient->getFlyDB()->lookupKey(key);
     if (NULL == val) {
-        snprintf(buf, sizeof(buf), "don`t have key: %s", key);
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("don`t have key: %s", key);
     }
 
     std::list<std::string *> *list =
@@ -451,8 +426,7 @@ void popGenericCommand(AbstractFlyClient *flyClient,
         list->pop_back();
     }
 
-    snprintf(buf, sizeof(buf), "status OK!");
-    flyClient->addReply(buf, strlen(buf));
+    flyClient->addReply("status OK!");
 }
 
 void rpopCommand(const AbstractCoordinator* coordinator,
@@ -475,8 +449,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
     char buf[100];
     uint8_t argc = flyClient->getArgc();
     if (argc < 2 || argc % 2 == 1) {
-        snprintf(buf, sizeof(buf), "parameters error!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("parameters error!");
         return;
     }
 
@@ -497,8 +470,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
         dict->addEntry(key, val);
     }
 
-    snprintf(buf, sizeof(buf), "status OK!");
-    flyClient->addReply(buf, strlen(buf));
+    flyClient->addReply("status OK!");
 }
 
 void hgetCommand(const AbstractCoordinator* coordinator,
@@ -510,8 +482,7 @@ void hgetCommand(const AbstractCoordinator* coordinator,
     // 如果参数数量 < 2，直接返回
     char buf[100];
     if (flyClient->getArgc() < 3) {
-        snprintf(buf, sizeof(buf), "missing parameters!");
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -519,8 +490,7 @@ void hgetCommand(const AbstractCoordinator* coordinator,
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
     FlyObj *table = flyClient->getFlyDB()->lookupKey(tableName);
     if (NULL == table) {
-        snprintf(buf, sizeof(buf), "Don`t have this talbe: %s", tableName);
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("Don`t have this talbe: %s", tableName);
         return;
     }
 
@@ -530,25 +500,75 @@ void hgetCommand(const AbstractCoordinator* coordinator,
             reinterpret_cast<std::string *>(flyClient->getArgv()[2]->getPtr());
     std::string *val = dict->fetchValue(key);
     if (NULL == val) {
-        snprintf(buf, sizeof(buf), "Don`t have key : %s", key);
-        flyClient->addReply(buf, strlen(buf));
+        flyClient->addReply("Don`t have key : %s", key);
         return;
     }
 
-    snprintf(buf, sizeof(buf), "value: %s", val);
-    flyClient->addReply(buf, strlen(buf));
+    flyClient->addReply("value: %s", val);
     return;
 }
 
 void saveCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
     AbstractFDBHandler *fdbHandler = coordinator->getFdbHandler();
-    FDBSaveInfo saveInfo = FDBSaveInfo();
+    // todo: saveInfo
+    FDBSaveInfo *saveInfo = new FDBSaveInfo();
     fdbHandler->save(saveInfo);
+    delete saveInfo;
 }
 
+/** BGSAVE [SCHEDULE] */
 void bgsaveCommand(const AbstractCoordinator* coordinator,
                    AbstractFlyClient* flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
 
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+
+    // 如果参数数量 < 2，直接返回
+    bool schedule = false;
+    if (2 == flyClient->getArgc()) {
+        std::string *argv1 = reinterpret_cast<std::string *>(
+                flyClient->getArgv()[1]->getPtr());
+        if (0 == argv1->compare("schedule")) {
+            schedule = true;
+        } else {
+            flyClient->addReply("wrong parameters");
+            return;
+        }
+    }
+
+    /** 如果有fdb持久化子进程存在，则说明处于fdb过程中，不允许再次执行fdb */
+    if (-1 != flyServer->getFdbChildPid()) {
+        flyClient->addReply("Background save already in progress");
+        return;
+    }
+
+    /**
+     * 如果有aof持久化子进程存在，则说明处于fdb过程中，
+     * 如果是执行fdb子进程调度，则标记schdule flag,
+     * 否则，如果是执行进行fdb, 则不允许执行
+     **/
+    if (-1 != flyServer->getAofChildPid()) {
+        if (!schedule) {
+            flyClient->addReply("An AOF log rewriting in progress: can't BGSAVE"
+                                " right now. Use BGSAVE SCHEDULE in order to "
+                                "schedule a BGSAVE whenever possible.");
+            return;
+        } else {
+            flyServer->setFdbBGSaveScheduled(true);
+            flyClient->addReply("Background saving scheduled");
+            return;
+        }
+    }
+
+    if (coordinator->getFdbHandler()->saveBackgroud() > 0) {
+        flyClient->addReply("Background saving started");
+    } else {
+        flyClient->addReply("error to do fdb");
+    }
+
+    return;
 }
 

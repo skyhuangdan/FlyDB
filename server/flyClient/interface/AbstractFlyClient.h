@@ -107,6 +107,8 @@ public:
 
     virtual void addReply(const char *s, size_t len) = 0;
 
+    virtual void addReply(const char *fmt, ...) = 0;
+
     virtual int getReqType() const = 0;
 
     virtual void setReqType(int reqType) = 0;

@@ -32,7 +32,11 @@ FDBHandler::~FDBHandler() {
 
 }
 
-int FDBHandler::save(FDBSaveInfo &fdbSaveInfo) {
+int FDBHandler::saveBackgroud() {
+
+}
+
+int FDBHandler::save(const FDBSaveInfo *fdbSaveInfo) {
     char tmpfile[256];
     char cwd[MAXPATHLEN];
 
@@ -83,7 +87,7 @@ int FDBHandler::save(FDBSaveInfo &fdbSaveInfo) {
     return 1;
 }
 
-int FDBHandler::saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo) {
+int FDBHandler::saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo) {
     char magic[10];
     snprintf(magic, sizeof(magic), "FLYDB%04d", FDB_VERSION);
     if (-1 == fio->write(magic, 9)) {
@@ -232,7 +236,7 @@ ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
 
 int FDBHandler::saveInfoAuxFields(Fio *fio,
                                   int flags,
-                                  FDBSaveInfo &saveInfo) {
+                                  const FDBSaveInfo *saveInfo) {
     int bits = (sizeof(void*) == 8) ? 64 : 32;
     int aof_preamble = (flags & RDB_SAVE_AOF_PREAMBLE) != 0;
 
@@ -250,22 +254,26 @@ int FDBHandler::saveInfoAuxFields(Fio *fio,
     }
 
     /* Handle saving options that generate aux fields. */
-    if (-1 == saveAuxFieldStrInt(fio,
-                                 "repl-stream-db",
-                                 saveInfo.replStreamDB)) {
-        return -1;
-    }
+    if (NULL != saveInfo) {
+        if (-1 == saveAuxFieldStrInt(fio,
+                                     "repl-stream-db",
+                                     saveInfo->replStreamDB)) {
+            return -1;
+        }
 
-    /**
-    if (-1 == saveAuxFieldStrStr(fio,
-                                 "repl-id",
-                                 saveInfo.replID)) {
-        return -1;
-    }
-    */
+        /**
+        if (-1 == saveAuxFieldStrStr(fio,
+                                     "repl-id",
+                                     saveInfo->replID)) {
+            return -1;
+        }
+        */
 
-    if (-1 == saveAuxFieldStrInt(fio, "repl-offset", saveInfo.replOffset)) {
-        return -1;
+        if (-1 == saveAuxFieldStrInt(fio,
+                                     "repl-offset",
+                                     saveInfo->replOffset)) {
+            return -1;
+        }
     }
 
     if (-1 == saveAuxFieldStrInt(fio, "aof-preamble", aof_preamble)) {
@@ -332,6 +340,12 @@ ssize_t FDBHandler::saveRawString(Fio *fio, const std::string &str) {
     return written;
 }
 
+void FDBHandler::deleteTempFile(pid_t pid) {
+    char tmpfile[256];
+    snprintf(tmpfile, sizeof(tmpfile), "temp-%d.rdb", pid);
+    unlink(tmpfile);
+}
+
 ssize_t FDBHandler::saveLen(Fio *fio, uint64_t len) {
     unsigned char buf[2];
     size_t nwritten;
@@ -379,7 +393,7 @@ ssize_t FDBHandler::saveLen(Fio *fio, uint64_t len) {
     return nwritten;
 }
 
-int FDBHandler::load(FDBSaveInfo &fdbSaveInfo) {
+int FDBHandler::load(FDBSaveInfo *fdbSaveInfo) {
     // open fdb file with read premission
     FILE *fp;
     if (NULL == (fp = fopen(this->filename, "r"))) {
@@ -399,7 +413,7 @@ int FDBHandler::load(FDBSaveInfo &fdbSaveInfo) {
     return res;
 }
 
-int FDBHandler::loadFromFile(FILE *fp, FDBSaveInfo &saveInfo) {
+int FDBHandler::loadFromFile(FILE *fp, FDBSaveInfo *saveInfo) {
     Fio *fio = new FileFio(fp, this->maxProcessingChunk);
     int res = loadFromFio(fio, saveInfo);
     delete fio;
@@ -407,7 +421,7 @@ int FDBHandler::loadFromFile(FILE *fp, FDBSaveInfo &saveInfo) {
     return res;
 }
 
-int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
+int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
     int version = 0;
     // 检查FDB文件头部
     if (-1 == (version = checkHeader(fio))) {
@@ -484,37 +498,40 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
                 return -1;
             }
 
-            // 如果开头是'%' 说明是information字段，使用notice打日志
-            if ('%' == ((std::string *)auxkey->getPtr())->at(0)) {
-                this->logHandler->logNotice("FDB '%s': %s",
-                                            auxkey->getPtr(),
-                                            auxval->getPtr());
+            if (NULL != saveInfo) {
+                // 如果开头是'%' 说明是information字段，使用notice打日志
+                if ('%' == ((std::string *)auxkey->getPtr())->at(0)) {
+                    this->logHandler->logNotice("FDB '%s': %s",
+                                                auxkey->getPtr(),
+                                                auxval->getPtr());
 
-            } else if (0 == strcasecmp(
-                    ((std::string *)auxkey->getPtr())->c_str(),
-                    "repl-stream-db")) {
-                saveInfo.replStreamDB =
-                        atoi(((std::string *)auxval->getPtr())->c_str());
-            } else if (0 == strcasecmp(
-                    ((std::string *)auxkey->getPtr())->c_str(),
-                    "repl-id")) {
-                if (CONFIG_RUN_ID_SIZE ==
-                    ((std::string *)auxval->getPtr())->length()) {
-                    memcpy(saveInfo.replID,
-                           auxval->getPtr(),
-                           CONFIG_RUN_ID_SIZE + 1);
-                    saveInfo.replIDIsSet = 1;
+                } else if (0 == strcasecmp(
+                        ((std::string *)auxkey->getPtr())->c_str(),
+                        "repl-stream-db")) {
+                    saveInfo->replStreamDB =
+                            atoi(((std::string *)auxval->getPtr())->c_str());
+                } else if (0 == strcasecmp(
+                        ((std::string *)auxkey->getPtr())->c_str(),
+                        "repl-id")) {
+                    if (CONFIG_RUN_ID_SIZE ==
+                        ((std::string *)auxval->getPtr())->length()) {
+                        memcpy(saveInfo->replID,
+                               auxval->getPtr(),
+                               CONFIG_RUN_ID_SIZE + 1);
+                        saveInfo->replIDIsSet = 1;
+                    }
+                } else if (0 == strcasecmp(
+                        ((std::string *)auxkey->getPtr())->c_str(),
+                        "repl-offset")) {
+                    saveInfo->replOffset = strtoll(
+                            ((std::string *)auxval->getPtr())->c_str(),
+                            NULL,
+                            10);
+                } else {
+                    this->logHandler->logDebug("Unrecognized RDB AUX field: '%s'",
+                                               auxkey->getPtr());
                 }
-            } else if (0 == strcasecmp(
-                    ((std::string *)auxkey->getPtr())->c_str(),
-                    "repl-offset")) {
-                saveInfo.replOffset = strtoll(
-                        ((std::string *)auxval->getPtr())->c_str(),
-                        NULL,
-                        10);
-            } else {
-                this->logHandler->logDebug("Unrecognized RDB AUX field: '%s'",
-                                           auxkey->getPtr());
+
             }
 
             delete auxkey;

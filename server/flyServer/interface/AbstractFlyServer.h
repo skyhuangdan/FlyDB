@@ -16,7 +16,7 @@ public:
     virtual void init(ConfigCache *configCache) = 0;
 
     // 获取server id
-    virtual int getPID() = 0;
+    virtual pid_t getPID() = 0;
 
     // 获取版本号
     virtual std::string getVersion() = 0;
@@ -57,6 +57,22 @@ public:
     virtual uint8_t getFlyDBCount() const = 0;
 
     virtual int getMaxClients() const = 0;
+
+    virtual bool isShutdownASAP() const = 0;
+
+    virtual void setShutdownASAP(bool shutdownASAP) = 0;
+
+    virtual pid_t getFdbChildPid() const = 0;
+
+    virtual void setFdbChildPid(pid_t fdbChildPid) = 0;
+
+    virtual bool isFdbBGSaveScheduled() const = 0;
+
+    virtual void setFdbBGSaveScheduled(bool fdbBGSaveScheduled) = 0;
+
+    virtual pid_t getAofChildPid() const = 0;
+
+    virtual void setAofChildPid(pid_t aofChildPid) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

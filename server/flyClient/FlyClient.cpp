@@ -241,6 +241,10 @@ void FlyClient::setBufpos(int bufpos) {
     FlyClient::bufpos = bufpos;
 }
 
+void FlyClient::addReplyRaw(const char *s) {
+    this->addReply(s, strlen(s));
+}
+
 void FlyClient::addReply(const char *s, size_t len) {
     // 查看client状态是否可以写入
     if (-1 == prepareClientToWrite()) {
@@ -251,6 +255,16 @@ void FlyClient::addReply(const char *s, size_t len) {
     if (-1 == addReplyToBuffer(s, len)) {
         addReplyToReplyList(s, len);
     }
+}
+
+void FlyClient::addReply(const char *fmt, ...) {
+    char msg[LOG_MAX_LEN];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+
+    this->addReplyRaw(msg);
 }
 
 int FlyClient::addReplyToBuffer(const char *s, size_t len) {

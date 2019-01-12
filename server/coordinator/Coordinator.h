@@ -31,7 +31,6 @@ public:
     AbstractFlyObjFactory *getFlyObjStringFactory() const;
 
 private:
-
     AbstractNetHandler *netHandler;
     AbstractFlyServer *flyServer;
     AbstractEventLoop *eventLoop;

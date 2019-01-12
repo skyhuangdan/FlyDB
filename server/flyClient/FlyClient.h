@@ -32,7 +32,8 @@ public:
     void delFlag(int flag);
     const std::string &getQueryBuf() const;
     void setQueryBuf(const std::string &queryBuf);
-    void addToQueryBuf(const std::string &str);             // 向输入缓冲中添加数据
+    /** 向输入缓冲中添加数据 */
+    void addToQueryBuf(const std::string &str);
     void trimQueryBuf(int begin, int end);
     int getQueryBufSize() const;
     FlyObj **getArgv() const;
@@ -41,8 +42,6 @@ public:
     int getArgc() const;
     void addArgv(FlyObj *obj);
     void setArgc(int argc);
-    CommandEntry *getCmd() const;
-    void setCmd(CommandEntry *cmd);
     const char *getBuf() const;
     bool bufSendOver();
     int getBufpos() const;
@@ -67,6 +66,7 @@ public:
     int prepareClientToWrite();
     bool hasNoPending();
     void addReply(const char *s, size_t len);
+    void addReply(const char *fmt, ...);
     int getReqType() const;
     void setReqType(int reqType);
     size_t getSendLen() const;
@@ -78,6 +78,7 @@ public:
 private:
     int addReplyToBuffer(const char *s, size_t len);
     int addReplyToReplyList(const char *s, size_t len);
+    void addReplyRaw(const char *s);
 
     const AbstractCoordinator *coordinator;
     uint64_t id;

@@ -21,11 +21,9 @@
 #include "../db/interface/AbstractFlyDBFactory.h"
 #include "../utils/MiscTool.h"
 
-const int DB_NUM = 4;
-const std::string VERSION = "0.0.1";
-
-int serverCron(const AbstractCoordinator *coordinator, 
-               uint64_t id, 
+void sigShutDownHandlers(int sig);
+int serverCron(const AbstractCoordinator *coordinator,
+               uint64_t id,
                void *clientData);
 
 class CommandTable;
@@ -35,13 +33,15 @@ public:
     FlyServer(const AbstractCoordinator *coordinator);
     ~FlyServer();
     void init(ConfigCache *configCache);                  // 初始化函数
-    int getPID();                                         // 获取server id
+    pid_t getPID();                                         // 获取server id
     std::string getVersion();                             // 获取版本号
     int dealWithCommand(AbstractFlyClient *flyclient);    // 处理命令
     int getHz() const;
     void setHz(int hz);
     time_t getNowt() const;
     void setNowt(time_t nowt);
+    bool isShutdownASAP() const;
+    void setShutdownASAP(bool shutdownASAP);
 
     /**
      * 网络相关
@@ -67,6 +67,20 @@ public:
     void freeClientsInAsyncFreeList();
     int getMaxClients() const;
 
+    /**
+     *  fdb相关
+     */
+    pid_t getFdbChildPid() const;
+    void setFdbChildPid(pid_t fdbChildPid);
+    bool isFdbBGSaveScheduled() const;
+    void setFdbBGSaveScheduled(bool fdbBGSaveScheduled);
+
+    /**
+     * AOF持久化
+     **/
+    pid_t getAofChildPid() const;
+    void setAofChildPid(pid_t aofChildPid);
+
 private:
     /** 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）*/
     void setMaxClientLimit();
@@ -76,8 +90,10 @@ private:
     void deleteFromAsyncClose(int fd);
     void loadDataFromDisk();
     void loadFromConfig(ConfigCache *configCache);
+    void setupSignalHandlers();
 
-    int pid;                                          // 运行server的线程标识
+    /** General */
+    pid_t pid;                                          // 运行server的线程标识
     AbstractFlyDBFactory *flyDBFactory;
     std::array<AbstractFlyDB*, DB_NUM> dbArray;       // db列表
     std::string version = VERSION;                    // 版本号
@@ -85,6 +101,8 @@ private:
     int hz;                                           // serverCron运行频率
     time_t nowt;                                      // 系统当前时间
     uint32_t lruclock;                                // LRU
+    bool shutdownASAP = false;
+
 
     /**
      *  网络相关
@@ -120,8 +138,15 @@ private:
 
     /**
      * AOF持久化
-     * */
+     **/
     AOFState aofState;
+    pid_t aofChildPid = -1;
+
+    /**
+     * FDB持久化
+     **/
+     pid_t fdbChildPid = -1;
+     bool fdbBGSaveScheduled = false;
 
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;

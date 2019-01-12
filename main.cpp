@@ -13,15 +13,14 @@
 
 AbstractLogFactory *logFactory = new FileLogFactory();
 MiscTool *miscTool = MiscTool::getInstance();
+AbstractCoordinator *coordinator = NULL;
 
 int main(int argc, char **argv) {
     std::cout << "Hello, flyDB. Wish you be better!" << std::endl;
 
-    AbstractCoordinator *coordinator = new Coordinator();
-    FDBSaveInfo fdbSaveInfo = FDBSaveInfo();
-    coordinator->getFdbHandler()->load(fdbSaveInfo);
-
+    coordinator = new Coordinator();
     coordinator->getEventLoop()->eventMain();
 
     delete coordinator;
+
 }

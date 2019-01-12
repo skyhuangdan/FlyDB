@@ -49,9 +49,12 @@ struct configMap {
 
 const int CONFIG_CRON_HZ = 1;
 const int CONFIG_DEFAULT_SERVER_PORT = 6379;                    // TCP port
-const int CONFIG_DEFAULT_MAX_CLIENTS = 10000;                   // 最多同时连接client数量
-const int CONFIG_MIN_RESERVED_FDS = 32;                         // 保留文件数量
-const int CONFIG_FDSET_INCR = (CONFIG_MIN_RESERVED_FDS + 96);   // eventloop可以处理的文件事件数量
+/** 最多同时连接client数量 */
+const int CONFIG_DEFAULT_MAX_CLIENTS = 10000;
+/** 保留文件数量 */
+const int CONFIG_MIN_RESERVED_FDS = 32;
+/** eventloop可以处理的文件事件数量 */
+const int CONFIG_FDSET_INCR = (CONFIG_MIN_RESERVED_FDS + 96);
 const int CONFIG_BINDADDR_MAX = 16;
 const int CONFIG_MAX_LINE = 1024;
 const int CONFIG_DEFAULT_UNIX_SOCKET_PERM = 0;
@@ -79,4 +82,6 @@ const int LRU_BITS = 24;
 const uint32_t LRU_CLOCK_MAX = (1 << LRU_BITS) - 1;     /** Max value of obj->lru */
 const int LRU_CLOCK_RESOLUTION = 1000;                  /** LRU clock resolution in ms */
 
+const int DB_NUM = 4;
+const std::string VERSION = "0.0.1";
 #endif //FLYDB_CONFIG_H

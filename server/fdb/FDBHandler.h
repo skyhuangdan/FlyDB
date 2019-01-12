@@ -20,24 +20,26 @@ public:
                char *filename,
                uint64_t maxProcessingChunk);
     ~FDBHandler();
-    int load(FDBSaveInfo &fdbSaveInfo);
-    int save(FDBSaveInfo &fdbSaveInfo);
+    int load(FDBSaveInfo *fdbSaveInfo);
+    int save(const FDBSaveInfo *fdbSaveInfo);
+    int saveBackgroud();
     int saveKeyValuePair(Fio *fio,
                          std::string &key,
                          FlyObj *val,
                          int64_t expireTime);
     ssize_t saveRawString(Fio *fio, const std::string &str);
+    void deleteTempFile(pid_t pid);
+
 private:
     static void dbScan(void *priv, std::string *key, FlyObj *val);
     static void dictSaveScan(void *priv, std::string *key, FlyObj *val);
     static void skipListSaveProc(void *priv, std::string *obj);
-    int saveToFio(Fio *fio, int flag, FDBSaveInfo &saveInfo);
+    int saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo);
     ssize_t saveLen(Fio *fio, uint64_t len);
     ssize_t saveObject(Fio *fio, FlyObj *obj);
-    int saveObjectType(Fio *fio, FlyObj *obj);
     int saveInfoAuxFields(Fio *fio,
                           int flags,
-                          FDBSaveInfo &saveInfo);
+                          const FDBSaveInfo *saveInfo);
     int saveAuxFieldStrStr(Fio *fio,
                            const std::string &key,
                            const std::string &val);
@@ -49,9 +51,9 @@ private:
                      const std::string &val);
     int saveMillisecondTime(Fio *fio, int64_t t);
     int saveType(Fio *fio, unsigned char type);
-    int loadFromFio(Fio *fio, FDBSaveInfo &saveInfo);
+    int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo);
     void startToLoad();
-    int loadFromFile(FILE *fp, FDBSaveInfo &fdbSaveInfo);
+    int loadFromFile(FILE *fp, FDBSaveInfo *fdbSaveInfo);
     void stopLoad();
     char loadChar(Fio *fio);
     uint8_t loadUint8(Fio *fio);

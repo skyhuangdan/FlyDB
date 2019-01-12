@@ -110,7 +110,7 @@ void FlyServer::init(ConfigCache *configCache) {
     return;
 }
 
-int FlyServer::getPID() {
+pid_t FlyServer::getPID() {
     return this->pid;
 }
 
@@ -262,6 +262,9 @@ void FlyServer::loadDataFromDisk() {
         // load from append only fiile
     } else {
         // load from fdb
+        FDBSaveInfo *fdbSaveInfo = new FDBSaveInfo();
+        this->coordinator->getFdbHandler()->load(fdbSaveInfo);
+        delete fdbSaveInfo;
     }
 
 }
@@ -418,7 +421,58 @@ int FlyServer::getMaxClients() const {
     return maxClients;
 }
 
-int serverCron(const AbstractCoordinator *coordinator, uint64_t id, void *clientData) {
+void FlyServer::setupSignalHandlers() {
+    signal(SIGTERM, sigShutDownHandlers);
+    signal(SIGINT, sigShutDownHandlers);
+}
+
+bool FlyServer::isShutdownASAP() const {
+    return this->shutdownASAP;
+}
+
+void FlyServer::setShutdownASAP(bool shutdownASAP) {
+    this->shutdownASAP = shutdownASAP;
+}
+
+pid_t FlyServer::getFdbChildPid() const {
+    return this->fdbChildPid;
+}
+
+void FlyServer::setFdbChildPid(pid_t fdbChildPid) {
+    this->fdbChildPid = fdbChildPid;
+}
+
+pid_t FlyServer::getAofChildPid() const {
+    return this->aofChildPid;
+}
+
+void FlyServer::setAofChildPid(pid_t aofChildPid) {
+    this->aofChildPid = aofChildPid;
+}
+
+bool FlyServer::isFdbBGSaveScheduled() const {
+    return this->fdbBGSaveScheduled;
+}
+
+void FlyServer::setFdbBGSaveScheduled(bool fdbBGSaveScheduled) {
+    this->fdbBGSaveScheduled = fdbBGSaveScheduled;
+}
+
+void sigShutDownHandlers(int sig) {
+    extern AbstractCoordinator *coordinator;
+
+    if (coordinator->getFlyServer()->isShutdownASAP()
+        && SIGINT == sig) {
+        coordinator->getFdbHandler()->deleteTempFile(getpid());
+        exit(1);
+    }
+
+    coordinator->getFlyServer()->setShutdownASAP(true);
+}
+
+int serverCron(const AbstractCoordinator *coordinator,
+               uint64_t id,
+               void *clientData) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
     // 设置当前时间
@@ -426,6 +480,13 @@ int serverCron(const AbstractCoordinator *coordinator, uint64_t id, void *client
 
     // 释放所有异步删除的clients
     flyServer->freeClientsInAsyncFreeList();
+
+    if (coordinator->getFlyServer()->isShutdownASAP()) {
+        // todo: saveInfo
+        FDBSaveInfo *saveInfo = new FDBSaveInfo();
+        coordinator->getFdbHandler()->save(saveInfo);
+        delete saveInfo;
+    }
 
     static int times = 0;
     std::cout << "serverCron is running " << times++ << " times!" << std::endl;
