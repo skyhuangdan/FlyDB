@@ -54,6 +54,7 @@ private:
     int loadFromFile(FILE *fp, FDBSaveInfo &fdbSaveInfo);
     void stopLoad();
     char loadChar(Fio *fio);
+    uint8_t loadUint8(Fio *fio);
     time_t loadTime(Fio *fio);
     uint64_t loadMillisecondTime(Fio *fio);
     int loadNum(Fio *fio, int *encoded);

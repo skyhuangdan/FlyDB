@@ -60,5 +60,6 @@ const int RDB_SAVE_NONE = 0;
 const int RDB_SAVE_AOF_PREAMBLE = 1 << 0;
 
 const int FDB_VERSION = 1;
+const int FDB_STRINT_MAX_LEN = 30;
 
 #endif //FLYDB_FDBDEF_H

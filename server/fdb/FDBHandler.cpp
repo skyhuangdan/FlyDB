@@ -256,11 +256,13 @@ int FDBHandler::saveInfoAuxFields(Fio *fio,
         return -1;
     }
 
+    /**
     if (-1 == saveAuxFieldStrStr(fio,
                                  "repl-id",
                                  saveInfo.replID)) {
         return -1;
     }
+    */
 
     if (-1 == saveAuxFieldStrInt(fio, "repl-offset", saveInfo.replOffset)) {
         return -1;
@@ -412,11 +414,11 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
         return -1;
     }
 
-    int64_t expireTime;
+    int64_t expireTime = -1;
     AbstractFlyDB *flyDB = coordinator->getFlyServer()->getFlyDB(0);
 
     while (1) {
-        char type = loadChar(fio);
+        int type = loadUint8(fio);
 
         if (FDB_OPCODE_EXPIRETIME == type) {
             // 获取过期时间
@@ -488,12 +490,14 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
                                             auxkey->getPtr(),
                                             auxval->getPtr());
 
-            } else if (strcasecmp(((std::string *)auxkey->getPtr())->c_str(),
-                                  "repl-stream-db")) {
+            } else if (0 == strcasecmp(
+                    ((std::string *)auxkey->getPtr())->c_str(),
+                    "repl-stream-db")) {
                 saveInfo.replStreamDB =
                         atoi(((std::string *)auxval->getPtr())->c_str());
-            } else if (strcasecmp(((std::string *)auxkey->getPtr())->c_str(),
-                                  "repl-id")) {
+            } else if (0 == strcasecmp(
+                    ((std::string *)auxkey->getPtr())->c_str(),
+                    "repl-id")) {
                 if (CONFIG_RUN_ID_SIZE ==
                     ((std::string *)auxval->getPtr())->length()) {
                     memcpy(saveInfo.replID,
@@ -501,8 +505,9 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo &saveInfo) {
                            CONFIG_RUN_ID_SIZE + 1);
                     saveInfo.replIDIsSet = 1;
                 }
-            } else if (strcasecmp(((std::string *)auxkey->getPtr())->c_str(),
-                                  "repl-offset")) {
+            } else if (0 == strcasecmp(
+                    ((std::string *)auxkey->getPtr())->c_str(),
+                    "repl-offset")) {
                 saveInfo.replOffset = strtoll(
                         ((std::string *)auxval->getPtr())->c_str(),
                         NULL,
@@ -579,6 +584,16 @@ char FDBHandler::loadChar(Fio *fio) {
     return ch;
 }
 
+uint8_t FDBHandler::loadUint8(Fio *fio) {
+    uint8_t num;
+    if (-1 == fio->read(&num, 1)) {
+        this->logHandler->logWarning("error to load char from fio!");
+        return -1;
+    }
+
+    return num;
+}
+
 // 返回FlyObj类型数据
 FlyObj* FDBHandler::loadStringObject(Fio *fio) {
     return reinterpret_cast<FlyObj*>(
@@ -613,13 +628,13 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
     }
 
     // 根据len从fio中读取字符串
-    std::string *str = new std::string();
-    if (-1 == fio->read((void*)(str->c_str()), len)) {
+    char *ch = new char[FDB_STRINT_MAX_LEN];
+    if (-1 == fio->read(ch, len)) {
         this->logHandler->logWarning("error to load string from fio!");
-        delete str;
     }
 
     // 根据flag返回FlyObj或者直接返回string
+    std::string *str = new std::string(ch);
     if (flag & FDB_LOAD_OBJECT) {
         return this->coordinator->getFlyObjStringFactory()->getObject(str);
     } else {
