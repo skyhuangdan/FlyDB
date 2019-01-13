@@ -13,12 +13,22 @@ public:
     /**
      * 发送消息
      **/
-    virtual void sendInfo(PipeType ptype) = 0;
+    virtual void sendInfo(PipeType ptype, size_t cowSize) = 0;
 
     /**
      * 接收消息
      **/
     virtual PipeCowBytes* recvInfo(void) = 0;
+
+    /**
+     * 打开管道
+     **/
+    virtual void open(void) = 0;
+
+    /**
+     * 关闭管道
+     **/
+    virtual void closeAll(void) = 0;
 };
 
 #endif //FLYDB_ABSTRACTPIPEHANDLER_H

@@ -11,8 +11,8 @@
 const uint64_t CHILD_INFO_MAGIC = 0xC17DDA7A12345678LL;
 
 enum PipeType {
-    CHILD_INFO_TYPE_RDB = 0,
-    CHILD_INFO_TYPE_AOF = 1
+    PIPE_TYPE_RDB = 0,
+    PIPE_TYPE_AOF = 1
 };
 
 struct PipeData {

@@ -5,18 +5,8 @@
 #include "Pipe.h"
 #include "PipeDef.h"
 
-Pipe::Pipe(const AbstractCoordinator *coordinator,
-           int infoPipe[2]) {
+Pipe::Pipe(const AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
-
-    /** initialize pipe */
-    int count = sizeof(this->infoPipe) / sizeof(int);
-    for (int i = 0; i < count; i++) {
-        this->infoPipe[i] = infoPipe[i];
-    }
-
-    /** open pipe */
-    this->open();
 }
 
 Pipe::~Pipe() {
@@ -24,7 +14,7 @@ Pipe::~Pipe() {
     this->closeAll();
 }
 
-void Pipe::sendInfo(PipeType ptype) {
+void Pipe::sendInfo(PipeType ptype, size_t cowSize) {
     if (-1 == this->infoPipe[1]) {
         return;
     }
@@ -32,6 +22,7 @@ void Pipe::sendInfo(PipeType ptype) {
     /** send pipe data */
     PipeData* pipeData = PipeData::Builder().processType(ptype)
             .magic(CHILD_INFO_MAGIC)
+            .cowSize(cowSize)
             .build();
     write(this->infoPipe[1], pipeData, sizeof(PipeData));
 }
@@ -49,7 +40,7 @@ PipeCowBytes* Pipe::recvInfo(void) {
     ssize_t wlen = sizeof(PipeData);
     if (wlen == read(this->infoPipe[0], pipeData, wlen)
             && CHILD_INFO_MAGIC == pipeData->magic) {
-        if (CHILD_INFO_TYPE_AOF == pipeData->processType) {
+        if (PIPE_TYPE_AOF == pipeData->processType) {
             cowBytes->aofCowBytes = pipeData->cowSize;
         } else {
             cowBytes->rdbCowBytes = pipeData->cowSize;
@@ -60,7 +51,7 @@ PipeCowBytes* Pipe::recvInfo(void) {
 }
 
 void Pipe::open(void) {
-    if (-1 == pipe(infoPipe)) {
+    if (-1 == pipe(this->infoPipe)) {
         this->closeAll();
         return;
     }

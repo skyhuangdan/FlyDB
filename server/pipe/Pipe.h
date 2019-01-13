@@ -11,16 +11,17 @@
 
 class Pipe : public AbstractPipe {
 public:
-    Pipe(const AbstractCoordinator *coordinator, int infoPipe[2]);
+    Pipe(const AbstractCoordinator *coordinator);
     ~Pipe();
-    void sendInfo(PipeType ptype);
-    PipeCowBytes* recvInfo(void);
-
-private:
     void open(void);
+    void sendInfo(PipeType ptype, size_t cowSize);
+    PipeCowBytes* recvInfo(void);
     void closeAll(void);
 
-    int infoPipe[2];
+private:
+
+    /** infoPipe[0]-read, infoPipe[1]-write */
+    int infoPipe[2] = {-1, -1};
     const AbstractCoordinator *coordinator;
 };
 

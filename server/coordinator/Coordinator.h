@@ -16,6 +16,7 @@ class Coordinator : public AbstractCoordinator {
 public:
     Coordinator();
     ~Coordinator();
+
     AbstractNetHandler *getNetHandler() const;
     AbstractFlyServer *getFlyServer() const;
     AbstractEventLoop *getEventLoop() const;
@@ -29,6 +30,9 @@ public:
     AbstractFlyObjFactory *getFlyObjSkipListFactory() const;
     AbstractFlyObjFactory *getFlyObjIntSetFactory() const;
     AbstractFlyObjFactory *getFlyObjStringFactory() const;
+
+    /** Pipe */
+    AbstractPipe *getPipe() const;
 
 private:
     AbstractNetHandler *netHandler;
@@ -44,6 +48,10 @@ private:
     AbstractFlyObjFactory *flyObjStringFactory;
     ConfigCache *configCache;
 
+    /**
+     * Pipe: child -> parent info sharing
+     **/
+    AbstractPipe *pipe = NULL;
 };
 
 

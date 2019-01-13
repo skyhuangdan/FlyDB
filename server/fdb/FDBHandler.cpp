@@ -14,6 +14,7 @@
 #include "../dataStructure/dict/Dict.cpp"
 #include "../dataStructure/skiplist/SkipList.cpp"
 #include "../dataStructure/intset/IntSet.h"
+#include "../pipe/Pipe.h"
 
 #define fdbExitReportCorrupt(...) checkThenExit(__LINE__,__VA_ARGS__)
 
@@ -39,6 +40,38 @@ int FDBHandler::saveBackgroud() {
         return -1;
     }
 
+    // 打开管道
+    this->coordinator->getPipe()->open();
+
+    pid_t childPid = -1;
+    if (0 == (childPid = fork())) {
+        /** Child */
+
+        // todo: saveInfo
+        FDBSaveInfo saveInfo = FDBSaveInfo();
+        int res = this->save(&saveInfo);
+        if (1 == res) {
+            // todo: cowSize = 0 now, need to resize
+            this->coordinator->getPipe()->sendInfo(PIPE_TYPE_RDB, 0);
+        }
+
+        exit(res == 1 ? 1 : 0);
+    } else {
+        /** Parent */
+        if (-1 == childPid) {
+            // 如果创建子进程失败，则关闭pipe
+            this->coordinator->getPipe()->closeAll();
+            this->logHandler->logWarning("Can't save in background: fork: %s",
+                                         strerror(errno));
+            return -1;
+        }
+
+        flyServer->setFdbChildPid(childPid);
+        this->logHandler->logNotice("Background saving started by pid %d",
+                                    childPid);
+    }
+
+    return 1;
 }
 
 int FDBHandler::save(const FDBSaveInfo *fdbSaveInfo) {

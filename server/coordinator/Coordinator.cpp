@@ -57,6 +57,10 @@ Coordinator::Coordinator() {
 
     /** flyserver初始化 **/
     this->flyServer->init(configCache);
+
+    // pip init
+    this->pipe = new Pipe(this);
+
 }
 
 Coordinator::~Coordinator() {
@@ -111,3 +115,6 @@ AbstractFlyObjFactory *Coordinator::getFlyObjStringFactory() const {
     return flyObjStringFactory;
 }
 
+AbstractPipe *Coordinator::getPipe() const {
+    return this->pipe;
+}

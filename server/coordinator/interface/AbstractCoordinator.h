@@ -13,6 +13,7 @@
 #include "../../config/interface/AbstractConfigReader.h"
 #include "../../flyClient/interface/AbstractFlyClientFactory.h"
 #include "../../flyObj/interface/AbstractFlyObjFactory.h"
+#include "../../pipe/interface/AbstractPipe.h"
 
 class AbstractFlyServer;
 class AbstractNetHandler;
@@ -39,6 +40,9 @@ public:
     virtual AbstractFlyObjFactory *getFlyObjSkipListFactory() const = 0;
     virtual AbstractFlyObjFactory *getFlyObjIntSetFactory() const = 0;
     virtual AbstractFlyObjFactory *getFlyObjStringFactory() const = 0;
+
+    /** Pipe */
+    virtual AbstractPipe *getPipe() const = 0;
 };
 
 #endif //FLYDB_ABSTRACTCOORDINATOR_H
