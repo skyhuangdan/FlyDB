@@ -20,6 +20,7 @@
 #include "../db/interface/AbstractFlyDB.h"
 #include "../db/interface/AbstractFlyDBFactory.h"
 #include "../utils/MiscTool.h"
+#include "FlyServerDef.h"
 
 void sigShutDownHandlers(int sig);
 int serverCron(const AbstractCoordinator *coordinator,
@@ -147,6 +148,13 @@ private:
      **/
      pid_t fdbChildPid = -1;
      bool fdbBGSaveScheduled = false;
+     time_t bgsaveLastTryTime;
+
+    /**
+     * Pipe: child -> parent info sharing.
+     **/
+    int childInfoPipe[2];         /** Pipe used to write the child_info_data. */
+    PipeData childInfoData;
 
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;

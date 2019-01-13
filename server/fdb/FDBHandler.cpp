@@ -33,6 +33,11 @@ FDBHandler::~FDBHandler() {
 }
 
 int FDBHandler::saveBackgroud() {
+    AbstractFlyServer *flyServer = this->coordinator->getFlyServer();
+    if (-1 != flyServer->getAofChildPid()
+        || -1 != flyServer->getFdbChildPid()) {
+        return -1;
+    }
 
 }
 
