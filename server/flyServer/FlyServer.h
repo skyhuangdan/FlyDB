@@ -154,7 +154,6 @@ private:
      * Pipe: child -> parent info sharing.
      **/
     int childInfoPipe[2];         /** Pipe used to write the child_info_data. */
-    PipeData childInfoData;
 
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;
