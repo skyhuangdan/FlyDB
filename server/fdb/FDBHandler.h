@@ -22,7 +22,8 @@ public:
     ~FDBHandler();
     int load(FDBSaveInfo *fdbSaveInfo);
     int save(const FDBSaveInfo *fdbSaveInfo);
-    int saveBackgroud();
+    int backgroundSave();
+    void backgroundSaveDone();
     int saveKeyValuePair(Fio *fio,
                          std::string &key,
                          FlyObj *val,

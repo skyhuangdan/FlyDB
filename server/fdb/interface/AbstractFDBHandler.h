@@ -16,7 +16,9 @@ public:
 
     virtual int save(const FDBSaveInfo *fdbSaveInfo) = 0;
 
-    virtual int saveBackgroud() = 0;
+    virtual int backgroundSave() = 0;
+
+    virtual void backgroundSaveDone() = 0;
 
     virtual int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) = 0;
 

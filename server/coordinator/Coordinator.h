@@ -33,6 +33,9 @@ public:
 
     /** Pipe */
     AbstractPipe *getPipe() const;
+    
+    /** LogHandler */
+    AbstractLogHandler *getLogHandler() const;
 
 private:
     AbstractNetHandler *netHandler;
@@ -52,6 +55,11 @@ private:
      * Pipe: child -> parent info sharing
      **/
     AbstractPipe *pipe = NULL;
+    
+    /**
+     * logHandler
+     */
+     AbstractLogHandler *logHandler = NULL;
 };
 
 

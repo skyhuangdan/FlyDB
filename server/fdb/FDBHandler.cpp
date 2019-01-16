@@ -33,7 +33,7 @@ FDBHandler::~FDBHandler() {
 
 }
 
-int FDBHandler::saveBackgroud() {
+int FDBHandler::backgroundSave() {
     AbstractFlyServer *flyServer = this->coordinator->getFlyServer();
     if (-1 != flyServer->getAofChildPid()
         || -1 != flyServer->getFdbChildPid()) {
@@ -46,6 +46,7 @@ int FDBHandler::saveBackgroud() {
     pid_t childPid = -1;
     if (0 == (childPid = fork())) {
         /** Child */
+        flyServer->closeListeningSockets(false);
 
         // todo: saveInfo
         FDBSaveInfo saveInfo = FDBSaveInfo();
@@ -72,6 +73,11 @@ int FDBHandler::saveBackgroud() {
     }
 
     return 1;
+}
+
+void FDBHandler::backgroundSaveDone() {
+    this->coordinator->getFlyServer()->setFdbChildPid(-1);
+    // todo: complete
 }
 
 int FDBHandler::save(const FDBSaveInfo *fdbSaveInfo) {

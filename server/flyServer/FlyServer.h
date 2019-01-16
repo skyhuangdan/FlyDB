@@ -52,6 +52,8 @@ public:
     size_t getClientMaxQuerybufLen() const;
     int64_t getStatNetInputBytes() const;
     void addToStatNetInputBytes(int64_t size);
+    void closeListeningSockets(bool unlinkUnixSocket);
+
     /**
      * flydb
      */
@@ -74,6 +76,7 @@ public:
      */
     pid_t getFdbChildPid() const;
     void setFdbChildPid(pid_t fdbChildPid);
+    bool haveFdbChildPid() const;
     bool isFdbBGSaveScheduled() const;
     void setFdbBGSaveScheduled(bool fdbBGSaveScheduled);
 
@@ -82,6 +85,7 @@ public:
      **/
     pid_t getAofChildPid() const;
     void setAofChildPid(pid_t aofChildPid);
+    bool haveAofChildPid() const;
 
 private:
     /** 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）*/

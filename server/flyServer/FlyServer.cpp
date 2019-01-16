@@ -155,6 +155,25 @@ void FlyServer::addToStatNetInputBytes(int64_t size) {
     this->clientMaxQuerybufLen += size;
 }
 
+void FlyServer::closeListeningSockets(bool unlinkUnixSocket) {
+    // 关闭所有监听连接socket
+    int ipCount = this->ipfd.size();
+    for (int i = 0; i < ipCount; i++) {
+        close(this->ipfd[i]);
+    }
+
+    // 关闭unix socket file descriptor
+    if (-1 != this->usfd) {
+        close(this->usfd);
+    }
+    if (unlinkUnixSocket && NULL != this->unixsocket) {
+        this->logHandler->logNotice("Removing the unix socket file.");
+        unlink(this->unixsocket);
+    }
+
+    // todo cluster enabled
+}
+
 void FlyServer::setMaxClientLimit() {
     this->maxClients = CONFIG_DEFAULT_MAX_CLIENTS;
     int maxFiles = this->maxClients + CONFIG_MIN_RESERVED_FDS;
@@ -442,12 +461,20 @@ void FlyServer::setFdbChildPid(pid_t fdbChildPid) {
     this->fdbChildPid = fdbChildPid;
 }
 
+bool FlyServer::haveFdbChildPid() const {
+    return -1 != this->fdbChildPid;
+}
+
 pid_t FlyServer::getAofChildPid() const {
     return this->aofChildPid;
 }
 
 void FlyServer::setAofChildPid(pid_t aofChildPid) {
     this->aofChildPid = aofChildPid;
+}
+
+bool FlyServer::haveAofChildPid() const {
+    return -1 != this->aofChildPid;
 }
 
 bool FlyServer::isFdbBGSaveScheduled() const {
@@ -486,6 +513,34 @@ int serverCron(const AbstractCoordinator *coordinator,
         FDBSaveInfo *saveInfo = new FDBSaveInfo();
         coordinator->getFdbHandler()->save(saveInfo);
         delete saveInfo;
+    }
+
+    // 如果有fdb或者aof子进程存在的话
+    if (flyServer->haveAofChildPid() || flyServer->haveFdbChildPid()) {
+        int statloc;
+        pid_t pid = -1;
+
+        if ((pid = wait3(&statloc, WNOHANG, NULL)) != 0) {
+            if (-1 == pid) {
+                coordinator->getLogHandler()->logWarning(
+                        "wait3() returned an error: %s. "
+                        "rdb_child_pid = %d, aof_child_pid = %d",
+                        strerror(errno),
+                        flyServer->getFdbChildPid(),
+                        flyServer->getAofChildPid());
+            } else if (flyServer->getFdbChildPid() == pid) {
+                coordinator->getFdbHandler()->backgroundSaveDone();
+            } else if (flyServer->getAofChildPid() == pid) {
+                // todo:
+            } else {
+                // todo:
+
+            }
+
+            coordinator->getPipe()->closeAll();
+        } else {
+
+        }
     }
 
     static int times = 0;

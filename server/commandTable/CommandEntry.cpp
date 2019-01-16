@@ -563,7 +563,7 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
         }
     }
 
-    if (coordinator->getFdbHandler()->saveBackgroud() > 0) {
+    if (coordinator->getFdbHandler()->backgroundSave() > 0) {
         flyClient->addReply("Background saving started");
     } else {
         flyClient->addReply("error to do fdb");

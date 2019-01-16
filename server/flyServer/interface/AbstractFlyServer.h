@@ -44,6 +44,8 @@ public:
 
     virtual void addToStatNetInputBytes(int64_t size) = 0;
 
+    virtual void closeListeningSockets(bool unlinkUnixSocket) = 0;
+
     virtual void addToClientsPendingToWrite(AbstractFlyClient *flyClient) = 0;
 
     virtual int handleClientsWithPendingWrites() = 0;
@@ -63,6 +65,8 @@ public:
     virtual void setShutdownASAP(bool shutdownASAP) = 0;
 
     virtual pid_t getFdbChildPid() const = 0;
+    
+    virtual bool haveFdbChildPid() const = 0;
 
     virtual void setFdbChildPid(pid_t fdbChildPid) = 0;
 
@@ -71,6 +75,8 @@ public:
     virtual void setFdbBGSaveScheduled(bool fdbBGSaveScheduled) = 0;
 
     virtual pid_t getAofChildPid() const = 0;
+    
+    virtual bool haveAofChildPid() const = 0;
 
     virtual void setAofChildPid(pid_t aofChildPid) = 0;
 };

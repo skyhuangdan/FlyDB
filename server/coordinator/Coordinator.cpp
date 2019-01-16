@@ -61,6 +61,8 @@ Coordinator::Coordinator() {
     // pip init
     this->pipe = new Pipe(this);
 
+    /** log handler */
+    this->logHandler = logFactory->getLogger();
 }
 
 Coordinator::~Coordinator() {
@@ -117,4 +119,8 @@ AbstractFlyObjFactory *Coordinator::getFlyObjStringFactory() const {
 
 AbstractPipe *Coordinator::getPipe() const {
     return this->pipe;
+}
+
+AbstractLogHandler *Coordinator::getLogHandler() const {
+    return this->logHandler;
 }
