@@ -56,6 +56,12 @@ enum FDBLoadType {
     FDB_LOAD_OBJECT
 };
 
+enum FDBChildType {
+    RDB_CHILD_TYPE_NONE = 0,
+    RDB_CHILD_TYPE_DISK = 1,
+    RDB_CHILD_TYPE_SOCKET = 2
+};
+
 const int RDB_SAVE_NONE = 0;
 const int RDB_SAVE_AOF_PREAMBLE = 1 << 0;
 

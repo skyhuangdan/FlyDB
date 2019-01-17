@@ -23,7 +23,7 @@ public:
     int load(FDBSaveInfo *fdbSaveInfo);
     int save(const FDBSaveInfo *fdbSaveInfo);
     int backgroundSave();
-    void backgroundSaveDone();
+    void backgroundSaveDone(int exitCode, int bySignal);
     int saveKeyValuePair(Fio *fio,
                          std::string &key,
                          FlyObj *val,

@@ -40,6 +40,8 @@ int FDBHandler::backgroundSave() {
         return -1;
     }
 
+    flyServer->setBgsaveLastTryTime(time(NULL));
+
     // 打开管道
     this->coordinator->getPipe()->open();
 
@@ -68,6 +70,7 @@ int FDBHandler::backgroundSave() {
         }
 
         flyServer->setFdbChildPid(childPid);
+        flyServer->setFdbDiskChildType();
         this->logHandler->logNotice("Background saving started by pid %d",
                                     childPid);
     }
@@ -75,8 +78,30 @@ int FDBHandler::backgroundSave() {
     return 1;
 }
 
-void FDBHandler::backgroundSaveDone() {
-    this->coordinator->getFlyServer()->setFdbChildPid(-1);
+void FDBHandler::backgroundSaveDone(int exitCode, int bySignal) {
+    AbstractFlyServer *flyServer = this->coordinator->getFlyServer();
+
+    int status = 1;
+    if (0 == bySignal && 0 == exitCode) {
+        this->coordinator->getLogHandler()->logNotice(
+                "Background saving terminated with success");
+        status = 1;
+    } else if (0 == bySignal && 0 != exitCode) {
+        this->coordinator->getLogHandler()->logWarning(
+                "Background saving error");
+        status = -1;
+    } else {
+        this->coordinator->getLogHandler()->logWarning(
+                "Background saving terminated by signal %d", bySignal);
+        /**
+         * SIGUSR1被放入白名单中了，这样我们可以正常杀死child而不至于产生错误
+         **/
+        if (SIGUSR1 != bySignal) {
+            status = -1;
+        }
+    }
+
+    flyServer->setFdbBgSaveDone(status);
     // todo: complete
 }
 

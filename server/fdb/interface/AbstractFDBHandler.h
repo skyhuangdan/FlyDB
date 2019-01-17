@@ -18,7 +18,7 @@ public:
 
     virtual int backgroundSave() = 0;
 
-    virtual void backgroundSaveDone() = 0;
+    virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
 
     virtual int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) = 0;
 

@@ -547,8 +547,8 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
 
     /**
      * 如果有aof持久化子进程存在，则说明处于fdb过程中，
-     * 如果是执行fdb子进程调度，则标记schdule flag,
-     * 否则，如果是执行进行fdb, 则不允许执行
+     * 如果是执行fdb子进程调度，则标记schdule flag, 以便于后续在serverCron函数中执行fdb操作
+     * 否则，如果是直接进行fdb, 则不允许执行
      **/
     if (-1 != flyServer->getAofChildPid()) {
         if (!schedule) {

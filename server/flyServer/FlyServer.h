@@ -10,6 +10,7 @@
 #include <string>
 #include <list>
 #include <pthread.h>
+#include <vector>
 #include "../event/EventLoop.h"
 #include "../../def.h"
 #include "../log/FileLogHandler.h"
@@ -79,6 +80,14 @@ public:
     bool haveFdbChildPid() const;
     bool isFdbBGSaveScheduled() const;
     void setFdbBGSaveScheduled(bool fdbBGSaveScheduled);
+    void setBgsaveLastTryTime(time_t bgsaveLastTryTime);
+    bool canBgsaveNow();
+    int getLastBgsaveStatus() const;
+    void setLastBgsaveStatus(int lastBgsaveStatus);
+    int getFdbChildType() const;
+    void setFdbDiskChildType();
+    void setFdbNoneChildType();
+    void setFdbBgSaveDone(int status);
 
     /**
      * AOF持久化
@@ -154,6 +163,9 @@ private:
      pid_t fdbChildPid = -1;
      bool fdbBGSaveScheduled = false;
      time_t bgsaveLastTryTime;
+     int lastBgsaveStatus = 1;
+     int fdbChildType = RDB_CHILD_TYPE_NONE;
+     std::vector<saveParam> saveParams;
 
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;
