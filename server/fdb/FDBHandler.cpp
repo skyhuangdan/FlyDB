@@ -50,15 +50,13 @@ int FDBHandler::backgroundSave() {
         /** Child */
         flyServer->closeListeningSockets(false);
 
-        // todo: saveInfo
-        FDBSaveInfo saveInfo = FDBSaveInfo();
-        int res = this->save(&saveInfo);
+        int res = this->save();
         if (1 == res) {
             // todo: cowSize = 0 now, need to resize
             this->coordinator->getPipe()->sendInfo(PIPE_TYPE_RDB, 0);
         }
 
-        exit(res == 1 ? 1 : 0);
+        exit(res == 1 ? 0 : 1);
     } else {
         /** Parent */
         if (-1 == childPid) {
@@ -102,12 +100,13 @@ void FDBHandler::backgroundSaveDone(int exitCode, int bySignal) {
     }
 
     flyServer->setFdbBgSaveDone(status);
-    // todo: complete
 }
 
-int FDBHandler::save(const FDBSaveInfo *fdbSaveInfo) {
+int FDBHandler::save() {
     char tmpfile[256];
     char cwd[MAXPATHLEN];
+    // todo: complete fdbSaveInfo
+    FDBSaveInfo *fdbSaveInfo = new FDBSaveInfo();
 
     snprintf(tmpfile, sizeof(tmpfile), "temp-%d.rdb", getpid());
     FILE *fp = fopen(tmpfile, "w");
@@ -153,6 +152,10 @@ int FDBHandler::save(const FDBSaveInfo *fdbSaveInfo) {
         return -1;
     }
 
+    // 设置save done状态
+    this->coordinator->getFlyServer()->setFdbSaveDone();
+
+    delete fdbSaveInfo;
     return 1;
 }
 
@@ -597,8 +600,9 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
                             NULL,
                             10);
                 } else {
-                    this->logHandler->logDebug("Unrecognized RDB AUX field: '%s'",
-                                               auxkey->getPtr());
+                    this->logHandler->logDebug(
+                            "Unrecognized RDB AUX field: '%s'",
+                            auxkey->getPtr());
                 }
 
             }
@@ -613,8 +617,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
         // load key-value, and insert into flydb
         std::string *key = NULL;
         FlyObj *val = NULL;
-        if (NULL ==
-            (key = loadStringPlain(fio))) {
+        if (NULL == (key = loadStringPlain(fio))) {
             fdbExitReportCorrupt("Unexpected EOF reading RDB file");
             return -1;
         }
@@ -943,6 +946,19 @@ int FDBHandler::checkHeader(Fio *fio) {
     return version;
 }
 
-void FDBHandler::checkThenExit(int linenum, char *reason, ...) {
+void FDBHandler::checkThenExit(int lineNum, char *reason, ...) {
+    va_list ap;
+    char msg[1024];
+    int len;
 
+    len = snprintf(msg,
+                   sizeof(msg),
+                   "Internal error in RDB reading function at rdb.c:%d -> ",
+                   lineNum);
+    va_start(ap, reason);
+    vsnprintf(msg + len, sizeof(msg) - len, reason, ap);
+    va_end(ap);
+    this->logHandler->logWarning(msg);
+
+    exit(1);
 }

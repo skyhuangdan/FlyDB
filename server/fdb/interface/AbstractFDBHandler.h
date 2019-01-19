@@ -14,7 +14,7 @@ class AbstractFDBHandler {
 public:
     virtual int load(FDBSaveInfo *fdbSaveInfo) = 0;
 
-    virtual int save(const FDBSaveInfo *fdbSaveInfo) = 0;
+    virtual int save() = 0;
 
     virtual int backgroundSave() = 0;
 

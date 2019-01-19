@@ -21,7 +21,6 @@
 #include "../db/interface/AbstractFlyDB.h"
 #include "../db/interface/AbstractFlyDBFactory.h"
 #include "../utils/MiscTool.h"
-#include "FlyServerDef.h"
 #include "../pipe/Pipe.h"
 
 void sigShutDownHandlers(int sig);
@@ -36,7 +35,7 @@ public:
     FlyServer(const AbstractCoordinator *coordinator);
     ~FlyServer();
     void init(ConfigCache *configCache);                  // 初始化函数
-    pid_t getPID();                                         // 获取server id
+    pid_t getPID();                                       // 获取server id
     std::string getVersion();                             // 获取版本号
     int dealWithCommand(AbstractFlyClient *flyclient);    // 处理命令
     int getHz() const;
@@ -80,6 +79,9 @@ public:
     bool haveFdbChildPid() const;
     bool isFdbBGSaveScheduled() const;
     void setFdbBGSaveScheduled(bool fdbBGSaveScheduled);
+    time_t getLastSaveTime() const;
+    bool lastSaveTimeGapGreaterThan(time_t gap) const;
+    void setLastSaveTime(time_t lastSaveTime);
     void setBgsaveLastTryTime(time_t bgsaveLastTryTime);
     bool canBgsaveNow();
     int getLastBgsaveStatus() const;
@@ -88,6 +90,11 @@ public:
     void setFdbDiskChildType();
     void setFdbNoneChildType();
     void setFdbBgSaveDone(int status);
+    void setFdbSaveDone();
+    int getSaveParamsCount() const;
+    const saveParam* getSaveParam(int pos) const;
+    uint64_t getDirty() const;
+    uint64_t addDirty(uint64_t count);
 
     /**
      * AOF持久化
@@ -95,6 +102,7 @@ public:
     pid_t getAofChildPid() const;
     void setAofChildPid(pid_t aofChildPid);
     bool haveAofChildPid() const;
+
 
 private:
     /** 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）*/
@@ -106,6 +114,7 @@ private:
     void loadDataFromDisk();
     void loadFromConfig(ConfigCache *configCache);
     void setupSignalHandlers();
+    void initSaveParams();
 
     /** General */
     pid_t pid;                                          // 运行server的线程标识
@@ -162,10 +171,12 @@ private:
      **/
      pid_t fdbChildPid = -1;
      bool fdbBGSaveScheduled = false;
-     time_t bgsaveLastTryTime;
+     time_t lastSaveTime = time(NULL);
+     time_t bgsaveLastTryTime = time(NULL);
      int lastBgsaveStatus = 1;
      int fdbChildType = RDB_CHILD_TYPE_NONE;
      std::vector<saveParam> saveParams;
+     uint64_t dirty = 0;
 
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;

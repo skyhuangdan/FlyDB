@@ -21,7 +21,7 @@ public:
                uint64_t maxProcessingChunk);
     ~FDBHandler();
     int load(FDBSaveInfo *fdbSaveInfo);
-    int save(const FDBSaveInfo *fdbSaveInfo);
+    int save();
     int backgroundSave();
     void backgroundSaveDone(int exitCode, int bySignal);
     int saveKeyValuePair(Fio *fio,

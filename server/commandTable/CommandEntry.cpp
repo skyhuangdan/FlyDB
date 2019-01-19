@@ -190,7 +190,8 @@ void getCommand(const AbstractCoordinator* coordinator,
     flyClient->addReply(val->c_str(), val->length());
 }
 
-void setGenericCommand(AbstractFlyClient *flyClient,
+void setGenericCommand(const AbstractCoordinator *coordinator,
+                       AbstractFlyClient *flyClient,
                        std::string *key,
                        FlyObj *val,
                        int64_t expireMilli) {
@@ -201,6 +202,7 @@ void setGenericCommand(AbstractFlyClient *flyClient,
         return;
     }
 
+    coordinator->getFlyServer()->addDirty(1);
     flyClient->addReply("set OK!");
 }
 
@@ -221,7 +223,7 @@ void setCommand(const AbstractCoordinator* coordinator,
     (flyClient->getArgv()[1]->getPtr());
     FlyObj *val = flyClient->getArgv()[2];
 
-    setGenericCommand(flyClient, key, val, -1);
+    setGenericCommand(coordinator, flyClient, key, val, -1);
 }
 
 void setExCommand(const AbstractCoordinator* coordinator,
@@ -246,7 +248,7 @@ void setExCommand(const AbstractCoordinator* coordinator,
             *(reinterpret_cast<int*>(flyClient->getArgv()[3]->getPtr()));
     int64_t expireMilli = (-1 == expireSeconds ? -1 : expireSeconds * 1000);
 
-    setGenericCommand(flyClient, key, val, expireMilli);
+    setGenericCommand(coordinator, flyClient, key, val, expireMilli);
 }
 
 void psetExCommand(const AbstractCoordinator* coordinator,
@@ -268,7 +270,7 @@ void psetExCommand(const AbstractCoordinator* coordinator,
     int64_t expireMilli =
             *(reinterpret_cast<int*>(flyClient->getArgv()[3]->getPtr()));
 
-    setGenericCommand(flyClient, key, val, expireMilli);
+    setGenericCommand(coordinator, flyClient, key, val, expireMilli);
 }
 
 void expireCommand(const AbstractCoordinator* coordinator,
@@ -324,7 +326,7 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
         }
     }
 
-    char buf[1024];
+    coordinator->getFlyServer()->addDirty(flyClient->getArgc() - 2);
     flyClient->addReply("push OK!");
 }
 
@@ -367,6 +369,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
                          (flyClient->getArgv()[1]->getPtr()));
     }
 
+    coordinator->getFlyServer()->addDirty(flyClient->getArgc() - 2);
     flyClient->addReply("push OK!");
 }
 
@@ -395,10 +398,12 @@ void popSortCommand(const AbstractCoordinator* coordinator,
     list->deleteNode(
             reinterpret_cast<std::string *>(flyClient->getArgv()[3]->getPtr()));
 
+    coordinator->getFlyServer()->addDirty(1);
     flyClient->addReply("status OK!");
 }
 
-void popGenericCommand(AbstractFlyClient *flyClient,
+void popGenericCommand(const AbstractCoordinator *coordinator,
+                       AbstractFlyClient *flyClient,
                        ListLocation location) {
     if (NULL == flyClient) {
         return;
@@ -426,17 +431,18 @@ void popGenericCommand(AbstractFlyClient *flyClient,
         list->pop_back();
     }
 
+    coordinator->getFlyServer()->addDirty(1);
     flyClient->addReply("status OK!");
 }
 
 void rpopCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
-    popGenericCommand(flyClient, LIST_HEAD);
+    popGenericCommand(coordinator, flyClient, LIST_HEAD);
 }
 
 void lpopCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
-    popGenericCommand(flyClient, LIST_TAIL);
+    popGenericCommand(coordinator, flyClient, LIST_TAIL);
 }
 
 void hsetCommand(const AbstractCoordinator* coordinator,
@@ -445,8 +451,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
         return;
     }
 
-    // 如果参数数量 != 2n+1，直接返回
-    char buf[100];
+    // 如果参数数量 != 2n，直接返回
     uint8_t argc = flyClient->getArgc();
     if (argc < 2 || argc % 2 == 1) {
         flyClient->addReply("parameters error!");
@@ -470,6 +475,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
         dict->addEntry(key, val);
     }
 
+    coordinator->getFlyServer()->addDirty(argc / 2 - 1);
     flyClient->addReply("status OK!");
 }
 
@@ -511,10 +517,7 @@ void hgetCommand(const AbstractCoordinator* coordinator,
 void saveCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
     AbstractFDBHandler *fdbHandler = coordinator->getFdbHandler();
-    // todo: saveInfo
-    FDBSaveInfo *saveInfo = new FDBSaveInfo();
-    fdbHandler->save(saveInfo);
-    delete saveInfo;
+    fdbHandler->save();
 }
 
 /** BGSAVE [SCHEDULE] */
@@ -540,7 +543,7 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
     }
 
     /** 如果有fdb持久化子进程存在，则说明处于fdb过程中，不允许再次执行fdb */
-    if (-1 != flyServer->getFdbChildPid()) {
+    if (flyServer->haveFdbChildPid()) {
         flyClient->addReply("Background save already in progress");
         return;
     }
@@ -550,7 +553,7 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
      * 如果是执行fdb子进程调度，则标记schdule flag, 以便于后续在serverCron函数中执行fdb操作
      * 否则，如果是直接进行fdb, 则不允许执行
      **/
-    if (-1 != flyServer->getAofChildPid()) {
+    if (flyServer->haveAofChildPid()) {
         if (!schedule) {
             flyClient->addReply("An AOF log rewriting in progress: can't BGSAVE"
                                 " right now. Use BGSAVE SCHEDULE in order to "

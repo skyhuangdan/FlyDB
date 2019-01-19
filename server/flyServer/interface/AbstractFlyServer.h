@@ -9,6 +9,7 @@
 #include "../../net/interface/AbstractNetHandler.h"
 #include "../../db/interface/AbstractFlyDB.h"
 #include "../../config/ConfigCache.h"
+#include "../FlyServerDef.h"
 
 class AbstractFlyServer {
 public:
@@ -76,6 +77,12 @@ public:
 
     virtual bool canBgsaveNow() = 0;
 
+    virtual time_t getLastSaveTime() const = 0;
+
+    virtual bool lastSaveTimeGapGreaterThan(time_t gap) const = 0;
+
+    virtual void setLastSaveTime(time_t lastSaveTime) = 0;
+
     virtual void setBgsaveLastTryTime(time_t bgsaveLastTryTime) = 0;
 
     virtual int getLastBgsaveStatus() const = 0;
@@ -89,6 +96,16 @@ public:
     virtual void setFdbNoneChildType() = 0;
 
     virtual void setFdbBgSaveDone(int status) = 0;
+
+    virtual void setFdbSaveDone() = 0;
+
+    virtual int getSaveParamsCount() const = 0;
+
+    virtual const saveParam* getSaveParam(int pos) const = 0;
+
+    virtual uint64_t getDirty() const = 0;
+
+    virtual uint64_t addDirty(uint64_t count) = 0;
 
     virtual pid_t getAofChildPid() const = 0;
     
