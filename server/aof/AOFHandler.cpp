@@ -6,29 +6,29 @@
 
 AOFHandler::AOFHandler(AbstractCoordinator *coordinator,
                        char *fileName,
-                       AOFState aofState) {
+                       AOFState state) {
     this->coordinator = coordinator;
     this->fileName = fileName;
-    this->aofState = aofState;
+    this->state = state;
 }
 
-pid_t AOFHandler::getAofChildPid() const {
-    return this->aofChildPid;
+pid_t AOFHandler::getChildPid() const {
+    return this->childPid;
 }
 
-void AOFHandler::setAofChildPid(pid_t aofChildPid) {
-    this->aofChildPid = aofChildPid;
+void AOFHandler::setChildPid(pid_t childPid) {
+    this->childPid = childPid;
 }
 
-bool AOFHandler::haveAofChildPid() const {
-    return -1 != this->aofChildPid;
+bool AOFHandler::haveChildPid() const {
+    return -1 != this->childPid;
 }
 
-bool AOFHandler::IsAofStateOn() const {
-    return this->aofState == AOF_ON;
+bool AOFHandler::IsStateOn() const {
+    return this->state == AOF_ON;
 }
 
-void AOFHandler::setAofState(AOFState aofState) {
-    this->aofState = aofState;
+void AOFHandler::setState(AOFState aofState) {
+    this->state = aofState;
 }
 

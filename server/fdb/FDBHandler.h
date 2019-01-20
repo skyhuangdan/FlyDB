@@ -20,7 +20,7 @@ public:
                char *filename,
                uint64_t maxProcessingChunk);
     ~FDBHandler();
-    int load(FDBSaveInfo *fdbSaveInfo);
+    int load(FDBSaveInfo *saveInfo);
     int save();
     int backgroundSave();
     void backgroundSaveDone(int exitCode, int bySignal);
@@ -30,15 +30,11 @@ public:
                          int64_t expireTime);
     ssize_t saveRawString(Fio *fio, const std::string &str);
     void deleteTempFile(pid_t pid);
-
-    /**
-     *  fdb相关
-     */
-    pid_t getFdbChildPid() const;
-    void setFdbChildPid(pid_t fdbChildPid);
-    bool haveFdbChildPid() const;
-    bool isFdbBGSaveScheduled() const;
-    void setFdbBGSaveScheduled(bool fdbBGSaveScheduled);
+    pid_t getChildPid() const;
+    void setChildPid(pid_t fdbChildPid);
+    bool haveChildPid() const;
+    bool isBGSaveScheduled() const;
+    void setBGSaveScheduled(bool fdbBGSaveScheduled);
     time_t getLastSaveTime() const;
     bool lastSaveTimeGapGreaterThan(time_t gap) const;
     void setLastSaveTime(time_t lastSaveTime);
@@ -46,16 +42,15 @@ public:
     bool canBgsaveNow();
     int getLastBgsaveStatus() const;
     void setLastBgsaveStatus(int lastBgsaveStatus);
-    int getFdbChildType() const;
-    void setFdbDiskChildType();
-    void setFdbNoneChildType();
-    void setFdbBgSaveDone(int status);
-    void setFdbSaveDone();
+    int getChildType() const;
+    void setDiskChildType();
+    void setNoneChildType();
+    void setBgSaveDone(int status);
+    void setSaveDone();
     int getSaveParamsCount() const;
     const saveParam* getSaveParam(int pos) const;
     uint64_t getDirty() const;
     uint64_t addDirty(uint64_t count);
-
 
 private:
     static void dbScan(void *priv, std::string *key, FlyObj *val);
@@ -80,7 +75,7 @@ private:
     int saveType(Fio *fio, unsigned char type);
     int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo);
     void startToLoad();
-    int loadFromFile(FILE *fp, FDBSaveInfo *fdbSaveInfo);
+    int loadFromFile(FILE *fp, FDBSaveInfo *saveInfo);
     void stopLoad();
     char loadChar(Fio *fio);
     uint8_t loadUint8(Fio *fio);
@@ -105,14 +100,13 @@ private:
     uint64_t loadTotalBytes = 0;
     off_t maxProcessingChunk = 0;
     uint64_t cksum = 0;
-
     uint64_t dirty = 0;
-    pid_t fdbChildPid = -1;
-    bool fdbBGSaveScheduled = false;
+    pid_t childPid = -1;
+    bool bgSaveScheduled = false;
     time_t lastSaveTime = time(NULL);
     time_t bgsaveLastTryTime = time(NULL);
     int lastBgsaveStatus = 1;
-    int fdbChildType = RDB_CHILD_TYPE_NONE;
+    int childType = RDB_CHILD_TYPE_NONE;
     std::vector<saveParam> saveParams;
 
     AbstractLogHandler *logHandler;

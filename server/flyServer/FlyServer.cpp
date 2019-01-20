@@ -282,7 +282,7 @@ int FlyServer::listenToPort() {
 
 void FlyServer::loadDataFromDisk() {
     // 如果开启了AOF，则优先从AOF中加载持久化数据，否则从FDB中加载
-    if (this->coordinator->getAofHandler()->IsAofStateOn()) {
+    if (this->coordinator->getAofHandler()->IsStateOn()) {
         // load from append only fiile
     } else {
         // load from fdb
@@ -486,8 +486,8 @@ int serverCron(const AbstractCoordinator *coordinator,
     }
 
     // 如果有fdb或者aof子进程存在的话
-    if (coordinator->getAofHandler()->haveAofChildPid()
-        || coordinator->getFdbHandler()->haveFdbChildPid()) {
+    if (coordinator->getAofHandler()->haveChildPid()
+        || coordinator->getFdbHandler()->haveChildPid()) {
         int statloc;
         pid_t pid = -1;
 
@@ -503,12 +503,12 @@ int serverCron(const AbstractCoordinator *coordinator,
                         "wait3() returned an error: %s. "
                         "rdb_child_pid = %d, aof_child_pid = %d",
                         strerror(errno),
-                        coordinator->getFdbHandler()->getFdbChildPid(),
-                        coordinator->getAofHandler()->getAofChildPid());
-            } else if (coordinator->getFdbHandler()->getFdbChildPid() == pid) {
+                        coordinator->getFdbHandler()->getChildPid(),
+                        coordinator->getAofHandler()->getChildPid());
+            } else if (coordinator->getFdbHandler()->getChildPid() == pid) {
                 coordinator->getFdbHandler()->backgroundSaveDone(
                         exitCode, bySignal);
-            } else if (coordinator->getAofHandler()->getAofChildPid() == pid) {
+            } else if (coordinator->getAofHandler()->getChildPid() == pid) {
                 // todo:
             } else {
                 coordinator->getLogHandler()->logWarning(
@@ -538,14 +538,14 @@ int serverCron(const AbstractCoordinator *coordinator,
     }
 
     // 处理被AOF延迟了的FDB操作
-    if (!coordinator->getFdbHandler()->haveFdbChildPid()
-        && !coordinator->getAofHandler()->haveAofChildPid()
-        && coordinator->getFdbHandler()->isFdbBGSaveScheduled()
+    if (!coordinator->getFdbHandler()->haveChildPid()
+        && !coordinator->getAofHandler()->haveChildPid()
+        && coordinator->getFdbHandler()->isBGSaveScheduled()
         && coordinator->getFdbHandler()->canBgsaveNow()
         && 1 == coordinator->getFdbHandler()->getLastBgsaveStatus()) {
         // fdb被成功执行了，则下次不再schedule
         if (1 == coordinator->getFdbHandler()->backgroundSave()) {
-            coordinator->getFdbHandler()->setFdbBGSaveScheduled(false);
+            coordinator->getFdbHandler()->setBGSaveScheduled(false);
         }
     }
 

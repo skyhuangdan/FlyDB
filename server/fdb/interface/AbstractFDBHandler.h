@@ -31,15 +31,15 @@ public:
 
     virtual void deleteTempFile(pid_t pid) = 0;
 
-    virtual pid_t getFdbChildPid() const = 0;
+    virtual pid_t getChildPid() const = 0;
 
-    virtual bool haveFdbChildPid() const = 0;
+    virtual bool haveChildPid() const = 0;
 
-    virtual void setFdbChildPid(pid_t fdbChildPid) = 0;
+    virtual void setChildPid(pid_t fdbChildPid) = 0;
 
-    virtual bool isFdbBGSaveScheduled() const = 0;
+    virtual bool isBGSaveScheduled() const = 0;
 
-    virtual void setFdbBGSaveScheduled(bool fdbBGSaveScheduled) = 0;
+    virtual void setBGSaveScheduled(bool fdbBGSaveScheduled) = 0;
 
     virtual bool canBgsaveNow() = 0;
 
@@ -55,15 +55,15 @@ public:
 
     virtual void setLastBgsaveStatus(int lastBgsaveStatus) = 0;
 
-    virtual int getFdbChildType() const = 0;
+    virtual int getChildType() const = 0;
 
-    virtual void setFdbDiskChildType() = 0;
+    virtual void setDiskChildType() = 0;
 
-    virtual void setFdbNoneChildType() = 0;
+    virtual void setNoneChildType() = 0;
 
-    virtual void setFdbBgSaveDone(int status) = 0;
+    virtual void setBgSaveDone(int status) = 0;
 
-    virtual void setFdbSaveDone() = 0;
+    virtual void setSaveDone() = 0;
 
     virtual int getSaveParamsCount() const = 0;
 

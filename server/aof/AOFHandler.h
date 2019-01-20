@@ -10,18 +10,20 @@
 
 class AOFHandler : public AbstractAOFHandler {
 public:
-    AOFHandler(AbstractCoordinator *coordinator, char *fileName, AOFState aofState);
-    pid_t getAofChildPid() const;
-    void setAofChildPid(pid_t aofChildPid);
-    bool haveAofChildPid() const;
-    bool IsAofStateOn() const;
-    void setAofState(AOFState aofState);
+    AOFHandler(AbstractCoordinator *coordinator,
+               char *fileName,
+               AOFState state);
+    pid_t getChildPid() const;
+    void setChildPid(pid_t childPid);
+    bool haveChildPid() const;
+    bool IsStateOn() const;
+    void setState(AOFState aofState);
 
 private:
     AbstractCoordinator *coordinator;
     char *fileName;
-    AOFState aofState;
-    pid_t aofChildPid = -1;
+    AOFState state;
+    pid_t childPid = -1;
     std::string aofBuf;
 
 

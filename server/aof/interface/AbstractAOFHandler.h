@@ -11,15 +11,15 @@
 class AbstractAOFHandler {
 public:
 
-    virtual pid_t getAofChildPid() const = 0;
+    virtual pid_t getChildPid() const = 0;
 
-    virtual bool haveAofChildPid() const = 0;
+    virtual bool haveChildPid() const = 0;
 
-    virtual void setAofChildPid(pid_t aofChildPid) = 0;
+    virtual void setChildPid(pid_t childPid) = 0;
 
-    virtual bool IsAofStateOn() const = 0;
+    virtual bool IsStateOn() const = 0;
 
-    virtual void setAofState(AOFState aofState) = 0;
+    virtual void setState(AOFState state) = 0;
 };
 
 #endif //FLYDB_ABSTRACTAOFHANDLER_H

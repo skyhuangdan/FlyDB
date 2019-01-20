@@ -543,7 +543,7 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
     }
 
     /** 如果有fdb持久化子进程存在，则说明处于fdb过程中，不允许再次执行fdb */
-    if (coordinator->getFdbHandler()->haveFdbChildPid()) {
+    if (coordinator->getFdbHandler()->haveChildPid()) {
         flyClient->addReply("Background save already in progress");
         return;
     }
@@ -553,14 +553,14 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
      * 如果是执行fdb子进程调度，则标记schdule flag, 以便于后续在serverCron函数中执行fdb操作
      * 否则，如果是直接进行fdb, 则不允许执行
      **/
-    if (coordinator->getAofHandler()->haveAofChildPid()) {
+    if (coordinator->getAofHandler()->haveChildPid()) {
         if (!schedule) {
             flyClient->addReply("An AOF log rewriting in progress: can't BGSAVE"
                                 " right now. Use BGSAVE SCHEDULE in order to "
                                 "schedule a BGSAVE whenever possible.");
             return;
         } else {
-            coordinator->getFdbHandler()->setFdbBGSaveScheduled(true);
+            coordinator->getFdbHandler()->setBGSaveScheduled(true);
             flyClient->addReply("Background saving scheduled");
             return;
         }

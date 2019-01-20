@@ -39,8 +39,8 @@ FDBHandler::~FDBHandler() {
 
 int FDBHandler::backgroundSave() {
     AbstractFlyServer *flyServer = this->coordinator->getFlyServer();
-    if (-1 != coordinator->getAofHandler()->getAofChildPid()
-        || -1 != this->getFdbChildPid()) {
+    if (-1 != coordinator->getAofHandler()->getChildPid()
+        || -1 != this->getChildPid()) {
         return -1;
     }
 
@@ -71,8 +71,8 @@ int FDBHandler::backgroundSave() {
             return -1;
         }
 
-        this->setFdbChildPid(childPid);
-        this->setFdbDiskChildType();
+        this->setChildPid(childPid);
+        this->setDiskChildType();
         this->logHandler->logNotice("Background saving started by pid %d",
                                     childPid);
     }
@@ -101,7 +101,7 @@ void FDBHandler::backgroundSaveDone(int exitCode, int bySignal) {
         }
     }
 
-    this->setFdbBgSaveDone(status);
+    this->setBgSaveDone(status);
 }
 
 int FDBHandler::save() {
@@ -155,7 +155,7 @@ int FDBHandler::save() {
     }
 
     // 设置save done状态
-    this->setFdbSaveDone();
+    this->setSaveDone();
 
     delete fdbSaveInfo;
     return 1;
@@ -420,24 +420,24 @@ void FDBHandler::deleteTempFile(pid_t pid) {
     unlink(tmpfile);
 }
 
-pid_t FDBHandler::getFdbChildPid() const {
-    return this->fdbChildPid;
+pid_t FDBHandler::getChildPid() const {
+    return this->childPid;
 }
 
-void FDBHandler::setFdbChildPid(pid_t fdbChildPid) {
-    this->fdbChildPid = fdbChildPid;
+void FDBHandler::setChildPid(pid_t fdbChildPid) {
+    this->childPid = fdbChildPid;
 }
 
-bool FDBHandler::haveFdbChildPid() const {
-    return -1 != this->fdbChildPid;
+bool FDBHandler::haveChildPid() const {
+    return -1 != this->childPid;
 }
 
-bool FDBHandler::isFdbBGSaveScheduled() const {
-    return this->fdbBGSaveScheduled;
+bool FDBHandler::isBGSaveScheduled() const {
+    return this->bgSaveScheduled;
 }
 
-void FDBHandler::setFdbBGSaveScheduled(bool fdbBGSaveScheduled) {
-    this->fdbBGSaveScheduled = fdbBGSaveScheduled;
+void FDBHandler::setBGSaveScheduled(bool fdbBGSaveScheduled) {
+    this->bgSaveScheduled = fdbBGSaveScheduled;
 }
 
 void FDBHandler::setBgsaveLastTryTime(time_t bgsaveLastTryTime) {
@@ -457,25 +457,25 @@ void FDBHandler::setLastBgsaveStatus(int lastBgsaveStatus) {
     this->lastBgsaveStatus = lastBgsaveStatus;
 }
 
-int FDBHandler::getFdbChildType() const {
-    return this->fdbChildType;
+int FDBHandler::getChildType() const {
+    return this->childType;
 }
 
-void FDBHandler::setFdbDiskChildType() {
-    this->fdbChildType = RDB_CHILD_TYPE_DISK;
+void FDBHandler::setDiskChildType() {
+    this->childType = RDB_CHILD_TYPE_DISK;
 }
 
-void FDBHandler::setFdbNoneChildType() {
-    this->fdbChildType = RDB_CHILD_TYPE_NONE;
+void FDBHandler::setNoneChildType() {
+    this->childType = RDB_CHILD_TYPE_NONE;
 }
 
-void FDBHandler::setFdbBgSaveDone(int status) {
+void FDBHandler::setBgSaveDone(int status) {
     this->setLastBgsaveStatus(status);
-    this->setFdbChildPid(-1);
-    this->setFdbNoneChildType();
+    this->setChildPid(-1);
+    this->setNoneChildType();
 }
 
-void FDBHandler::setFdbSaveDone() {
+void FDBHandler::setSaveDone() {
     this->dirty = 0;
     this->lastSaveTime = time(NULL);
     this->lastBgsaveStatus = 1;
@@ -563,7 +563,7 @@ ssize_t FDBHandler::saveLen(Fio *fio, uint64_t len) {
     return nwritten;
 }
 
-int FDBHandler::load(FDBSaveInfo *fdbSaveInfo) {
+int FDBHandler::load(FDBSaveInfo *saveInfo) {
     // open fdb file with read premission
     FILE *fp;
     if (NULL == (fp = fopen(this->filename, "r"))) {
@@ -574,7 +574,7 @@ int FDBHandler::load(FDBSaveInfo *fdbSaveInfo) {
     this->startToLoad();
 
     // do real load
-    int res = loadFromFile(fp, fdbSaveInfo);
+    int res = loadFromFile(fp, saveInfo);
 
     // 读取完毕
     fclose(fp);
