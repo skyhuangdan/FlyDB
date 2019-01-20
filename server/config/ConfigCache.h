@@ -50,6 +50,10 @@ public:
 
     void setFdbFile(char *fdbFile);
 
+    char *getAofFile() const;
+
+    void setAofFile(char *aofFile);
+
     AOFState getAofState() const;
 
     void setAofState(AOFState aofState);
@@ -84,7 +88,8 @@ private:
     /**
      * 持久化
      */
-    char *fdbFile;                                  // 持久化文件名字
+    char *fdbFile;                                  // fdb持久化文件名
+    char *aofFile;                                  // aof持久化文件名
     AOFState aofState;
 };
 

@@ -172,13 +172,26 @@ void TextConfigReader::loadConfigFromLineString(const std::string &line) {
         fclose(fdbfd);
 
         configCache->setFdbFile(fdbFile);
-    } else if (0 == words[0].compare("appendonly") && words.size() == 2) {
+    } else if (0 == words[0].compare("appendonly") && 2 == words.size()) {
         int yes;
         if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {
             std::cout <<  "argument must be 'yes' or 'no'";
             exit(1);
         }
         this->configCache->setAofState(yes ? AOF_ON : AOF_OFF);
+    } else if (0 == words[0].compare("appendfilename") && 2 == words.size()) {
+        free(configCache->getAofFile());
+        char *aofFile = strdup(words[1].c_str());
+
+        // 尝试打开一次，查看是否可以正常打开
+        FILE *aoffd = fopen(aofFile, "a");
+        if (NULL == aoffd) {
+            std::cout << "Can not open aof file: " << aofFile << std::endl;
+            exit(1);
+        }
+        fclose(aoffd);
+
+        configCache->setAofFile(aofFile);
     }
 }
 

@@ -24,6 +24,9 @@ ConfigCache::ConfigCache() {
 
     // fdb相关
     this->fdbFile = strdup(CONFIG_DEFAULT_FDB_FILENAME.c_str());
+
+    // aof相关
+    this->aofFile = strdup(CONFIG_DEFAULT_AOF_FILENAME.c_str());
 }
 
 const std::vector <std::string> &ConfigCache::getBindAddrs() const {
@@ -42,11 +45,11 @@ void ConfigCache::setUnixsocket(const char *unixsocket) {
     this->unixsocket = unixsocket;
 }
 
-unsigned short ConfigCache::getUnixsocketperm() const {
+mode_t ConfigCache::getUnixsocketperm() const {
     return this->unixsocketperm;
 }
 
-void ConfigCache::setUnixsocketperm(unsigned short unixsocketperm) {
+void ConfigCache::setUnixsocketperm(mode_t unixsocketperm) {
     this->unixsocketperm = unixsocketperm;
 }
 
@@ -120,5 +123,13 @@ int ConfigCache::getSyslogFacility() const {
 
 void ConfigCache::setSyslogFacility(int syslogFacility) {
     this->syslogFacility = syslogFacility;
+}
+
+char *ConfigCache::getAofFile() const {
+    return this->aofFile;
+}
+
+void ConfigCache::setAofFile(char *aofFile) {
+    this->aofFile = aofFile;
 }
 

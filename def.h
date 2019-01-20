@@ -77,6 +77,9 @@ const int CONFIG_DEFAULT_FDB_CHECKSUM = 1;
 const int CONFIG_LOADING_INTERVAL_BYTES = 2 * 1024 * 1024;
 const int LONG_STR_SIZE = 21;         // Bytes needed for long -> str + '\0'
 
+// AOF相关
+const std::string CONFIG_DEFAULT_AOF_FILENAME = "appendonly.aof";
+
 // LRU
 const int LRU_BITS = 24;
 const uint32_t LRU_CLOCK_MAX = (1 << LRU_BITS) - 1;     /** Max value of obj->lru */
@@ -84,4 +87,5 @@ const int LRU_CLOCK_RESOLUTION = 1000;                  /** LRU clock resolution
 
 const int DB_NUM = 4;
 const std::string VERSION = "0.0.1";
+
 #endif //FLYDB_CONFIG_H
