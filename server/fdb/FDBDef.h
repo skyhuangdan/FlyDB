@@ -62,6 +62,16 @@ enum FDBChildType {
     RDB_CHILD_TYPE_SOCKET = 2
 };
 
+struct saveParam {
+    saveParam(time_t seconds, int changes) {
+        this->seconds = seconds;
+        this->changes = changes;
+    }
+
+    time_t seconds;
+    int changes;
+};
+
 const int RDB_SAVE_NONE = 0;
 const int RDB_SAVE_AOF_PREAMBLE = 1 << 0;
 

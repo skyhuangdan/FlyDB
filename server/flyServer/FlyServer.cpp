@@ -14,7 +14,6 @@
 #include "../log/FileLogHandler.h"
 #include "../flyClient/ClientDef.h"
 #include "../fdb/FDBHandler.h"
-#include "../aof/AOFDef.h"
 #include "../db/FlyDB.h"
 #include "../log/FileLogFactory.h"
 #include "../db/FlyDBFactory.h"
@@ -51,12 +50,6 @@ FlyServer::FlyServer(const AbstractCoordinator *coordinator) {
     // 当前时间
     this->nowt = time(NULL);
     this->clientMaxQuerybufLen = PROTO_MAX_QUERYBUF_LEN;
-
-    // saveparam
-    this->initSaveParams();
-
-    this->lastSaveTime = time(NULL);
-    this->bgsaveLastTryTime = time(NULL);
 }
 
 FlyServer::~FlyServer() {
@@ -74,7 +67,6 @@ void FlyServer::loadFromConfig(ConfigCache *configCache) {
     this->unixsocketperm = configCache->getUnixsocketperm();
     this->tcpKeepAlive = configCache->getTcpKeepAlive();
     this->port = configCache->getPort();
-    this->aofState = configCache->getAofState();
 }
 
 void FlyServer::init(ConfigCache *configCache) {
@@ -290,7 +282,7 @@ int FlyServer::listenToPort() {
 
 void FlyServer::loadDataFromDisk() {
     // 如果开启了AOF，则优先从AOF中加载持久化数据，否则从FDB中加载
-    if (AOF_ON == this->aofState) {
+    if (this->coordinator->getAofHandler()->IsAofStateOn()) {
         // load from append only fiile
     } else {
         // load from fdb
@@ -458,123 +450,12 @@ void FlyServer::setupSignalHandlers() {
     signal(SIGINT, sigShutDownHandlers);
 }
 
-void FlyServer::initSaveParams() {
-    this->saveParams.push_back(saveParam(60 * 60, 1));
-    this->saveParams.push_back(saveParam(300, 100));
-    this->saveParams.push_back(saveParam(60, 10000));
-}
-
 bool FlyServer::isShutdownASAP() const {
     return this->shutdownASAP;
 }
 
 void FlyServer::setShutdownASAP(bool shutdownASAP) {
     this->shutdownASAP = shutdownASAP;
-}
-
-pid_t FlyServer::getFdbChildPid() const {
-    return this->fdbChildPid;
-}
-
-void FlyServer::setFdbChildPid(pid_t fdbChildPid) {
-    this->fdbChildPid = fdbChildPid;
-}
-
-bool FlyServer::haveFdbChildPid() const {
-    return -1 != this->fdbChildPid;
-}
-
-pid_t FlyServer::getAofChildPid() const {
-    return this->aofChildPid;
-}
-
-void FlyServer::setAofChildPid(pid_t aofChildPid) {
-    this->aofChildPid = aofChildPid;
-}
-
-bool FlyServer::haveAofChildPid() const {
-    return -1 != this->aofChildPid;
-}
-
-bool FlyServer::isFdbBGSaveScheduled() const {
-    return this->fdbBGSaveScheduled;
-}
-
-void FlyServer::setFdbBGSaveScheduled(bool fdbBGSaveScheduled) {
-    this->fdbBGSaveScheduled = fdbBGSaveScheduled;
-}
-
-void FlyServer::setBgsaveLastTryTime(time_t bgsaveLastTryTime) {
-    this->bgsaveLastTryTime = bgsaveLastTryTime;
-}
-
-bool FlyServer::canBgsaveNow() {
-    return this->nowt - this->bgsaveLastTryTime > CONFIG_BGSAVE_RETRY_DELAY;
-}
-
-int FlyServer::getLastBgsaveStatus() const {
-    return lastBgsaveStatus;
-}
-
-void FlyServer::setLastBgsaveStatus(int lastBgsaveStatus) {
-    this->lastBgsaveStatus = lastBgsaveStatus;
-}
-
-int FlyServer::getFdbChildType() const {
-    return this->fdbChildType;
-}
-
-void FlyServer::setFdbDiskChildType() {
-    this->fdbChildType = RDB_CHILD_TYPE_DISK;
-}
-
-void FlyServer::setFdbNoneChildType() {
-    this->fdbChildType = RDB_CHILD_TYPE_NONE;
-}
-
-void FlyServer::setFdbBgSaveDone(int status) {
-    this->setLastBgsaveStatus(status);
-    this->setFdbChildPid(-1);
-    this->setFdbNoneChildType();
-}
-
-void FlyServer::setFdbSaveDone() {
-    this->dirty = 0;
-    this->lastSaveTime = time(NULL);
-    this->lastBgsaveStatus = 1;
-}
-
-int FlyServer::getSaveParamsCount() const {
-    return this->saveParams.size();
-}
-
-const saveParam* FlyServer::getSaveParam(int pos) const  {
-    if (pos >= this->saveParams.size()) {
-        return NULL;
-    }
-
-    return &(this->saveParams[pos]);
-}
-
-uint64_t FlyServer::getDirty() const {
-    return this->dirty;
-}
-
-uint64_t FlyServer::addDirty(uint64_t count) {
-    this->dirty += count;
-    return this->dirty;
-}
-
-time_t FlyServer::getLastSaveTime() const {
-    return this->lastSaveTime;
-}
-
-bool FlyServer::lastSaveTimeGapGreaterThan(time_t gap) const {
-    return this->nowt - this->lastSaveTime > gap;
-}
-
-void FlyServer::setLastSaveTime(time_t lastSaveTime) {
-    this->lastSaveTime = lastSaveTime;
 }
 
 void sigShutDownHandlers(int sig) {
@@ -605,7 +486,8 @@ int serverCron(const AbstractCoordinator *coordinator,
     }
 
     // 如果有fdb或者aof子进程存在的话
-    if (flyServer->haveAofChildPid() || flyServer->haveFdbChildPid()) {
+    if (coordinator->getAofHandler()->haveAofChildPid()
+        || coordinator->getFdbHandler()->haveFdbChildPid()) {
         int statloc;
         pid_t pid = -1;
 
@@ -621,12 +503,12 @@ int serverCron(const AbstractCoordinator *coordinator,
                         "wait3() returned an error: %s. "
                         "rdb_child_pid = %d, aof_child_pid = %d",
                         strerror(errno),
-                        flyServer->getFdbChildPid(),
-                        flyServer->getAofChildPid());
-            } else if (flyServer->getFdbChildPid() == pid) {
+                        coordinator->getFdbHandler()->getFdbChildPid(),
+                        coordinator->getAofHandler()->getAofChildPid());
+            } else if (coordinator->getFdbHandler()->getFdbChildPid() == pid) {
                 coordinator->getFdbHandler()->backgroundSaveDone(
                         exitCode, bySignal);
-            } else if (flyServer->getAofChildPid() == pid) {
+            } else if (coordinator->getAofHandler()->getAofChildPid() == pid) {
                 // todo:
             } else {
                 coordinator->getLogHandler()->logWarning(
@@ -641,27 +523,29 @@ int serverCron(const AbstractCoordinator *coordinator,
          * 查看是否达到fdb执行条件，即：
          * saveParam->dirty>changes并且save sap < saveParam->seconds
          **/
-        int count = flyServer->getSaveParamsCount();
+        int count = coordinator->getFdbHandler()->getSaveParamsCount();
         for (int i = 0; i < count; i++) {
-            const saveParam* saveParam = flyServer->getSaveParam(i);
-            if (flyServer->getDirty() > saveParam->changes
-                && flyServer->lastSaveTimeGapGreaterThan(saveParam->seconds)
-                && flyServer->canBgsaveNow()
-                && 1 == flyServer->getLastBgsaveStatus()) {
+            const saveParam* saveParam =
+                    coordinator->getFdbHandler()->getSaveParam(i);
+            if (coordinator->getFdbHandler()->getDirty() > saveParam->changes
+                && coordinator->getFdbHandler()->
+                    lastSaveTimeGapGreaterThan(saveParam->seconds)
+                && coordinator->getFdbHandler()->canBgsaveNow()
+                && 1 == coordinator->getFdbHandler()->getLastBgsaveStatus()) {
                 coordinator->getFdbHandler()->backgroundSave();
             }
         }
     }
 
     // 处理被AOF延迟了的FDB操作
-    if (!flyServer->haveFdbChildPid()
-        && !flyServer->haveAofChildPid()
-        && flyServer->isFdbBGSaveScheduled()
-        && flyServer->canBgsaveNow()
-        && 1 == flyServer->getLastBgsaveStatus()) {
+    if (!coordinator->getFdbHandler()->haveFdbChildPid()
+        && !coordinator->getAofHandler()->haveAofChildPid()
+        && coordinator->getFdbHandler()->isFdbBGSaveScheduled()
+        && coordinator->getFdbHandler()->canBgsaveNow()
+        && 1 == coordinator->getFdbHandler()->getLastBgsaveStatus()) {
         // fdb被成功执行了，则下次不再schedule
         if (1 == coordinator->getFdbHandler()->backgroundSave()) {
-            flyServer->setFdbBGSaveScheduled(false);
+            coordinator->getFdbHandler()->setFdbBGSaveScheduled(false);
         }
     }
 

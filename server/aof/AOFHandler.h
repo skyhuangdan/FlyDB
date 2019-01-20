@@ -6,9 +6,24 @@
 #define FLYDB_AOFHANDLER_H
 
 #include "interface/AbstractAOFHandler.h"
+#include "../coordinator/interface/AbstractCoordinator.h"
 
 class AOFHandler : public AbstractAOFHandler {
-    static AOFHandler* getInstance();
+public:
+    AOFHandler(AbstractCoordinator *coordinator, char *fileName, AOFState aofState);
+    pid_t getAofChildPid() const;
+    void setAofChildPid(pid_t aofChildPid);
+    bool haveAofChildPid() const;
+    bool IsAofStateOn() const;
+    void setAofState(AOFState aofState);
+
+private:
+    AbstractCoordinator *coordinator;
+    char *fileName;
+    AOFState aofState;
+    pid_t aofChildPid = -1;
+    std::string aofBuf;
+
 
 };
 

@@ -202,7 +202,7 @@ void setGenericCommand(const AbstractCoordinator *coordinator,
         return;
     }
 
-    coordinator->getFlyServer()->addDirty(1);
+    coordinator->getFdbHandler()->addDirty(1);
     flyClient->addReply("set OK!");
 }
 
@@ -326,7 +326,7 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
         }
     }
 
-    coordinator->getFlyServer()->addDirty(flyClient->getArgc() - 2);
+    coordinator->getFdbHandler()->addDirty(flyClient->getArgc() - 2);
     flyClient->addReply("push OK!");
 }
 
@@ -369,7 +369,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
                          (flyClient->getArgv()[1]->getPtr()));
     }
 
-    coordinator->getFlyServer()->addDirty(flyClient->getArgc() - 2);
+    coordinator->getFdbHandler()->addDirty(flyClient->getArgc() - 2);
     flyClient->addReply("push OK!");
 }
 
@@ -398,7 +398,7 @@ void popSortCommand(const AbstractCoordinator* coordinator,
     list->deleteNode(
             reinterpret_cast<std::string *>(flyClient->getArgv()[3]->getPtr()));
 
-    coordinator->getFlyServer()->addDirty(1);
+    coordinator->getFdbHandler()->addDirty(1);
     flyClient->addReply("status OK!");
 }
 
@@ -431,7 +431,7 @@ void popGenericCommand(const AbstractCoordinator *coordinator,
         list->pop_back();
     }
 
-    coordinator->getFlyServer()->addDirty(1);
+    coordinator->getFdbHandler()->addDirty(1);
     flyClient->addReply("status OK!");
 }
 
@@ -475,7 +475,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
         dict->addEntry(key, val);
     }
 
-    coordinator->getFlyServer()->addDirty(argc / 2 - 1);
+    coordinator->getFdbHandler()->addDirty(argc / 2 - 1);
     flyClient->addReply("status OK!");
 }
 
@@ -543,7 +543,7 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
     }
 
     /** 如果有fdb持久化子进程存在，则说明处于fdb过程中，不允许再次执行fdb */
-    if (flyServer->haveFdbChildPid()) {
+    if (coordinator->getFdbHandler()->haveFdbChildPid()) {
         flyClient->addReply("Background save already in progress");
         return;
     }
@@ -553,14 +553,14 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
      * 如果是执行fdb子进程调度，则标记schdule flag, 以便于后续在serverCron函数中执行fdb操作
      * 否则，如果是直接进行fdb, 则不允许执行
      **/
-    if (flyServer->haveAofChildPid()) {
+    if (coordinator->getAofHandler()->haveAofChildPid()) {
         if (!schedule) {
             flyClient->addReply("An AOF log rewriting in progress: can't BGSAVE"
                                 " right now. Use BGSAVE SCHEDULE in order to "
                                 "schedule a BGSAVE whenever possible.");
             return;
         } else {
-            flyServer->setFdbBGSaveScheduled(true);
+            coordinator->getFdbHandler()->setFdbBGSaveScheduled(true);
             flyClient->addReply("Background saving scheduled");
             return;
         }

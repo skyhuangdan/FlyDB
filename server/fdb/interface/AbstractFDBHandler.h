@@ -30,6 +30,48 @@ public:
     virtual ssize_t saveRawString(Fio *fio, const std::string &str) = 0;
 
     virtual void deleteTempFile(pid_t pid) = 0;
+
+    virtual pid_t getFdbChildPid() const = 0;
+
+    virtual bool haveFdbChildPid() const = 0;
+
+    virtual void setFdbChildPid(pid_t fdbChildPid) = 0;
+
+    virtual bool isFdbBGSaveScheduled() const = 0;
+
+    virtual void setFdbBGSaveScheduled(bool fdbBGSaveScheduled) = 0;
+
+    virtual bool canBgsaveNow() = 0;
+
+    virtual time_t getLastSaveTime() const = 0;
+
+    virtual bool lastSaveTimeGapGreaterThan(time_t gap) const = 0;
+
+    virtual void setLastSaveTime(time_t lastSaveTime) = 0;
+
+    virtual void setBgsaveLastTryTime(time_t bgsaveLastTryTime) = 0;
+
+    virtual int getLastBgsaveStatus() const = 0;
+
+    virtual void setLastBgsaveStatus(int lastBgsaveStatus) = 0;
+
+    virtual int getFdbChildType() const = 0;
+
+    virtual void setFdbDiskChildType() = 0;
+
+    virtual void setFdbNoneChildType() = 0;
+
+    virtual void setFdbBgSaveDone(int status) = 0;
+
+    virtual void setFdbSaveDone() = 0;
+
+    virtual int getSaveParamsCount() const = 0;
+
+    virtual const saveParam* getSaveParam(int pos) const = 0;
+
+    virtual uint64_t getDirty() const = 0;
+
+    virtual uint64_t addDirty(uint64_t count) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFDBHANDLER_H

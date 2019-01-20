@@ -27,6 +27,10 @@ FDBHandler::FDBHandler(const AbstractCoordinator *coordinator,
     this->logHandler = logFactory->getLogger();
     this->cksum = 0;
     this->endianConvTool = EndianConvTool::getInstance();
+    // saveparam
+    this->initSaveParams();
+    this->lastSaveTime = time(NULL);
+    this->bgsaveLastTryTime = time(NULL);
 }
 
 FDBHandler::~FDBHandler() {
@@ -35,12 +39,12 @@ FDBHandler::~FDBHandler() {
 
 int FDBHandler::backgroundSave() {
     AbstractFlyServer *flyServer = this->coordinator->getFlyServer();
-    if (-1 != flyServer->getAofChildPid()
-        || -1 != flyServer->getFdbChildPid()) {
+    if (-1 != coordinator->getAofHandler()->getAofChildPid()
+        || -1 != this->getFdbChildPid()) {
         return -1;
     }
 
-    flyServer->setBgsaveLastTryTime(time(NULL));
+    this->setBgsaveLastTryTime(time(NULL));
 
     // 打开管道
     this->coordinator->getPipe()->open();
@@ -67,8 +71,8 @@ int FDBHandler::backgroundSave() {
             return -1;
         }
 
-        flyServer->setFdbChildPid(childPid);
-        flyServer->setFdbDiskChildType();
+        this->setFdbChildPid(childPid);
+        this->setFdbDiskChildType();
         this->logHandler->logNotice("Background saving started by pid %d",
                                     childPid);
     }
@@ -77,8 +81,6 @@ int FDBHandler::backgroundSave() {
 }
 
 void FDBHandler::backgroundSaveDone(int exitCode, int bySignal) {
-    AbstractFlyServer *flyServer = this->coordinator->getFlyServer();
-
     int status = 1;
     if (0 == bySignal && 0 == exitCode) {
         this->coordinator->getLogHandler()->logNotice(
@@ -99,7 +101,7 @@ void FDBHandler::backgroundSaveDone(int exitCode, int bySignal) {
         }
     }
 
-    flyServer->setFdbBgSaveDone(status);
+    this->setFdbBgSaveDone(status);
 }
 
 int FDBHandler::save() {
@@ -153,7 +155,7 @@ int FDBHandler::save() {
     }
 
     // 设置save done状态
-    this->coordinator->getFlyServer()->setFdbSaveDone();
+    this->setFdbSaveDone();
 
     delete fdbSaveInfo;
     return 1;
@@ -417,6 +419,102 @@ void FDBHandler::deleteTempFile(pid_t pid) {
     snprintf(tmpfile, sizeof(tmpfile), "temp-%d.rdb", pid);
     unlink(tmpfile);
 }
+
+pid_t FDBHandler::getFdbChildPid() const {
+    return this->fdbChildPid;
+}
+
+void FDBHandler::setFdbChildPid(pid_t fdbChildPid) {
+    this->fdbChildPid = fdbChildPid;
+}
+
+bool FDBHandler::haveFdbChildPid() const {
+    return -1 != this->fdbChildPid;
+}
+
+bool FDBHandler::isFdbBGSaveScheduled() const {
+    return this->fdbBGSaveScheduled;
+}
+
+void FDBHandler::setFdbBGSaveScheduled(bool fdbBGSaveScheduled) {
+    this->fdbBGSaveScheduled = fdbBGSaveScheduled;
+}
+
+void FDBHandler::setBgsaveLastTryTime(time_t bgsaveLastTryTime) {
+    this->bgsaveLastTryTime = bgsaveLastTryTime;
+}
+
+bool FDBHandler::canBgsaveNow() {
+    return this->coordinator->getFlyServer()->getNowt()
+           - this->bgsaveLastTryTime > CONFIG_BGSAVE_RETRY_DELAY;
+}
+
+int FDBHandler::getLastBgsaveStatus() const {
+    return lastBgsaveStatus;
+}
+
+void FDBHandler::setLastBgsaveStatus(int lastBgsaveStatus) {
+    this->lastBgsaveStatus = lastBgsaveStatus;
+}
+
+int FDBHandler::getFdbChildType() const {
+    return this->fdbChildType;
+}
+
+void FDBHandler::setFdbDiskChildType() {
+    this->fdbChildType = RDB_CHILD_TYPE_DISK;
+}
+
+void FDBHandler::setFdbNoneChildType() {
+    this->fdbChildType = RDB_CHILD_TYPE_NONE;
+}
+
+void FDBHandler::setFdbBgSaveDone(int status) {
+    this->setLastBgsaveStatus(status);
+    this->setFdbChildPid(-1);
+    this->setFdbNoneChildType();
+}
+
+void FDBHandler::setFdbSaveDone() {
+    this->dirty = 0;
+    this->lastSaveTime = time(NULL);
+    this->lastBgsaveStatus = 1;
+}
+
+int FDBHandler::getSaveParamsCount() const {
+    return this->saveParams.size();
+}
+
+const saveParam* FDBHandler::getSaveParam(int pos) const  {
+    if (pos >= this->saveParams.size()) {
+        return NULL;
+    }
+
+    return &(this->saveParams[pos]);
+}
+
+uint64_t FDBHandler::getDirty() const {
+    return this->dirty;
+}
+
+uint64_t FDBHandler::addDirty(uint64_t count) {
+    this->dirty += count;
+    return this->dirty;
+}
+
+time_t FDBHandler::getLastSaveTime() const {
+    return this->lastSaveTime;
+}
+
+bool FDBHandler::lastSaveTimeGapGreaterThan(time_t gap) const {
+    return this->coordinator->getFlyServer()->getNowt()
+           - this->lastSaveTime > gap;
+}
+
+void FDBHandler::setLastSaveTime(time_t lastSaveTime) {
+    this->lastSaveTime = lastSaveTime;
+}
+
 
 ssize_t FDBHandler::saveLen(Fio *fio, uint64_t len) {
     unsigned char buf[2];
@@ -944,6 +1042,12 @@ int FDBHandler::checkHeader(Fio *fio) {
     }
 
     return version;
+}
+
+void FDBHandler::initSaveParams() {
+    this->saveParams.push_back(saveParam(60 * 60, 1));
+    this->saveParams.push_back(saveParam(300, 100));
+    this->saveParams.push_back(saveParam(60, 10000));
 }
 
 void FDBHandler::checkThenExit(int lineNum, char *reason, ...) {

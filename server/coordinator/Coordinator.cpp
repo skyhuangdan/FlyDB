@@ -50,6 +50,9 @@ Coordinator::Coordinator() {
                                       configCache->getFdbFile(),
                                       CONFIG_LOADING_INTERVAL_BYTES);
 
+    /** aof handler **/
+    this->aofHandler = new AOFHandler(this, NULL, configCache->getAofState());
+
     /** event loop **/
     this->flyServer = new FlyServer(this);
     this->eventLoop =

@@ -9,7 +9,6 @@
 #include <map>
 #include <string>
 #include <list>
-#include <pthread.h>
 #include <vector>
 #include "../event/EventLoop.h"
 #include "../../def.h"
@@ -71,39 +70,6 @@ public:
     void freeClientsInAsyncFreeList();
     int getMaxClients() const;
 
-    /**
-     *  fdb相关
-     */
-    pid_t getFdbChildPid() const;
-    void setFdbChildPid(pid_t fdbChildPid);
-    bool haveFdbChildPid() const;
-    bool isFdbBGSaveScheduled() const;
-    void setFdbBGSaveScheduled(bool fdbBGSaveScheduled);
-    time_t getLastSaveTime() const;
-    bool lastSaveTimeGapGreaterThan(time_t gap) const;
-    void setLastSaveTime(time_t lastSaveTime);
-    void setBgsaveLastTryTime(time_t bgsaveLastTryTime);
-    bool canBgsaveNow();
-    int getLastBgsaveStatus() const;
-    void setLastBgsaveStatus(int lastBgsaveStatus);
-    int getFdbChildType() const;
-    void setFdbDiskChildType();
-    void setFdbNoneChildType();
-    void setFdbBgSaveDone(int status);
-    void setFdbSaveDone();
-    int getSaveParamsCount() const;
-    const saveParam* getSaveParam(int pos) const;
-    uint64_t getDirty() const;
-    uint64_t addDirty(uint64_t count);
-
-    /**
-     * AOF持久化
-     **/
-    pid_t getAofChildPid() const;
-    void setAofChildPid(pid_t aofChildPid);
-    bool haveAofChildPid() const;
-
-
 private:
     /** 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）*/
     void setMaxClientLimit();
@@ -114,7 +80,6 @@ private:
     void loadDataFromDisk();
     void loadFromConfig(ConfigCache *configCache);
     void setupSignalHandlers();
-    void initSaveParams();
 
     /** General */
     pid_t pid;                                          // 运行server的线程标识
@@ -159,24 +124,6 @@ private:
     uint64_t statRejectedConn;
     /** client buff最大长度 */
     size_t clientMaxQuerybufLen;
-
-    /**
-     * AOF持久化
-     **/
-    AOFState aofState;
-    pid_t aofChildPid = -1;
-
-    /**
-     * FDB持久化
-     **/
-     pid_t fdbChildPid = -1;
-     bool fdbBGSaveScheduled = false;
-     time_t lastSaveTime = time(NULL);
-     time_t bgsaveLastTryTime = time(NULL);
-     int lastBgsaveStatus = 1;
-     int fdbChildType = RDB_CHILD_TYPE_NONE;
-     std::vector<saveParam> saveParams;
-     uint64_t dirty = 0;
 
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;
