@@ -2,7 +2,7 @@
 // Created by 赵立伟 on 2019/1/20.
 //
 
-#include <signal.h>
+#include <csignal>
 #include "BIOHandler.h"
 
 AbstractLogHandler *BIOHandler::logHandler;
@@ -170,6 +170,29 @@ void BIOHandler::createBackgroundJob(int type,
                                      void *arg1,
                                      void *arg2,
                                      void *arg3) {
+    /** 创建job */
+    BIOJob *job = new BIOJob(time(NULL), arg1, arg2, arg3);
 
+    /** 将job加入队列中，并发送条件信号 */
+    pthread_mutex_lock(&mutex[type]);
+    jobs[type].push_back(job);
+    pending[type]++;
+    pthread_cond_broadcast(&newjobCond[type]);
+    pthread_mutex_unlock(&mutex[type]);
 }
 
+void BIOHandler::killThreads(void) {
+    int err;
+    for (int i = 0; i < BIO_NUM_OPS; i++) {
+        if (0 == pthread_cancel(threads[i])) {
+            if (0 == (err = pthread_join(threads[i], NULL))) {
+                logHandler->logWarning(
+                        "Bio thread for job type #%d terminated", i);
+            } else {
+                logHandler->logWarning(
+                        "Bio thread for job type #%d can be joined: %s",
+                        i, strerror(err));
+            }
+        }
+    }
+}

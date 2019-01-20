@@ -10,17 +10,19 @@
 #include <array>
 #include "BIODef.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
+#include "interface/AbstractBIOHandler.h"
 
-class BIOHandler {
+class BIOHandler : public AbstractBIOHandler {
 public:
-    static bool init();
+    uint64_t getPendingJobCount(int type);
+    uint64_t waitStep(int type);
+    void createBackgroundJob(int type, void *arg1, void *arg2, void *arg3);
+    void killThreads(void);
 
 private:
+    static bool init();
     static void initStackSize(pthread_attr_t *attr);
     static void *processBackgroundJobs(void *arg);
-    static uint64_t getPendingJobCount(int type);
-    static uint64_t waitStep(int type);
-    void createBackgroundJob(int type, void *arg1, void *arg2, void *arg3);
 
     static bool __init;
     static std::array<pthread_t, BIO_NUM_OPS> threads;

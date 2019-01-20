@@ -15,6 +15,8 @@
 #include "../flyObj/FlyObjSkipList/FlyObjSkipListFactory.h"
 #include "../flyObj/FlyObjIntSet/FlyObjIntSetFactory.h"
 #include "../flyObj/FlyObjString/FlyObjStringFactory.h"
+#include "../aof/AOFHandler.h"
+#include "../flyServer/FlyServer.h"
 
 Coordinator::Coordinator() {
     /** 加载config **/
@@ -126,4 +128,8 @@ AbstractPipe *Coordinator::getPipe() const {
 
 AbstractLogHandler *Coordinator::getLogHandler() const {
     return this->logHandler;
+}
+
+AbstractBIOHandler *Coordinator::getBioHandler() const {
+    return this->bioHandler;
 }

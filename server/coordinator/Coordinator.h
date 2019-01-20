@@ -6,11 +6,6 @@
 #define FLYDB_COORDINATOR_H
 
 #include "interface/AbstractCoordinator.h"
-#include "../net/interface/AbstractNetHandler.h"
-#include "../flyServer/FlyServer.h"
-#include "../fdb/interface/AbstractFDBHandler.h"
-#include "../config/interface/AbstractConfigReader.h"
-#include "../flyObj/interface/AbstractFlyObjFactory.h"
 
 class Coordinator : public AbstractCoordinator {
 public:
@@ -37,6 +32,9 @@ public:
     /** LogHandler */
     AbstractLogHandler *getLogHandler() const;
 
+    /** bio */
+    AbstractBIOHandler *getBioHandler() const;
+
 private:
     AbstractNetHandler *netHandler;
     AbstractFlyServer *flyServer;
@@ -60,6 +58,11 @@ private:
      * logHandler
      */
      AbstractLogHandler *logHandler = NULL;
+
+     /**
+      * bio
+      **/
+      AbstractBIOHandler *bioHandler = NULL;
 
 };
 

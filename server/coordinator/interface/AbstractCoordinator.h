@@ -14,6 +14,7 @@
 #include "../../flyClient/interface/AbstractFlyClientFactory.h"
 #include "../../flyObj/interface/AbstractFlyObjFactory.h"
 #include "../../pipe/interface/AbstractPipe.h"
+#include "../../bio/interface/AbstractBIOHandler.h"
 
 class AbstractFlyServer;
 class AbstractNetHandler;
@@ -46,6 +47,9 @@ public:
 
     /** LogHandler */
     virtual AbstractLogHandler *getLogHandler() const = 0;
+
+    /** bio */
+    AbstractBIOHandler *getBioHandler() const;
 
 };
 
