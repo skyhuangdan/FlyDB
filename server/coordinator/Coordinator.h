@@ -60,6 +60,7 @@ private:
      * logHandler
      */
      AbstractLogHandler *logHandler = NULL;
+
 };
 
 

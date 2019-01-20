@@ -14,7 +14,6 @@
 #include "../../def.h"
 #include "../log/FileLogHandler.h"
 #include "../aof/AOFHandler.h"
-#include "../aof/AOFDef.h"
 #include "../flyClient/interface/AbstractFlyClient.h"
 #include "interface/AbstractFlyServer.h"
 #include "../db/interface/AbstractFlyDB.h"

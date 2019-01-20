@@ -46,6 +46,7 @@ public:
 
     /** LogHandler */
     virtual AbstractLogHandler *getLogHandler() const = 0;
+
 };
 
 #endif //FLYDB_ABSTRACTCOORDINATOR_H
