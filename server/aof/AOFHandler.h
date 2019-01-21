@@ -10,17 +10,66 @@
 
 class AOFHandler : public AbstractAOFHandler {
 public:
-    AOFHandler(AbstractCoordinator *coordinator,
-               char *fileName,
-               AOFState state);
+    AOFHandler();
     int start();
     int rewriteBackground();
+    int rewriteAppendOnlyFile();
 
     pid_t getChildPid() const;
     void setChildPid(pid_t childPid);
     bool haveChildPid() const;
     bool IsStateOn() const;
     void setState(AOFState aofState);
+
+    void setCoordinator(AbstractCoordinator *coordinator);
+    void setFileName(char *fileName);
+    void setUseFdbPreamble(bool useFdbPreamble);
+    void setFsync(int fsync);
+    void setRewriteIncrementalFsync(bool rewriteIncrementalFsync);
+
+    class Builder {
+    public:
+        Builder() {
+            this->handler = new AOFHandler();
+        }
+
+        Builder& coordinator(AbstractCoordinator *coord) {
+            this->handler->setCoordinator(coord);
+            return *this;
+        }
+
+        Builder& fileName(char *fileName) {
+            this->handler->setFileName(fileName);
+            return *this;
+        }
+
+        Builder& state(AOFState aofState) {
+            this->handler->setState(aofState);
+            return *this;
+        }
+
+        Builder& useFdbPreamble(bool useFdbPreamble) {
+            this->handler->setUseFdbPreamble(useFdbPreamble);
+            return *this;
+        }
+
+        Builder& fsync(int fsync) {
+            this->handler->setFsync(fsync);
+            return *this;
+        }
+
+        Builder& rewriteIncrementalFsync(bool rewriteIncrementalFsync) {
+            this->handler->setRewriteIncrementalFsync(rewriteIncrementalFsync);
+            return *this;
+        }
+
+        AOFHandler* build() {
+            return this->handler;
+        }
+
+    private:
+        AOFHandler *handler;
+    };
 
 private:
     AbstractCoordinator *coordinator;
@@ -31,6 +80,9 @@ private:
     time_t lastFsync;
     int fd = -1;
     bool scheduled = false;
+    bool useFdbPreamble = CONFIG_DEFAULT_AOF_USE_FDB_PREAMBLE;
+    int fsync = CONFIG_DEFAULT_AOF_FSYNC;
+    bool rewriteIncrementalFsync = CONFIG_DEFAULT_AOF_REWRITE_INCREMENTAL_FSYNC;
 
 };
 

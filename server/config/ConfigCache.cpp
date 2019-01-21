@@ -133,3 +133,28 @@ void ConfigCache::setAofFile(char *aofFile) {
     this->aofFile = aofFile;
 }
 
+bool ConfigCache::isAofUseFdbPreamble() const {
+    return this->aofUseFdbPreamble;
+}
+
+void ConfigCache::setAofUseFdbPreamble(bool aofUseFdbPreamble) {
+    this->aofUseFdbPreamble = aofUseFdbPreamble;
+}
+
+int ConfigCache::getAofFsync() const {
+    return this->aofFsync;
+}
+
+void ConfigCache::setAofFsync(int aofFsync) {
+    this->aofFsync = aofFsync;
+}
+
+bool ConfigCache::isAofRewriteIncrementalFsync() const {
+    return this->aofRewriteIncrementalFsync;
+}
+
+void ConfigCache::setAofRewriteIncrementalFsync(
+        bool aofRewriteIncrementalFsync) {
+    this->aofRewriteIncrementalFsync = aofRewriteIncrementalFsync;
+}
+

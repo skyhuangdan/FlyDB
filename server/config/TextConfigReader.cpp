@@ -28,6 +28,13 @@ configMap syslogFacilityMap[] = {
         {NULL, 0}
 };
 
+configMap aofFsyncEnumMap[] = {
+        {"everysec", AOF_FSYNC_EVERYSEC},
+        {"always", AOF_FSYNC_ALWAYS},
+        {"no", AOF_FSYNC_NO},
+        {NULL, 0}
+};
+
 TextConfigReader::TextConfigReader(std::string &configfile) {
     if ('-' == configfile[0] && '\0' == configfile[1]) {
         this->fp = stdin;
@@ -192,6 +199,30 @@ void TextConfigReader::loadConfigFromLineString(const std::string &line) {
         fclose(aoffd);
 
         configCache->setAofFile(aofFile);
+    } else if (0 == words[0].compare("aof-use-fdb-preamble")
+               && 2 == words.size()) {
+        int yes;
+        if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {
+            std::cout << "argument must be 'yes' or 'no'";
+            exit(1);
+        }
+        this->configCache->setAofUseFdbPreamble(yes ? true : false);
+    } else if (0 == words[0].compare("appendfsync") && 2 == words.size()) {
+        int fsync = configMapGetValue(aofFsyncEnumMap, words[1].c_str());
+        if (INT_MIN == fsync) {
+            std::cout << "argument must be 'no', 'always' or 'everysec'";
+            exit(1);
+        }
+
+        this->configCache->setAofFsync(fsync);
+    } else if (0 == words[0].compare("aof-rewrite-incremental-fsync")
+               && 2 == words.size()) {
+        int yes;
+        if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {
+            std::cout <<  "argument must be 'yes' or 'no'";
+            exit(1);
+        }
+        this->configCache->setAofRewriteIncrementalFsync(yes ? true : false);
     }
 }
 

@@ -6,15 +6,19 @@
 #include "FileFio.h"
 
 FileFio::FileFio(FILE *fp, uint64_t maxProcessingChunk)
-        : Fio(maxProcessingChunk) {
+        : Fio() {
     this->fp = fp;
+    this->setMaxProcessingChunk(maxProcessingChunk);
 }
 
-size_t FileFio::read(void *buf, size_t len) {
+FileFio::FileFio() : Fio() {
+}
+
+size_t FileFio::baseread(void *buf, size_t len) {
     return fread(buf, len, 1, this->fp);
 }
 
-size_t FileFio::write(const void *buf, size_t len) {
+size_t FileFio::basewrite(const void *buf, size_t len) {
     // 写入
     int written = fwrite(buf, len, 1, this->fp);
     this->buffered += written;
@@ -39,6 +43,14 @@ int FileFio::flush() {
     return 0 == fflush(this->fp) ? 1 : 0;
 }
 
-int FileFio::updateChecksum(const void *buf, size_t len) {
+void FileFio::setFp(FILE *fp) {
+    this->fp = fp;
+}
 
+void FileFio::setAutosync(off_t autosync) {
+    this->autosync = autosync;
+}
+
+void FileFio::setMaxProcessingChunk(uint64_t maxProcessingChunk) {
+    this->setMaxProcessingChunk(maxProcessingChunk);
 }

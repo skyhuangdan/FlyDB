@@ -4,14 +4,10 @@
 
 #include <fcntl.h>
 #include "AOFHandler.h"
+#include "../io/FileFio.h"
 
-AOFHandler::AOFHandler(AbstractCoordinator *coordinator,
-                       char *fileName,
-                       AOFState state) {
-    this->coordinator = coordinator;
-    this->fileName = fileName;
-    this->state = state;
-    this->lastFsync = time(NULL);
+AOFHandler::AOFHandler() {
+
 }
 
 int AOFHandler::start() {
@@ -62,6 +58,39 @@ int AOFHandler::rewriteBackground() {
         return -1;
     }
 
+
+    return 1;
+}
+
+int AOFHandler::rewriteAppendOnlyFile() {
+    char tmpfile[256];
+
+    /** 获取临时aof文件 */
+    snprintf(tmpfile, sizeof(tmpfile), "temp-rewriteaof-%d.aof", getpid());
+    FILE *fp = fopen(tmpfile, "w");
+    if (NULL == fp) {
+        this->coordinator->getLogHandler()->logWarning(
+                "Opening the temp file for AOF rewrite "
+                "in rewriteAppendOnlyFile(): %s",
+                strerror(errno));
+        return -1;
+    }
+
+    /** todo: rewrite */
+    off_t autosync = this->rewriteIncrementalFsync ? AOF_AUTOSYNC_BYTES : 0;
+    FileFio* fio = FileFio::Builder().file(fp).autosync(autosync).build();
+
+    /** rename file to real file name */
+    if (-1 == rename(tmpfile, this->fileName)) {
+        this->coordinator->getLogHandler()->logWarning(
+                "Error moving temp append only file "
+                "on the final destination: %s", strerror(errno));
+        return -1;
+    }
+    this->coordinator->getLogHandler()->logNotice(
+            "SYNC append only file rewrite performed");
+    return 1;
+
 }
 
 pid_t AOFHandler::getChildPid() const {
@@ -82,5 +111,25 @@ bool AOFHandler::IsStateOn() const {
 
 void AOFHandler::setState(AOFState aofState) {
     this->state = aofState;
+}
+
+void AOFHandler::setCoordinator(AbstractCoordinator *coordinator) {
+    this->coordinator = coordinator;
+}
+
+void AOFHandler::setFileName(char *fileName) {
+    this->fileName = fileName;
+}
+
+void AOFHandler::setUseFdbPreamble(bool useFdbPreamble) {
+    this->useFdbPreamble = useFdbPreamble;
+}
+
+void AOFHandler::setFsync(int fsync) {
+    this->fsync = fsync;
+}
+
+void AOFHandler::setRewriteIncrementalFsync(bool rewriteIncrementalFsync) {
+    this->rewriteIncrementalFsync = rewriteIncrementalFsync;
 }
 

@@ -8,8 +8,15 @@
 #include <sys/types.h>
 #include "../AOFDef.h"
 
+class AbstractCoordinator;
 class AbstractAOFHandler {
 public:
+
+    virtual int start() = 0;
+
+    virtual int rewriteBackground() = 0;
+
+    virtual int rewriteAppendOnlyFile() = 0;
 
     virtual pid_t getChildPid() const = 0;
 

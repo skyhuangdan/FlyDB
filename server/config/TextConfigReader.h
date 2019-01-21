@@ -11,6 +11,11 @@
 #include "../../def.h"
 #include "ConfigCache.h"
 
+struct configMap {
+    const char *name;
+    const int value;
+};
+
 class TextConfigReader : public AbstractConfigReader {
 public:
     TextConfigReader(std::string &configfile);

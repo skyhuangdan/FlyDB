@@ -11,6 +11,7 @@
 #include "server/log/interface/AbstractLogFactory.h"
 #include "server/log/FileLogFactory.h"
 #include "server/utils/MiscTool.h"
+#include "server/aof/AOFDef.h"
 
 #ifndef BYTE_ORDER
 #if (BSD >= 199103)
@@ -41,11 +42,6 @@
 #endif /* linux */
 #endif /* BSD */
 #endif /* BYTE_ORDER */
-
-struct configMap {
-    const char *name;
-    const int value;
-};
 
 const int CONFIG_CRON_HZ = 1;
 const int CONFIG_DEFAULT_SERVER_PORT = 6379;                    // TCP port
@@ -79,6 +75,9 @@ const int LONG_STR_SIZE = 21;         // Bytes needed for long -> str + '\0'
 
 // AOF相关
 const std::string CONFIG_DEFAULT_AOF_FILENAME = "appendonly.aof";
+const int CONFIG_DEFAULT_AOF_USE_FDB_PREAMBLE = 0;
+const int CONFIG_DEFAULT_AOF_FSYNC = AOF_FSYNC_EVERYSEC;
+const bool CONFIG_DEFAULT_AOF_REWRITE_INCREMENTAL_FSYNC = true;
 
 // LRU
 const int LRU_BITS = 24;

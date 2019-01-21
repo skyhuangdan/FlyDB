@@ -123,7 +123,10 @@ int FDBHandler::save() {
         return -1;
     }
 
-    Fio *fio = new FileFio(fp, this->maxProcessingChunk);
+    Fio *fio = FileFio::Builder()
+            .file(fp)
+            .maxProcessingChunk(this->maxProcessingChunk)
+            .build();
     if (-1 == saveToFio(fio, 0, fdbSaveInfo)) {
         this->logHandler->logWarning("Write error saving DB on disk: %s",
                                      strerror(errno));
@@ -584,7 +587,10 @@ int FDBHandler::load(FDBSaveInfo *saveInfo) {
 }
 
 int FDBHandler::loadFromFile(FILE *fp, FDBSaveInfo *saveInfo) {
-    Fio *fio = new FileFio(fp, this->maxProcessingChunk);
+    Fio *fio = FileFio::Builder()
+            .file(fp)
+            .maxProcessingChunk(this->maxProcessingChunk)
+            .build();
     int res = loadFromFio(fio, saveInfo);
     delete fio;
 

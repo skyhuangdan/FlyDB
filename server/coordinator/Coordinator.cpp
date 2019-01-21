@@ -53,7 +53,13 @@ Coordinator::Coordinator() {
                                       CONFIG_LOADING_INTERVAL_BYTES);
 
     /** aof handler **/
-    this->aofHandler = new AOFHandler(this, NULL, configCache->getAofState());
+    this->aofHandler = AOFHandler::Builder()
+            .coordinator(this)
+            .fileName(configCache->getAofFile())
+            .state(configCache->getAofState())
+            .useFdbPreamble(configCache->isAofUseFdbPreamble())
+            .fsync(configCache->getAofFsync())
+            .build();
 
     /** event loop **/
     this->flyServer = new FlyServer(this);

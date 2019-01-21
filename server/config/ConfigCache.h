@@ -58,6 +58,18 @@ public:
 
     void setAofState(AOFState aofState);
 
+    bool isAofUseFdbPreamble() const;
+
+    void setAofUseFdbPreamble(bool aofUseFdbPreamble);
+
+    int getAofFsync() const;
+
+    void setAofFsync(int aofFsync);
+
+    bool isAofRewriteIncrementalFsync() const;
+
+    void setAofRewriteIncrementalFsync(bool aofRewriteIncrementalFsync);
+
     int getPort() const;
 
     void setPort(int port);
@@ -86,11 +98,18 @@ private:
     int syslogFacility;
 
     /**
-     * 持久化
+     * 持久化信息
      */
     char *fdbFile;                                  // fdb持久化文件名
     char *aofFile;                                  // aof持久化文件名
     AOFState aofState;
+    bool aofUseFdbPreamble;                         // aof与fdb混合持久化
+    int aofFsync;                                   // aof文件同步策略
+    /**
+     * 用于标示在rewrite过程中是否增量进行fsync操作，
+     * 便于均摊磁盘IO压力，增量每次写入自动进行fsync
+     **/
+    bool aofRewriteIncrementalFsync;
 };
 
 #endif //FLYDB_FILECONFIG_H
