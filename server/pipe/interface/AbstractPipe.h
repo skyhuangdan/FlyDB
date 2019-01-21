@@ -23,7 +23,7 @@ public:
     /**
      * 打开管道
      **/
-    virtual void open(void) = 0;
+    virtual int open(void) = 0;
 
     /**
      * 关闭管道

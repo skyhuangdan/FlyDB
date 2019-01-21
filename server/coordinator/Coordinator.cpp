@@ -64,7 +64,7 @@ Coordinator::Coordinator() {
     this->flyServer->init(configCache);
 
     // pip init
-    this->pipe = new Pipe(this);
+    this->fdbPipe = new Pipe(this);
 
     /** log handler */
     this->logHandler = logFactory->getLogger();
@@ -122,8 +122,8 @@ AbstractFlyObjFactory *Coordinator::getFlyObjStringFactory() const {
     return flyObjStringFactory;
 }
 
-AbstractPipe *Coordinator::getPipe() const {
-    return this->pipe;
+AbstractPipe *Coordinator::getFDBPipe() const {
+    return this->fdbPipe;
 }
 
 AbstractLogHandler *Coordinator::getLogHandler() const {

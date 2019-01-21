@@ -13,7 +13,7 @@ class Pipe : public AbstractPipe {
 public:
     Pipe(const AbstractCoordinator *coordinator);
     ~Pipe();
-    void open(void);
+    int open(void);
     void sendInfo(PipeType ptype, size_t cowSize);
     PipeCowBytes* recvInfo(void);
     void closeAll(void);

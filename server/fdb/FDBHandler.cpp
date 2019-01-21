@@ -47,7 +47,7 @@ int FDBHandler::backgroundSave() {
     this->setBgsaveLastTryTime(time(NULL));
 
     // 打开管道
-    this->coordinator->getPipe()->open();
+    this->coordinator->getFDBPipe()->open();
 
     pid_t childPid = -1;
     if (0 == (childPid = fork())) {
@@ -57,7 +57,7 @@ int FDBHandler::backgroundSave() {
         int res = this->save();
         if (1 == res) {
             // todo: cowSize = 0 now, need to resize
-            this->coordinator->getPipe()->sendInfo(PIPE_TYPE_RDB, 0);
+            this->coordinator->getFDBPipe()->sendInfo(PIPE_TYPE_RDB, 0);
         }
 
         exit(res == 1 ? 0 : 1);
@@ -65,7 +65,7 @@ int FDBHandler::backgroundSave() {
         /** Parent */
         if (-1 == childPid) {
             // 如果创建子进程失败，则关闭pipe
-            this->coordinator->getPipe()->closeAll();
+            this->coordinator->getFDBPipe()->closeAll();
             this->logHandler->logWarning("Can't save in background: fork: %s",
                                          strerror(errno));
             return -1;

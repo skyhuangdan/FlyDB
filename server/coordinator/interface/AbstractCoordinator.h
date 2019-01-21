@@ -43,7 +43,7 @@ public:
     virtual AbstractFlyObjFactory *getFlyObjStringFactory() const = 0;
 
     /** Pipe */
-    virtual AbstractPipe *getPipe() const = 0;
+    virtual AbstractPipe *getFDBPipe() const = 0;
 
     /** LogHandler */
     virtual AbstractLogHandler *getLogHandler() const = 0;

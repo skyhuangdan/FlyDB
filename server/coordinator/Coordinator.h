@@ -27,7 +27,7 @@ public:
     AbstractFlyObjFactory *getFlyObjStringFactory() const;
 
     /** Pipe */
-    AbstractPipe *getPipe() const;
+    AbstractPipe *getFDBPipe() const;
     
     /** LogHandler */
     AbstractLogHandler *getLogHandler() const;
@@ -50,9 +50,9 @@ private:
     ConfigCache *configCache;
 
     /**
-     * Pipe: child -> parent info sharing
+     * FDB Pipe: child -> parent info sharing
      **/
-    AbstractPipe *pipe = NULL;
+    AbstractPipe *fdbPipe = NULL;
     
     /**
      * logHandler

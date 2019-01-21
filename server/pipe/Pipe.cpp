@@ -50,16 +50,19 @@ PipeCowBytes* Pipe::recvInfo(void) {
     return cowBytes;
 }
 
-void Pipe::open(void) {
+int Pipe::open(void) {
     if (-1 == pipe(this->infoPipe)) {
         this->closeAll();
-        return;
+        return -1;
     }
 
     if (-1 == coordinator->getNetHandler()->setBlock(
             NULL, this->infoPipe[0], 0)) {
         this->closeAll();
+        return -1;
     }
+    
+    return 1;
 }
 
 void Pipe::closeAll(void) {

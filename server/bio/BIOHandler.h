@@ -12,6 +12,9 @@
 #include "../coordinator/interface/AbstractCoordinator.h"
 #include "interface/AbstractBIOHandler.h"
 
+/**
+ * background I/O
+ */
 class BIOHandler : public AbstractBIOHandler {
 public:
     uint64_t getPendingJobCount(int type);
