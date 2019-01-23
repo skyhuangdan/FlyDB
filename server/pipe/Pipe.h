@@ -14,9 +14,13 @@ public:
     Pipe(const AbstractCoordinator *coordinator);
     ~Pipe();
     int open(void);
+    int setReadNonBlock(void);
+    int setWriteNonBlock(void);
     void sendInfo(PipeType ptype, size_t cowSize);
     PipeCowBytes* recvInfo(void);
     void closeAll(void);
+    int getReadPipe() const;
+    int getWritePipe() const;
 
 private:
 

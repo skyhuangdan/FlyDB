@@ -58,6 +58,30 @@ int AOFHandler::rewriteBackground() {
         return -1;
     }
 
+    /** 打开主线程与子线程之间的管道 */
+    if (-1 == coordinator->getAofDataPipe()->open()
+        || -1 == coordinator->getAofDataPipe()->setReadNonBlock()
+        || -1 == coordinator->getAofDataPipe()->setWriteNonBlock()
+        || -1 == coordinator->getAofAckToChildPipe()->open()
+        || -1 == coordinator->getAofAckToParentPipe()->open()) {
+        return -1;
+    }
+
+    /** 创建文件事件: 用于child-->parent ack的读取处理 */
+    if (-1 == this->coordinator->getEventLoop()->createFileEvent(
+            coordinator->getAofAckToParentPipe()->getReadPipe(),
+            ES_READABLE,
+            NULL,
+            NULL)) {
+        return -1;
+    }
+
+    // 打开ChildInfo管道并且设置读通道非阻塞
+    if (-1 == this->coordinator->getChildInfoPipe()->open()
+        || -1 == this->coordinator->getChildInfoPipe()->setReadNonBlock()) {
+        return -1;
+    }
+
 
     return 1;
 }
@@ -76,15 +100,43 @@ int AOFHandler::rewriteAppendOnlyFile() {
         return -1;
     }
 
-    /** todo: rewrite */
+    /** 将当前状态下的数据持久化 */
     off_t autosync = this->rewriteIncrementalFsync ? AOF_AUTOSYNC_BYTES : 0;
     FileFio* fio = FileFio::Builder().file(fp).autosync(autosync).build();
+    /** 如果使用混合持久化，则调用fdb进行快照持久化 */
+    if (this->useFdbPreamble) {
+        FDBSaveInfo *fdbSaveInfo = new FDBSaveInfo();
+        if (-1 == coordinator->getFdbHandler()->saveToFio(
+                fio, RDB_SAVE_AOF_PREAMBLE, fdbSaveInfo)) {
+            fclose(fp);
+            unlink(tmpfile);
+            return -1;
+        }
+    } else {
+        if (-1 == this->rewriteAppendOnlyFileFio(fio)) {
+            fclose(fp);
+            unlink(tmpfile);
+            return -1;
+        }
+    }
+
+    /** 刷新至磁盘中 */
+    if (EOF == fflush(fp) || -1 == fsync(fileno(fp))) {
+        coordinator->getLogHandler()->logWarning(
+                "Write error saving DB on disk: %s", strerror(errno));
+        fclose(fp);
+        unlink(tmpfile);
+        return -1;
+    }
+
+    /** todo: 持久化写入过程中产生的命令 */
 
     /** rename file to real file name */
     if (-1 == rename(tmpfile, this->fileName)) {
         this->coordinator->getLogHandler()->logWarning(
                 "Error moving temp append only file "
                 "on the final destination: %s", strerror(errno));
+        unlink(tmpfile);
         return -1;
     }
     this->coordinator->getLogHandler()->logNotice(
@@ -125,11 +177,14 @@ void AOFHandler::setUseFdbPreamble(bool useFdbPreamble) {
     this->useFdbPreamble = useFdbPreamble;
 }
 
-void AOFHandler::setFsync(int fsync) {
-    this->fsync = fsync;
+void AOFHandler::setFsyncStragy(int stragy) {
+    this->fsyncStragy = stragy;
 }
 
 void AOFHandler::setRewriteIncrementalFsync(bool rewriteIncrementalFsync) {
     this->rewriteIncrementalFsync = rewriteIncrementalFsync;
 }
 
+int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
+
+}

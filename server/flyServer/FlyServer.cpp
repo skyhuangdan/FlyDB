@@ -516,7 +516,7 @@ int serverCron(const AbstractCoordinator *coordinator,
 
             }
 
-            coordinator->getFDBPipe()->closeAll();
+            coordinator->getChildInfoPipe()->closeAll();
         }
     } else {
         /**

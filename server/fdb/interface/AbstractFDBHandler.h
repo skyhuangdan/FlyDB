@@ -16,6 +16,8 @@ public:
 
     virtual int save() = 0;
 
+    virtual int saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo) = 0;
+
     virtual int backgroundSave() = 0;
 
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;

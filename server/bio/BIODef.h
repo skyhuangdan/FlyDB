@@ -32,7 +32,7 @@ enum BIOJobOpCode {
     BIO_NUM_OPS = 3
 };
 
-/* Define aof_fsync to fdatasync() in Linux and fsync() for all the rest */
+/* Define aof_fsync to fdatasync() in Linux and fsyncStragy() for all the rest */
 #ifdef __linux__
 #define aof_fsync fdatasync
 #else

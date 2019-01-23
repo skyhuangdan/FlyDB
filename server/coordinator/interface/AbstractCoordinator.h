@@ -42,14 +42,19 @@ public:
     virtual AbstractFlyObjFactory *getFlyObjIntSetFactory() const = 0;
     virtual AbstractFlyObjFactory *getFlyObjStringFactory() const = 0;
 
-    /** Pipe */
-    virtual AbstractPipe *getFDBPipe() const = 0;
+    /** ChildInfo Pipe: child-->parent */
+    virtual AbstractPipe *getChildInfoPipe() const = 0;
 
     /** LogHandler */
     virtual AbstractLogHandler *getLogHandler() const = 0;
 
     /** bio */
     AbstractBIOHandler *getBioHandler() const;
+
+    /** AOF Pipe */
+    virtual AbstractPipe *getAofDataPipe() const = 0;
+    virtual AbstractPipe *getAofAckToParentPipe() const = 0;
+    virtual AbstractPipe *getAofAckToChildPipe() const = 0;
 
 };
 

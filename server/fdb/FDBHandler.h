@@ -22,6 +22,7 @@ public:
     ~FDBHandler();
     int load(FDBSaveInfo *saveInfo);
     int save();
+    int saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo);
     int backgroundSave();
     void backgroundSaveDone(int exitCode, int bySignal);
     int saveKeyValuePair(Fio *fio,
@@ -56,7 +57,6 @@ private:
     static void dbScan(void *priv, std::string *key, FlyObj *val);
     static void dictSaveScan(void *priv, std::string *key, FlyObj *val);
     static void skipListSaveProc(void *priv, std::string *obj);
-    int saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo);
     ssize_t saveLen(Fio *fio, uint64_t len);
     ssize_t saveObject(Fio *fio, FlyObj *obj);
     int saveInfoAuxFields(Fio *fio,

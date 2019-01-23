@@ -26,14 +26,19 @@ public:
     AbstractFlyObjFactory *getFlyObjIntSetFactory() const;
     AbstractFlyObjFactory *getFlyObjStringFactory() const;
 
-    /** Pipe */
-    AbstractPipe *getFDBPipe() const;
+    /** ChildInfo Pipe: child-->parent */
+    AbstractPipe *getChildInfoPipe() const;
     
     /** LogHandler */
     AbstractLogHandler *getLogHandler() const;
 
     /** bio */
     AbstractBIOHandler *getBioHandler() const;
+
+    /** AOF Pipe */
+    AbstractPipe *getAofDataPipe() const;
+    AbstractPipe *getAofAckToParentPipe() const;
+    AbstractPipe *getAofAckToChildPipe() const;
 
 private:
     AbstractNetHandler *netHandler;
@@ -50,9 +55,16 @@ private:
     ConfigCache *configCache;
 
     /**
-     * FDB Pipe: child -> parent info sharing
+     * ChildInfo Pipe: child -> parent info
      **/
     AbstractPipe *fdbPipe = NULL;
+
+    /**
+     * AOF Pipe
+     **/
+     AbstractPipe *aofDataPipe = NULL;
+     AbstractPipe *aofAckToParentPipe = NULL;
+     AbstractPipe *aofAckToChildPipe = NULL;
     
     /**
      * logHandler

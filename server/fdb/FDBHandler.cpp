@@ -46,8 +46,11 @@ int FDBHandler::backgroundSave() {
 
     this->setBgsaveLastTryTime(time(NULL));
 
-    // 打开管道
-    this->coordinator->getFDBPipe()->open();
+    // 打开管道并且设置读通道非阻塞
+    if (-1 == this->coordinator->getChildInfoPipe()->open()
+        || -1 == this->coordinator->getChildInfoPipe()->setReadNonBlock()) {
+        return -1;
+    }
 
     pid_t childPid = -1;
     if (0 == (childPid = fork())) {
@@ -57,7 +60,7 @@ int FDBHandler::backgroundSave() {
         int res = this->save();
         if (1 == res) {
             // todo: cowSize = 0 now, need to resize
-            this->coordinator->getFDBPipe()->sendInfo(PIPE_TYPE_RDB, 0);
+            this->coordinator->getChildInfoPipe()->sendInfo(PIPE_TYPE_RDB, 0);
         }
 
         exit(res == 1 ? 0 : 1);
@@ -65,7 +68,7 @@ int FDBHandler::backgroundSave() {
         /** Parent */
         if (-1 == childPid) {
             // 如果创建子进程失败，则关闭pipe
-            this->coordinator->getFDBPipe()->closeAll();
+            this->coordinator->getChildInfoPipe()->closeAll();
             this->logHandler->logWarning("Can't save in background: fork: %s",
                                          strerror(errno));
             return -1;
@@ -127,7 +130,7 @@ int FDBHandler::save() {
             .file(fp)
             .maxProcessingChunk(this->maxProcessingChunk)
             .build();
-    if (-1 == saveToFio(fio, 0, fdbSaveInfo)) {
+    if (-1 == saveToFio(fio, RDB_SAVE_NONE, fdbSaveInfo)) {
         this->logHandler->logWarning("Write error saving DB on disk: %s",
                                      strerror(errno));
         fclose(fp);

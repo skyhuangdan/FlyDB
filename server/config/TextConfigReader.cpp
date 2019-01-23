@@ -215,7 +215,7 @@ void TextConfigReader::loadConfigFromLineString(const std::string &line) {
         }
 
         this->configCache->setAofFsync(fsync);
-    } else if (0 == words[0].compare("aof-rewrite-incremental-fsync")
+    } else if (0 == words[0].compare("aof-rewrite-incremental-fsyncStragy")
                && 2 == words.size()) {
         int yes;
         if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {

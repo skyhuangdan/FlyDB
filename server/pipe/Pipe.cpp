@@ -56,12 +56,26 @@ int Pipe::open(void) {
         return -1;
     }
 
+    return 1;
+}
+
+int Pipe::setReadNonBlock(void) {
     if (-1 == coordinator->getNetHandler()->setBlock(
             NULL, this->infoPipe[0], 0)) {
         this->closeAll();
         return -1;
     }
-    
+
+    return 1;
+}
+
+int Pipe::setWriteNonBlock(void) {
+    if (-1 == coordinator->getNetHandler()->setBlock(
+            NULL, this->infoPipe[1], 0)) {
+        this->closeAll();
+        return -1;
+    }
+
     return 1;
 }
 
@@ -72,4 +86,12 @@ void Pipe::closeAll(void) {
         this->infoPipe[0] = -1;
         this->infoPipe[1] = -1;
     }
+}
+
+int Pipe::getReadPipe() const {
+    return this->infoPipe[0];
+}
+
+int Pipe::getWritePipe() const {
+    return this->infoPipe[1];
 }

@@ -58,7 +58,7 @@ Coordinator::Coordinator() {
             .fileName(configCache->getAofFile())
             .state(configCache->getAofState())
             .useFdbPreamble(configCache->isAofUseFdbPreamble())
-            .fsync(configCache->getAofFsync())
+            .fsyncStragy(configCache->getAofFsync())
             .build();
 
     /** event loop **/
@@ -69,8 +69,13 @@ Coordinator::Coordinator() {
     /** flyserver初始化 **/
     this->flyServer->init(configCache);
 
-    // pip init
+    /** fdb pipe init */
     this->fdbPipe = new Pipe(this);
+
+    /** aof pipe init  */
+    this->aofDataPipe = new Pipe(this);
+    this->aofAckToParentPipe = new Pipe(this);
+    this->aofAckToChildPipe = new Pipe(this);
 
     /** log handler */
     this->logHandler = logFactory->getLogger();
@@ -128,7 +133,7 @@ AbstractFlyObjFactory *Coordinator::getFlyObjStringFactory() const {
     return flyObjStringFactory;
 }
 
-AbstractPipe *Coordinator::getFDBPipe() const {
+AbstractPipe *Coordinator::getChildInfoPipe() const {
     return this->fdbPipe;
 }
 
@@ -138,4 +143,16 @@ AbstractLogHandler *Coordinator::getLogHandler() const {
 
 AbstractBIOHandler *Coordinator::getBioHandler() const {
     return this->bioHandler;
+}
+
+AbstractPipe *Coordinator::getAofDataPipe() const {
+    return this->aofDataPipe;
+}
+
+AbstractPipe *Coordinator::getAofAckToParentPipe() const {
+    return this->aofAckToParentPipe;
+}
+
+AbstractPipe *Coordinator::getAofAckToChildPipe() const {
+    return this->aofAckToChildPipe;
 }

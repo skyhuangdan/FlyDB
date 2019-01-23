@@ -24,7 +24,7 @@ public:
     void setCoordinator(AbstractCoordinator *coordinator);
     void setFileName(char *fileName);
     void setUseFdbPreamble(bool useFdbPreamble);
-    void setFsync(int fsync);
+    void setFsyncStragy(int stragy);
     void setRewriteIncrementalFsync(bool rewriteIncrementalFsync);
 
     class Builder {
@@ -53,8 +53,8 @@ public:
             return *this;
         }
 
-        Builder& fsync(int fsync) {
-            this->handler->setFsync(fsync);
+        Builder& fsyncStragy(int stragy) {
+            this->handler->setFsyncStragy(stragy);
             return *this;
         }
 
@@ -72,6 +72,8 @@ public:
     };
 
 private:
+    int rewriteAppendOnlyFileFio(Fio *fio);
+
     AbstractCoordinator *coordinator;
     char *fileName;
     AOFState state;
@@ -81,7 +83,7 @@ private:
     int fd = -1;
     bool scheduled = false;
     bool useFdbPreamble = CONFIG_DEFAULT_AOF_USE_FDB_PREAMBLE;
-    int fsync = CONFIG_DEFAULT_AOF_FSYNC;
+    int fsyncStragy = CONFIG_DEFAULT_AOF_FSYNC;
     bool rewriteIncrementalFsync = CONFIG_DEFAULT_AOF_REWRITE_INCREMENTAL_FSYNC;
 
 };
