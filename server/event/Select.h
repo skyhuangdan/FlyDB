@@ -6,19 +6,22 @@
 #define FLYDB_SELECT_H
 
 #include <sys/select.h>
-#include "EventLoop.h"
+#include <map>
+#include "../coordinator/interface/AbstractCoordinator.h"
 
 class PollState {
 public:
-    PollState();
+    PollState(const AbstractCoordinator *coordinator);
     void add(int fd, int mask);
     void del(int fd, int mask);
-    int poll(EventLoop *eventLoop, struct timeval *tvp);
+    void poll(struct timeval *tvp, std::map<int, int> &res);
 
 private:
     fd_set rfds, wfds;
     // 当select()之后再去使用fd会不安全, 因此保留一个fd的备份
     fd_set _rfds, _wfds;
+
+    const AbstractCoordinator *coordinator;
 };
 
 #endif //FLYDB_SELECT_H

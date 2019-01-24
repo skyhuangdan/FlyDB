@@ -6,9 +6,11 @@
 #include "Select.h"
 #include "EventDef.h"
 
-PollState::PollState() {
+PollState::PollState(const AbstractCoordinator *coordinator) {
     FD_ZERO(&(this->rfds));
     FD_ZERO(&(this->wfds));
+
+    this->coordinator = coordinator;
 }
 
 void PollState::add(int fd, int mask) {
@@ -29,18 +31,17 @@ void PollState::del(int fd, int mask) {
     }
 }
 
-int PollState::poll(EventLoop *eventLoop, struct timeval *tvp) {
+void PollState::poll(struct timeval *tvp, std::map<int, int> &res) {
     // 保存副本
     memcpy(&this->_rfds, &this->rfds, sizeof(fd_set));
     memcpy(&this->_wfds, &this->wfds, sizeof(fd_set));
 
     // select并遍历获取事件
-    int numEvents = 0;
-    int retval = select(eventLoop->getMaxfd() + 1,
+    int retval = select(coordinator->getEventLoop()->getMaxfd() + 1,
             &this->_rfds, &this->_wfds, NULL, tvp);
     if (retval > 0) {
-        for (int i = 0; i <= eventLoop->getMaxfd(); i++) {
-            int eventMask = eventLoop->getFileEvents(i);
+        for (int i = 0; i <= coordinator->getEventLoop()->getMaxfd(); i++) {
+            int eventMask = coordinator->getEventLoop()->getFileEvents(i);
             if (ES_NONE == eventMask) {
                 continue;
             }
@@ -57,10 +58,7 @@ int PollState::poll(EventLoop *eventLoop, struct timeval *tvp) {
                 continue;
             }
 
-            eventLoop->addFiredEvent(i, mask);
-            numEvents++;
+            res[i] = mask;
         }
     }
-
-    return numEvents;
 }

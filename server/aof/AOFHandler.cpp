@@ -60,11 +60,14 @@ int AOFHandler::rewriteBackground() {
 
     /** 打开主线程与子线程之间的管道 */
     if (-1 == coordinator->getAofDataPipe()->open()
+        || -1 == coordinator->getAofAckToChildPipe()->open()
+        || -1 == coordinator->getAofAckToParentPipe()->open()
+        || -1 == coordinator->getChildInfoPipe()->open()
         || -1 == coordinator->getAofDataPipe()->setReadNonBlock()
         || -1 == coordinator->getAofDataPipe()->setWriteNonBlock()
-        || -1 == coordinator->getAofAckToChildPipe()->open()
-        || -1 == coordinator->getAofAckToParentPipe()->open()) {
-        return -1;
+        || -1 == coordinator->getChildInfoPipe()->setReadNonBlock()) {
+
+        goto error;
     }
 
     /** 创建文件事件: 用于child-->parent ack的读取处理 */
@@ -73,17 +76,18 @@ int AOFHandler::rewriteBackground() {
             ES_READABLE,
             NULL,
             NULL)) {
-        return -1;
+        goto error;
     }
-
-    // 打开ChildInfo管道并且设置读通道非阻塞
-    if (-1 == this->coordinator->getChildInfoPipe()->open()
-        || -1 == this->coordinator->getChildInfoPipe()->setReadNonBlock()) {
-        return -1;
-    }
-
 
     return 1;
+
+error:
+    coordinator->getAofDataPipe()->closeAll();
+    coordinator->getAofAckToChildPipe()->closeAll();
+    coordinator->getAofAckToParentPipe()->closeAll();
+    coordinator->getChildInfoPipe()->closeAll();
+    return -1;
+
 }
 
 int AOFHandler::rewriteAppendOnlyFile() {

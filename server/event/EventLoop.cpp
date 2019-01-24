@@ -3,6 +3,7 @@
 //
 
 #include <cstdlib>
+#include <poll.h>
 #include "EventLoop.h"
 #include "Select.h"
 #include "EventDef.h"
@@ -14,13 +15,13 @@ EventLoop::EventLoop(const AbstractCoordinator *coordinator, int setSize) {
     this->timeEventNextId = 0;
     this->stopFlag = false;
     this->maxfd = -1;
-    this->apiData = new PollState();
+    this->coordinator = coordinator;
+    this->apiData = new PollState(this->coordinator);
     this->fileEvents.resize(this->setSize);
     for (int i = 0; i < this->setSize; i++) {
         this->fileEvents[i].setFd(i);
         this->fileEvents[i].setCoordinator(coordinator);
     }
-    this->coordinator = coordinator;
     this->beforeSleepProc = beforeSleep;
     this->afterSleepProc = NULL;
 }
@@ -29,7 +30,6 @@ EventLoop::~EventLoop() {
     delete this->apiData;
     this->timeEvents.clear();
     this->fileEvents.clear();
-    this->firedEvents.clear();
 }
 
 void EventLoop::eventMain() {
@@ -48,6 +48,38 @@ int EventLoop::getMaxfd() const {
 
 int EventLoop::getSetSize() const {
     return setSize;
+}
+
+int EventLoop::wait(int fd, int mask, int millseconds) {
+    /** 初始化pfd */
+    struct pollfd pfd;
+    memset(&pfd, 0, sizeof(pfd));
+    pfd.fd = fd;
+    if (mask && ES_READABLE) {
+        pfd.events |= POLLIN;
+    }
+    if (mask && ES_WRITABLE) {
+        pfd.events |= POLLOUT;
+    }
+
+    /**
+     * 获取设备符状态：
+     *      如果返回 = 0，表示没有设备符准备好
+     *      如果返回 < 0, 表示出错
+     **/
+    int retval, retmask;
+    if ((retval = poll(&pfd, 1, millseconds)) <= 0) {
+        return retval;
+    }
+
+    /** 设置设备符可读可写状态mask并返回 */
+    if ((pfd.revents && POLLIN) && (mask && ES_READABLE)) {
+        retmask |= ES_READABLE;
+    }
+    if ((pfd.revents && POLLOUT) && (mask && ES_WRITABLE)) {
+        retmask |= ES_WRITABLE;
+    }
+    return retmask;
 }
 
 void EventLoop::stop() {
@@ -188,21 +220,21 @@ int EventLoop::processEvents(int flags) {
         }
 
         // 获取文件事件（及网络io）
-        int numEvents =
-                reinterpret_cast<PollState*>(this->apiData)->poll(this, tvp);
+        std::map<int, int> pollRes;
+        reinterpret_cast<PollState*>(this->apiData)->poll(tvp, pollRes);
         if (afterSleepProc != NULL && flags & EVENT_CALL_AFTER_SLEEP) {
             this->afterSleepProc(this->coordinator);
         }
 
         // 处理获取到的文件事件, 处理完清空firedEvents
-        for (int i = 0; i < numEvents; i++) {
-            int fd = this->firedEvents[i].getFd();
-            int mask = this->firedEvents[i].getMask();
+        std::map<int, int>::iterator iter = pollRes.begin();
+        for (iter; iter != pollRes.end(); iter++) {
+            int fd = iter->first;
+            int mask = iter->second;
             FileEvent* fileEvent = &this->fileEvents[fd];
             fileEvent->process(mask);
             processed++;
         }
-        this->firedEvents.clear();
     }
 
     // 处理time event
@@ -255,7 +287,8 @@ int EventLoop::deleteTimeEvent(uint64_t id) {
     for (iter; iter != this->timeEvents.end(); iter++) {
         if (iter->getId() == id) {
             if (iter->getFinalizerProc()) {
-                iter->getFinalizerProc()(this->coordinator, iter->getClientData());
+                iter->getFinalizerProc()(this->coordinator,
+                                         iter->getClientData());
             }
             this->timeEvents.erase(iter++);
             return 1;
@@ -270,10 +303,6 @@ void EventLoop::createTimeEvent(uint64_t milliseconds, timeEventProc *proc,
     this->timeEvents.push_front(TimeEvent(this->timeEventNextId++, milliseconds,
                       proc, clientData, finalizerProc));
     this->timeEvents.sort();
-}
-
-void EventLoop::addFiredEvent(int fd, int mask) {
-    this->firedEvents.push_back(FiredEvent(fd, mask));
 }
 
 void beforeSleep(const AbstractCoordinator *coordinator) {

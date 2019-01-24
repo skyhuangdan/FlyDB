@@ -85,6 +85,7 @@ private:
     bool useFdbPreamble = CONFIG_DEFAULT_AOF_USE_FDB_PREAMBLE;
     int fsyncStragy = CONFIG_DEFAULT_AOF_FSYNC;
     bool rewriteIncrementalFsync = CONFIG_DEFAULT_AOF_REWRITE_INCREMENTAL_FSYNC;
+    bool stopSendingDiff = false;
 
 };
 

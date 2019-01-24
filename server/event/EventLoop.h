@@ -10,7 +10,6 @@
 #include <ctime>
 #include "FileEvent.h"
 #include "TimeEvent.h"
-#include "FiredEvent.h"
 #include "interface/AbstractEventLoop.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 
@@ -22,6 +21,7 @@ public:
     int processEvents(int flags);
     void eventMain();
     int getMaxfd() const;
+    int wait(int fd, int mask, int millseconds);
 
     // file event
     int getSetSize() const;
@@ -43,17 +43,12 @@ public:
     int deleteTimeEvent(uint64_t id);
     void createTimeEvent(uint64_t milliseconds, timeEventProc* proc,
                         void *clientData, eventFinalizerProc *finalizerProc);
-
-    // fired event
-    void addFiredEvent(int fd, int mask);
-
 private:
     int maxfd;          /** 当前注册的最大fd(file descriptor) */
     int setSize;        // 最大fd数量
     uint64_t timeEventNextId;
     int64_t lastTime;
     std::vector<FileEvent> fileEvents;
-    std::vector<FiredEvent> firedEvents;
     std::list<TimeEvent> timeEvents;
     bool stopFlag;
     void *apiData;

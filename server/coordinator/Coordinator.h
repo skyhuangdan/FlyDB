@@ -62,9 +62,9 @@ private:
     /**
      * AOF Pipe
      **/
-     AbstractPipe *aofDataPipe = NULL;
-     AbstractPipe *aofAckToParentPipe = NULL;
-     AbstractPipe *aofAckToChildPipe = NULL;
+     AbstractPipe *aofDataPipe = NULL;          // parent-->child: aof diff info
+     AbstractPipe *aofAckToParentPipe = NULL;   // child-->parent: ack info
+     AbstractPipe *aofAckToChildPipe = NULL;    // parent-->child: ack info
     
     /**
      * logHandler
