@@ -6,7 +6,7 @@
 #define FLYDB_ABSTRACTFDBHANDLER_H
 
 #include "../FDBDef.h"
-#include "../../io/interface/Fio.h"
+#include "../../io/base/Fio.h"
 
 class FlyObj;
 

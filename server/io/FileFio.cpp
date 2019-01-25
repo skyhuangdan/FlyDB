@@ -54,3 +54,7 @@ void FileFio::setAutosync(off_t autosync) {
 void FileFio::setMaxProcessingChunk(uint64_t maxProcessingChunk) {
     this->setMaxProcessingChunk(maxProcessingChunk);
 }
+
+FILE *FileFio::getFp() const {
+    return fp;
+}

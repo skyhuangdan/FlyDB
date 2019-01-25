@@ -66,6 +66,9 @@ public:
     int writeToClient(const AbstractCoordinator *coordinator,
                       AbstractFlyClient *flyClient,
                       int handlerInstalled);
+    int wait(int fd, int mask, int millseconds);
+    ssize_t syncRead(int fd, char *ptr, ssize_t size, uint64_t timeout);
+    ssize_t syncWrite(int fd, char *ptr, ssize_t size, uint64_t timeout);
 
 private:
     NetHandler();

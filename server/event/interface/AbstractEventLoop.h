@@ -17,7 +17,6 @@ public:
     virtual int getSetSize() const = 0;
     virtual int resizeSetSize(int setSize) = 0;
     virtual void stop() = 0;
-    virtual int wait(int fd, int mask, int millseconds) = 0;
     virtual int createFileEvent(int fd,
                                 int mask,
                                 fileEventProc* proc,

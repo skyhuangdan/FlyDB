@@ -7,6 +7,7 @@
 
 #include "interface/AbstractAOFHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
+#include "../io/FileFio.h"
 
 class AOFHandler : public AbstractAOFHandler {
 public:
@@ -72,13 +73,15 @@ public:
     };
 
 private:
+    int rewriteAppendOnlyFileDiff(char *tmpfile, FileFio* fio);
     int rewriteAppendOnlyFileFio(Fio *fio);
+    int readDiffFromParent();
 
     AbstractCoordinator *coordinator;
     char *fileName;
     AOFState state;
     pid_t childPid = -1;
-    std::string aofBuf;
+    std::string childDiff;
     time_t lastFsync;
     int fd = -1;
     bool scheduled = false;

@@ -50,38 +50,6 @@ int EventLoop::getSetSize() const {
     return setSize;
 }
 
-int EventLoop::wait(int fd, int mask, int millseconds) {
-    /** 初始化pfd */
-    struct pollfd pfd;
-    memset(&pfd, 0, sizeof(pfd));
-    pfd.fd = fd;
-    if (mask && ES_READABLE) {
-        pfd.events |= POLLIN;
-    }
-    if (mask && ES_WRITABLE) {
-        pfd.events |= POLLOUT;
-    }
-
-    /**
-     * 获取设备符状态：
-     *      如果返回 = 0，表示没有设备符准备好
-     *      如果返回 < 0, 表示出错
-     **/
-    int retval, retmask;
-    if ((retval = poll(&pfd, 1, millseconds)) <= 0) {
-        return retval;
-    }
-
-    /** 设置设备符可读可写状态mask并返回 */
-    if ((pfd.revents && POLLIN) && (mask && ES_READABLE)) {
-        retmask |= ES_READABLE;
-    }
-    if ((pfd.revents && POLLOUT) && (mask && ES_WRITABLE)) {
-        retmask |= ES_WRITABLE;
-    }
-    return retmask;
-}
-
 void EventLoop::stop() {
     this->stopFlag = true;
 }

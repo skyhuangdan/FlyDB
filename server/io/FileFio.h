@@ -6,7 +6,7 @@
 #define FLYDB_FILEFIO_H
 
 #include <cstdio>
-#include "interface/Fio.h"
+#include "base/Fio.h"
 
 class FileFio : public Fio {
 public:
@@ -17,6 +17,7 @@ public:
     void setMaxProcessingChunk(uint64_t maxProcessingChunk);
     int tell();
     int flush();
+    FILE *getFp() const;
 
     class Builder {
     public:

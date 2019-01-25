@@ -89,6 +89,18 @@ public:
     virtual int writeToClient(const AbstractCoordinator *coordinator,
                               AbstractFlyClient *flyClient,
                               int handlerInstalled) = 0;
+
+    virtual int wait(int fd, int mask, int millseconds) = 0;
+
+    virtual ssize_t syncRead(int fd,
+                             char *ptr,
+                             ssize_t size,
+                             uint64_t timeout) = 0;
+
+    virtual ssize_t syncWrite(int fd,
+                              char *ptr,
+                              ssize_t size,
+                              uint64_t timeout) = 0;
 };
 
 #endif //FLYDB_ABSTRACTNETHANDLER_H

@@ -21,7 +21,6 @@ public:
     int processEvents(int flags);
     void eventMain();
     int getMaxfd() const;
-    int wait(int fd, int mask, int millseconds);
 
     // file event
     int getSetSize() const;

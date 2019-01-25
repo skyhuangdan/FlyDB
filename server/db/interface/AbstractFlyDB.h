@@ -7,7 +7,7 @@
 
 #include <cstdint>
 #include <string>
-#include "../../io/interface/Fio.h"
+#include "../../io/base/Fio.h"
 
 class FlyObj;
 class AbstractFlyDB;

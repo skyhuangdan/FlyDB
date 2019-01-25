@@ -18,6 +18,7 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <iostream>
+#include <poll.h>
 #include "NetHandler.h"
 #include "NetDef.h"
 #include "../../def.h"
@@ -639,6 +640,52 @@ int NetHandler::writeToClient(const AbstractCoordinator *coordinator,
     return 1;
 }
 
+int NetHandler::wait(int fd, int mask, int millseconds) {
+    /** 初始化pfd */
+    struct pollfd pfd;
+    memset(&pfd, 0, sizeof(pfd));
+    pfd.fd = fd;
+    if (mask && ES_READABLE) {
+        pfd.events |= POLLIN;
+    }
+    if (mask && ES_WRITABLE) {
+        pfd.events |= POLLOUT;
+    }
+
+    /**
+     * 获取设备符状态：
+     *      如果返回 = 0，表示没有设备符准备好
+     *      如果返回 < 0, 表示出错
+     **/
+    int retval, retmask;
+    if ((retval = poll(&pfd, 1, millseconds)) <= 0) {
+        return retval;
+    }
+
+    /** 设置设备符可读可写状态mask并返回 */
+    if ((pfd.revents && POLLIN) && (mask && ES_READABLE)) {
+        retmask |= ES_READABLE;
+    }
+    if ((pfd.revents && POLLOUT) && (mask && ES_WRITABLE)) {
+        retmask |= ES_WRITABLE;
+    }
+    return retmask;
+}
+
+ssize_t NetHandler::syncRead(int fd,
+                             char *ptr,
+                             ssize_t size,
+                             uint64_t timeout) {
+    // todo syncRead
+
+}
+
+ssize_t NetHandler::syncWrite(int fd,
+                              char *ptr,
+                              ssize_t size,
+                              uint64_t timeout) {
+    // todo syncWrite
+}
 
 int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
     size_t pos = flyClient->getQueryBuf().find("\r\n");
