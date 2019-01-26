@@ -676,15 +676,60 @@ ssize_t NetHandler::syncRead(int fd,
                              char *ptr,
                              ssize_t size,
                              uint64_t timeout) {
-    // todo syncRead
+    ssize_t readCount = 0;
+    uint64_t start = miscTool->mstime(), span = 0;
+    while ((span = miscTool->mstime() - start) < timeout) {
+        /** read once */
+        int readRes;
+        if ((readRes = read(fd, ptr + readCount, size - readCount) <= 0)) {
+            if (-1 == readRes && EAGAIN == errno) {
+                continue;
+            }
+            return -1;
+        }
 
+        /** weather read all? */
+        readCount += readRes;
+        if (readCount == size) {
+            break;
+        }
+
+        /** wait fd readable */
+        this->wait(fd, ES_READABLE, timeout - span);
+    }
+
+    return readCount;
 }
 
 ssize_t NetHandler::syncWrite(int fd,
                               char *ptr,
                               ssize_t size,
                               uint64_t timeout) {
-    // todo syncWrite
+    uint64_t start = miscTool->mstime(), span = 0;
+    ssize_t totalWrite = 0;
+
+    while ((span = miscTool->mstime() - start) < timeout) {
+        int writeRes = 0;
+        if ((writeRes = write(fd, ptr + totalWrite, size - totalWrite)) <= 0) {
+            /** if res is -1 and errno means read again, then continue */
+            if (-1 == writeRes && EAGAIN == errno) {
+                continue;
+            }
+
+            return -1;
+        }
+
+        /** if write all done, break and return */
+        totalWrite += writeRes;
+        if (writeRes == size) {
+            break;
+        }
+
+        /** wait fd writable */
+        this->wait(fd, ES_WRITABLE, timeout - span);
+    }
+
+    return totalWrite;
 }
 
 int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
