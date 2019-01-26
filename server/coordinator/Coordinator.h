@@ -40,6 +40,10 @@ public:
     AbstractPipe *getAofAckToParentPipe() const;
     AbstractPipe *getAofAckToChildPipe() const;
 
+    /** 关闭上述所有管道：childInfo pipe和AOF pipe */
+    void closeAllPipe();
+    int openAllPipe();
+
 private:
     AbstractNetHandler *netHandler;
     AbstractFlyServer *flyServer;

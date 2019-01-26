@@ -76,6 +76,7 @@ int FDBHandler::backgroundSave() {
 
         this->setChildPid(childPid);
         this->setDiskChildType();
+        // todo: updateDictResizePolicy
         this->logHandler->logNotice("Background saving started by pid %d",
                                     childPid);
     }

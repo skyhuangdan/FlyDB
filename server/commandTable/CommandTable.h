@@ -5,6 +5,7 @@
 #ifndef FLYDB_COMMANDTABLE_H
 #define FLYDB_COMMANDTABLE_H
 
+#include <string>
 #include "../flyClient/FlyClient.h"
 #include "../log/FileLogHandler.h"
 

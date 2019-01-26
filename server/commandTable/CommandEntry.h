@@ -136,6 +136,6 @@ void hgetCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void saveCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void bgsaveCommand(const AbstractCoordinator*, AbstractFlyClient*);
 
-extern std::vector<CommandEntry> flyDBCommandTable;
+extern std::vector<CommandEntry*> flyDBCommandTable;
 
 #endif //FLYDB_COMMANDENTRY_H

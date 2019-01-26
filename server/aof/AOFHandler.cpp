@@ -59,15 +59,14 @@ int AOFHandler::rewriteBackground() {
     }
 
     /** 打开主线程与子线程之间的管道 */
-    if (-1 == coordinator->getAofDataPipe()->open()
-        || -1 == coordinator->getAofAckToChildPipe()->open()
-        || -1 == coordinator->getAofAckToParentPipe()->open()
-        || -1 == coordinator->getChildInfoPipe()->open()
-        || -1 == coordinator->getAofDataPipe()->setReadNonBlock()
+    if (-1 == coordinator->openAllPipe()) {
+        return -1;
+    }
+    if (-1 == coordinator->getAofDataPipe()->setReadNonBlock()
         || -1 == coordinator->getAofDataPipe()->setWriteNonBlock()
         || -1 == coordinator->getChildInfoPipe()->setReadNonBlock()) {
-
-        goto error;
+        coordinator->closeAllPipe();
+        return -1;
     }
 
     /** 创建文件事件: 用于child-->parent ack的读取处理 */
@@ -76,22 +75,42 @@ int AOFHandler::rewriteBackground() {
             ES_READABLE,
             NULL,
             NULL)) {
-        goto error;
+        coordinator->closeAllPipe();
+        return -1;
+    }
+
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+    pid_t childPid;
+    if (0 == (childPid = fork())) {
+        /**
+         * child thread
+         **/
+        flyServer->closeListeningSockets(false);
+        if (1 == this->rewriteAppendOnlyFile()) {
+            coordinator->getChildInfoPipe()->sendInfo(PIPE_TYPE_AOF, 0);
+            exit(0);
+        }
+
+        /** write failure */
+        exit(1);
+    } else {
+        /** parent */
+        if (-1 == childPid) {    /** 创建子线程失败 */
+            coordinator->getAofDataPipe()->closeAll();
+            coordinator->getAofAckToChildPipe()->closeAll();
+            coordinator->getAofAckToParentPipe()->closeAll();
+            coordinator->getChildInfoPipe()->closeAll();
+        }
+
+        this->childPid = childPid;
+        this->scheduled = false;
+        // todo: updateDictResizePolicy
+
     }
 
     return 1;
-
-error:
-    coordinator->getAofDataPipe()->closeAll();
-    coordinator->getAofAckToChildPipe()->closeAll();
-    coordinator->getAofAckToParentPipe()->closeAll();
-    coordinator->getChildInfoPipe()->closeAll();
-    return -1;
 }
 
-/**
- *
- **/
 int AOFHandler::rewriteAppendOnlyFile() {
     char tmpfile[256];
 
@@ -139,54 +158,6 @@ int AOFHandler::rewriteAppendOnlyFile() {
     return this->rewriteAppendOnlyFileDiff(tmpfile, fio);
 }
 
-int AOFHandler::readDiffFromParent() {
-
-}
-
-pid_t AOFHandler::getChildPid() const {
-    return this->childPid;
-}
-
-void AOFHandler::setChildPid(pid_t childPid) {
-    this->childPid = childPid;
-}
-
-bool AOFHandler::haveChildPid() const {
-    return -1 != this->childPid;
-}
-
-bool AOFHandler::IsStateOn() const {
-    return this->state == AOF_ON;
-}
-
-void AOFHandler::setState(AOFState aofState) {
-    this->state = aofState;
-}
-
-void AOFHandler::setCoordinator(AbstractCoordinator *coordinator) {
-    this->coordinator = coordinator;
-}
-
-void AOFHandler::setFileName(char *fileName) {
-    this->fileName = fileName;
-}
-
-void AOFHandler::setUseFdbPreamble(bool useFdbPreamble) {
-    this->useFdbPreamble = useFdbPreamble;
-}
-
-void AOFHandler::setFsyncStragy(int stragy) {
-    this->fsyncStragy = stragy;
-}
-
-void AOFHandler::setRewriteIncrementalFsync(bool rewriteIncrementalFsync) {
-    this->rewriteIncrementalFsync = rewriteIncrementalFsync;
-}
-
-int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
-
-}
-
 int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     FILE *fp = fio->getFp();
     /**
@@ -217,9 +188,10 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
         return -1;
     }
 
-    /** 设置从parent读取ack的管道为非阻塞 */
+    /** 设置从parent读取ack的管道为非阻塞, 防止下面的syncRead block住 */
     int ackToChildReadFd = coordinator->getAofAckToChildPipe()->getReadPipe();
-    if (-1 == coordinator->getNetHandler()->setBlock(NULL, ackToChildReadFd, 0)) {
+    if (-1 == coordinator->getNetHandler()->setBlock(
+            NULL, ackToChildReadFd, 0)) {
         coordinator->getLogHandler()->logWarning(
                 "Write error saving DB on disk: %s", strerror(errno));
         fclose(fp);
@@ -229,8 +201,8 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
 
     /** 读取parent发送来的ack */
     char byte;
-    if (1 != coordinator->getNetHandler()->syncRead(ackToChildReadFd, &byte, 1, 5000)
-        || byte != '!') {
+    if (1 != coordinator->getNetHandler()->syncRead(
+            ackToChildReadFd, &byte, 1, 5000) || byte != '!') {
         coordinator->getLogHandler()->logWarning(
                 "Write error saving DB on disk: %s", strerror(errno));
         fclose(fp);
@@ -277,5 +249,61 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     this->coordinator->getLogHandler()->logNotice(
             "SYNC append only file rewrite performed");
     return 1;
+}
+
+int AOFHandler::readDiffFromParent() {
+    char buf[65536];
+    int totalRead = 0, onceRead;
+    while ((onceRead = read(coordinator->getAofDataPipe()->getReadPipe(),
+            buf, sizeof(buf))) > 0) {
+        this->childDiff += buf;
+        totalRead += onceRead;
+    }
+
+    return totalRead;
+}
+
+int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
 
 }
+
+pid_t AOFHandler::getChildPid() const {
+    return this->childPid;
+}
+
+void AOFHandler::setChildPid(pid_t childPid) {
+    this->childPid = childPid;
+}
+
+bool AOFHandler::haveChildPid() const {
+    return -1 != this->childPid;
+}
+
+bool AOFHandler::IsStateOn() const {
+    return this->state == AOF_ON;
+}
+
+void AOFHandler::setState(AOFState aofState) {
+    this->state = aofState;
+}
+
+void AOFHandler::setCoordinator(AbstractCoordinator *coordinator) {
+    this->coordinator = coordinator;
+}
+
+void AOFHandler::setFileName(char *fileName) {
+    this->fileName = fileName;
+}
+
+void AOFHandler::setUseFdbPreamble(bool useFdbPreamble) {
+    this->useFdbPreamble = useFdbPreamble;
+}
+
+void AOFHandler::setFsyncStragy(int stragy) {
+    this->fsyncStragy = stragy;
+}
+
+void AOFHandler::setRewriteIncrementalFsync(bool rewriteIncrementalFsync) {
+    this->rewriteIncrementalFsync = rewriteIncrementalFsync;
+}
+

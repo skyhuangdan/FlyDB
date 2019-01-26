@@ -645,10 +645,10 @@ int NetHandler::wait(int fd, int mask, int millseconds) {
     struct pollfd pfd;
     memset(&pfd, 0, sizeof(pfd));
     pfd.fd = fd;
-    if (mask && ES_READABLE) {
+    if (mask & ES_READABLE) {
         pfd.events |= POLLIN;
     }
-    if (mask && ES_WRITABLE) {
+    if (mask & ES_WRITABLE) {
         pfd.events |= POLLOUT;
     }
 
@@ -663,10 +663,10 @@ int NetHandler::wait(int fd, int mask, int millseconds) {
     }
 
     /** 设置设备符可读可写状态mask并返回 */
-    if ((pfd.revents && POLLIN) && (mask && ES_READABLE)) {
+    if ((pfd.revents & POLLIN) && (mask & ES_READABLE)) {
         retmask |= ES_READABLE;
     }
-    if ((pfd.revents && POLLOUT) && (mask && ES_WRITABLE)) {
+    if ((pfd.revents & POLLOUT) && (mask & ES_WRITABLE)) {
         retmask |= ES_WRITABLE;
     }
     return retmask;

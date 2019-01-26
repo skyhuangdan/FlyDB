@@ -42,19 +42,23 @@ public:
     virtual AbstractFlyObjFactory *getFlyObjIntSetFactory() const = 0;
     virtual AbstractFlyObjFactory *getFlyObjStringFactory() const = 0;
 
-    /** ChildInfo Pipe: child-->parent */
-    virtual AbstractPipe *getChildInfoPipe() const = 0;
-
     /** LogHandler */
     virtual AbstractLogHandler *getLogHandler() const = 0;
 
     /** bio */
     AbstractBIOHandler *getBioHandler() const;
 
+    /** ChildInfo Pipe: child-->parent */
+    virtual AbstractPipe *getChildInfoPipe() const = 0;
+
     /** AOF Pipe */
     virtual AbstractPipe *getAofDataPipe() const = 0;
     virtual AbstractPipe *getAofAckToParentPipe() const = 0;
     virtual AbstractPipe *getAofAckToChildPipe() const = 0;
+
+    /** 关闭上述所有管道：childInfo pipe和AOF pipe */
+    virtual void closeAllPipe() = 0;
+    virtual int openAllPipe() = 0;
 
 };
 

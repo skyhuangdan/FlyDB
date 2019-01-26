@@ -37,15 +37,20 @@ int Dict<KEY, VAL>::addEntry(KEY* key, VAL* val) {
         return -1;
     }
 
+    /** 如果正在执行rehash, 先执行一部rehash */
     int res = 0;
-    if (isRehashing()) {  // 如果正在rehash
+    if (isRehashing()) {
         // 进行一步rehash
         rehashSteps(1);
+    }
+
+    /** 如果经过上面，rehash仍然没执行完 */
+    if (isRehashing()) {
         // 插入操作
         res = this->ht[1]->addEntry(key, val);
     } else {  // 如果没在rehash, 执行插入操作；并判断是否需要扩容
         if ((res = this->ht[0]->addEntry(key, val)) > 0) {
-            if (this->ht[0]->needExpand()) {
+            if (this->ht[0]->needExpand(this->canResize)) {
                 this->ht[1] =
                         new HashTable<KEY, VAL>(this->ht[0]->getSize() * 2);
                 this->rehashIndex = 0;
@@ -259,6 +264,21 @@ uint32_t Dict<KEY, VAL>::revBits(uint32_t bits) {
 }
 
 template<class KEY, class VAL>
+int Dict<KEY, VAL>::shrinkToMinSize() {
+    /** 如果正处于rehash过程中，或者ht[0]不允许resize, 返回-1 */
+    if (this->isRehashing() || !this->canResize) {
+        return -1;
+    }
+
+    int minimal = this->ht[0]->getUsed();
+    if (minimal < HASH_TABLE_INITIAL_SIZE) {
+        minimal = HASH_TABLE_INITIAL_SIZE;
+    }
+
+    this->expand(minimal);
+}
+
+template<class KEY, class VAL>
 int Dict<KEY, VAL>::expand(uint32_t size) {
     uint32_t expandSize = nextPower(size);
     // 如果正在rehash, 或者扩容大小 < 目前已使用空间
@@ -277,6 +297,11 @@ int Dict<KEY, VAL>::expand(uint32_t size) {
     rehashSteps(1);
 
     return 1;
+}
+
+template<class KEY, class VAL>
+void Dict<KEY, VAL>::setCanResize(bool canResize) {
+    this->canResize = canResize;
 }
 
 template<class KEY, class VAL>

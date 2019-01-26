@@ -156,3 +156,22 @@ AbstractPipe *Coordinator::getAofAckToParentPipe() const {
 AbstractPipe *Coordinator::getAofAckToChildPipe() const {
     return this->aofAckToChildPipe;
 }
+
+void Coordinator::closeAllPipe() {
+    this->getAofDataPipe()->closeAll();
+    this->getAofAckToChildPipe()->closeAll();
+    this->getAofAckToParentPipe()->closeAll();
+    this->getChildInfoPipe()->closeAll();
+}
+
+int Coordinator::openAllPipe() {
+    if (-1 == this->getAofDataPipe()->open()
+        || -1 == this->getAofAckToChildPipe()->open()
+        || -1 == this->getAofAckToParentPipe()->open()
+        || -1 == this->getChildInfoPipe()->open()) {
+        this->closeAllPipe();
+        return -1;
+    }
+    
+    return 1;
+}

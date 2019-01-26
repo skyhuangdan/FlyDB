@@ -115,13 +115,26 @@ bool HashTable<KEY, VAL>::hasKey(KEY* key) {
 }
 
 template<class KEY, class VAL>
-bool HashTable<KEY, VAL>::needExpand() const {
-    return this->used >= this->size * NEED_REHASH_RATIO;
+bool HashTable<KEY, VAL>::needExpand(bool canResize) const {
+    /** 如果允许resize， 则used > size时就需要扩容*/
+    if (canResize && this->used > this->size) {
+        return true;
+    }
+
+    /**
+     * 如果不允许resize, 则需要used > size * NEED_FORCE_REHASH_RATIO才允许扩容,
+     * 此时一般是由于aof或者fdb child thread正在进行持久化，减小内存压力
+     **/
+    if (!canResize && this->used > this->size * NEED_FORCE_REHASH_RATIO) {
+        return true;
+    }
+
+    return false;
 }
 
 template<class KEY, class VAL>
 bool HashTable<KEY, VAL>::needShrink() const {
-    return this->used * NEED_REHASH_RATIO <= this->size;
+    return this->used < this->size;
 }
 
 template<class KEY, class VAL>
@@ -148,3 +161,4 @@ template<class KEY, class VAL>
 uint32_t HashTable<KEY, VAL>::getMask() const {
     return this->mask;
 }
+
