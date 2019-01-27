@@ -168,7 +168,6 @@ const char *FlyClient::getBuf() const {
 }
 
 void FlyClient::clearBuf(){
-    this->buf[0] = '/0';
     this->setBufpos(0);
     this->setSendLen(0);
 }
@@ -217,7 +216,7 @@ int64_t FlyClient::getBulkLen() const {
 }
 
 void FlyClient::setBulkLen(int64_t bulkLen) {
-    FlyClient::bulkLen = bulkLen;
+    this->bulkLen = bulkLen;
 }
 
 bool FlyClient::hasNoPending() {

@@ -1026,7 +1026,8 @@ void sendReplyToClient(const AbstractCoordinator *coordinator,
                        int fd,
                        void *clientdata,
                        int mask) {
-    AbstractFlyClient *flyClient = reinterpret_cast<AbstractFlyClient *>(clientdata);
+    AbstractFlyClient *flyClient =
+            reinterpret_cast<AbstractFlyClient *>(clientdata);
     coordinator->getNetHandler()->writeToClient(coordinator, flyClient, 1);
 }
 

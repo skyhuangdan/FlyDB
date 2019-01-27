@@ -405,7 +405,7 @@ int FlyServer::handleClientsWithPendingWrites() {
     for (iter; iter != this->clientsPendingWrite.end(); iter++) {
         // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
         // 否则无法加入。也就无法处理其输出
-        (*iter)->delFlag(~CLIENT_PENDING_WRITE);
+        (*iter)->delFlag(CLIENT_PENDING_WRITE);
 
         // 先直接发送，如果发送不完，再创建文件事件异步发送
         if (-1 == this->coordinator->getNetHandler()->writeToClient(
@@ -414,10 +414,12 @@ int FlyServer::handleClientsWithPendingWrites() {
         }
 
         // 异步发送
-        if (!(*iter)->hasNoPending()
-            && -1 == this->coordinator->getEventLoop()->createFileEvent(
+        if (!(*iter)->hasNoPending()) {
+            if (-1 == this->coordinator->getEventLoop()->createFileEvent(
                     (*iter)->getFd(), ES_WRITABLE, sendReplyToClient, *iter)) {
-            freeClientAsync(*iter);
+                freeClientAsync(*iter);
+            }
+
         }
     }
 
