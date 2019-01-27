@@ -24,7 +24,6 @@ FlyObj::~FlyObj() {
     delete this->ptr;
 }
 
-
 FlyObjType FlyObj::getType() const {
     return this->type;
 }

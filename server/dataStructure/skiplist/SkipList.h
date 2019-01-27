@@ -17,12 +17,12 @@ public:
     SkipListNode<T> *getTailer() const;
     uint32_t getLength() const;
     uint32_t getLevel() const;
-    void insertNode(T *obj);
-    void insertNode(double score, T *obj);
-    int deleteNode(T *obj);
-    int deleteNode(double score, T *obj);
-    int deleteNode(double score, T *obj, SkipListNode<T>** res);
-    uint32_t getRank(double score, T *obj);
+    void insertNode(const T &obj);
+    void insertNode(double score, const T &obj);
+    int deleteNode(const T &obj);
+    int deleteNode(double score, const T &obj);
+    int deleteNode(double score, const T &obj, SkipListNode<T>** res);
+    uint32_t getRank(double score, const T &obj);
     SkipListNode<T>* getNodeByRank(uint32_t rank);
     int isInRange(SkipListRange range);
     SkipListNode<T>* firstInRange(SkipListRange range);
@@ -30,7 +30,7 @@ public:
     uint32_t deleteRangeByScore(SkipListRange range);
     uint32_t deleteRangeByRank(uint32_t start, uint32_t end);
     int deleteNode(SkipListNode<T>* node); // 会释放节点
-    void scanAll(void (*scanProc)(void* priv, T *obj),
+    void scanAll(void (*scanProc)(void* priv, const T &obj),
                  void *priv);
 
 private:

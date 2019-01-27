@@ -46,12 +46,12 @@ uint32_t SkipList<T>::getLevel() const {
 }
 
 template<class T>
-void SkipList<T>::insertNode(T *obj) {
+void SkipList<T>::insertNode(const T &obj) {
     this->insertNode(0, obj);
 }
 
 template<class T>
-void SkipList<T>::insertNode(double score, T *obj) {
+void SkipList<T>::insertNode(double score, const T &obj) {
     // 随机获取level
     uint8_t randLevel = randomLevel();
     uint8_t finalLevel = randLevel > this->level ? randLevel : this->level;
@@ -78,7 +78,7 @@ void SkipList<T>::insertNode(double score, T *obj) {
         SkipListNode<T>* next = temp->getLevels()[i].next;
         while (NULL != next && (next->getScore() < score
                    || (next->getScore() == score
-                       && *(next->getObj()) < *obj))) {
+                       && next->getObj() < obj))) {
             rank[i] += temp->getLevels()[i].span;
             temp = next;
             next = next->getLevels()[i].next;
@@ -146,19 +146,19 @@ uint8_t SkipList<T>::randomLevel() {
 }
 
 template<class T>
-int SkipList<T>::deleteNode(T *obj) {
+int SkipList<T>::deleteNode(const T &obj) {
     SkipListNode<T> *node = new SkipListNode<T>();
     return this->deleteNode(0, obj);
 }
 
 template<class T>
-int SkipList<T>::deleteNode(double score, T *obj) {
+int SkipList<T>::deleteNode(double score, const T &obj) {
     SkipListNode<T> *node = new SkipListNode<T>();
     return this->deleteNode(score, obj, &node);
 }
 
 template<class T>
-int SkipList<T>::deleteNode(double score, T *obj, SkipListNode<T>** res) {
+int SkipList<T>::deleteNode(double score, const T &obj, SkipListNode<T>** res) {
     // forward找到待查节点的前节点
     std::vector<SkipListNode<T>*> forwards(this->level);
     for (int l = this->level - 1; l >= 0; l--) {
@@ -167,7 +167,7 @@ int SkipList<T>::deleteNode(double score, T *obj, SkipListNode<T>** res) {
         // 找到node==NULL或者score、obj都相等的node
         while (node != NULL
                && (node->getScore() < score
-                   || *(node->getObj()) < *obj)) {
+                   || node->getObj() < obj)) {
             prevNode = node;
             node = prevNode->getLevels()[l].next;
         }
@@ -177,7 +177,7 @@ int SkipList<T>::deleteNode(double score, T *obj, SkipListNode<T>** res) {
     // 没有找到符合条件的node
     if (NULL == forwards[0]->getLevels()[0].next
         || (forwards[0]->getLevels()[0].next->getScore() != score
-            && 0 == *(forwards[0]->getLevels()[0].next->getObj()) < *obj)) {
+            && forwards[0]->getLevels()[0].next->getObj() < obj)) {
         return -1;
     } else {  // 处理previous指针
         SkipListNode<T>* node = *res = forwards[0]->getLevels()[0].next;
@@ -211,7 +211,7 @@ int SkipList<T>::deleteNode(double score, T *obj, SkipListNode<T>** res) {
 }
 
 template<class T>
-uint32_t SkipList<T>::getRank(double score, T *obj) {
+uint32_t SkipList<T>::getRank(double score, const T &obj) {
     int totalSpan = 0;
 
     SkipListNode<T>* prev = this->header;
@@ -249,7 +249,8 @@ SkipListNode<T>* SkipList<T>::getNodeByRank(uint32_t rank) {
     SkipListNode<T>* node = this->header;
 
     for (int l = this->level - 1; l >= 0; l--) {
-        while (node->getLevels()[l].next != NULL && node->getLevels()[l].span < rank) {
+        while (node->getLevels()[l].next != NULL
+               && node->getLevels()[l].span < rank) {
             rank -= node->getLevels()[l].span;
             node = node->getLevels()[l].next;
         }
@@ -325,7 +326,8 @@ SkipListNode<T>* SkipList<T>::lastInRange(SkipListRange range) {
          * 1.prev到node的跨度只有1或者prev是链表最后一个节点
          * 2.prev->score在range范围内
          */
-        if ((1 == prev->getLevels()[l].span || node == NULL) && prev->scoreInRange(range)) {
+        if ((1 == prev->getLevels()[l].span || node == NULL)
+            && prev->scoreInRange(range)) {
             return prev;
         }
     }
@@ -401,7 +403,7 @@ uint32_t SkipList<T>::deleteRangeByRank(uint32_t start, uint32_t end) {
 }
 
 template<class T>
-void SkipList<T>::scanAll(void (*scanProc)(void* priv, T *obj),
+void SkipList<T>::scanAll(void (*scanProc)(void* priv, const T &obj),
                           void *priv) {
     SkipListNode<T> *node = this->tailer;
     while (node != this->header) {

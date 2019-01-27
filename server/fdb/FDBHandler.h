@@ -56,7 +56,7 @@ public:
 private:
     static void dbScan(void *priv, const std::string &key, const FlyObj &val);
     static void dictSaveScan(void *priv, const std::string &key, const FlyObj &val);
-    static void skipListSaveProc(void *priv, std::string *obj);
+    static void skipListSaveProc(void *priv, const std::string &obj);
     ssize_t saveLen(Fio *fio, uint64_t len);
     ssize_t saveObject(Fio *fio, const FlyObj &obj);
     int saveInfoAuxFields(Fio *fio,

@@ -10,7 +10,7 @@ SkipListNode<T>::SkipListNode() {
 }
 
 template<class T>
-SkipListNode<T>::SkipListNode(T *obj, double score) {
+SkipListNode<T>::SkipListNode(const T &obj, double score) {
     this->obj = obj;
     this->score = score;
     this->previous = NULL;
@@ -44,7 +44,7 @@ bool SkipListNode<T>::scoreInRange(SkipListRange range) {
 }
 
 template<class T>
-T* SkipListNode<T>::getObj() const {
+const T& SkipListNode<T>::getObj() const {
     return obj;
 }
 
@@ -65,5 +65,4 @@ void SkipListNode<T>::setPrevious(SkipListNode<T> *previous) {
 
 template<class T>
 SkipListNode<T>::~SkipListNode() {
-    delete this->obj;
 }

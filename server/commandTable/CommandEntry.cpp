@@ -195,7 +195,6 @@ void setGenericCommand(const AbstractCoordinator *coordinator,
                        std::string *key,
                        FlyObj *val,
                        int64_t expireMilli) {
-    char buf[1024];
     // 将key和val添加到flydb中
     if (-1 == flyClient->getFlyDB()->addExpire(*key, *val, expireMilli)) {
         flyClient->addReply("set error!");
@@ -319,10 +318,10 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
     for (int j = 2; j < flyClient->getArgc(); j++) {
         if (LIST_HEAD == location) {
             list->push_front(reinterpret_cast<std::string*>
-                             (flyClient->getArgv()[1]->getPtr()));
+                             (flyClient->getArgv()[j]->getPtr()));
         } else {
             list->push_back(reinterpret_cast<std::string*>
-                            (flyClient->getArgv()[1]->getPtr()));
+                            (flyClient->getArgv()[j]->getPtr()));
         }
     }
 
@@ -365,8 +364,8 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
     }
 
     for (int j = 2; j < flyClient->getArgc(); j++) {
-        list->insertNode(reinterpret_cast<std::string*>
-                         (flyClient->getArgv()[1]->getPtr()));
+        list->insertNode(*(reinterpret_cast<std::string*>(
+                flyClient->getArgv()[j]->getPtr())));
     }
 
     coordinator->getFdbHandler()->addDirty(flyClient->getArgc() - 2);
@@ -396,7 +395,7 @@ void popSortCommand(const AbstractCoordinator* coordinator,
     SkipList<std::string> *list =
             reinterpret_cast<SkipList<std::string> *>(val->getPtr());
     list->deleteNode(
-            reinterpret_cast<std::string *>(flyClient->getArgv()[3]->getPtr()));
+            *(reinterpret_cast<std::string *>(flyClient->getArgv()[3]->getPtr())));
 
     coordinator->getFdbHandler()->addDirty(1);
     flyClient->addReply("status OK!");

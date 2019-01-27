@@ -226,11 +226,11 @@ void FDBHandler::dictSaveScan(void *priv,
             *(reinterpret_cast<std::string *>(val.getPtr())));
 }
 
-void FDBHandler::skipListSaveProc(void *priv, std::string *obj) {
+void FDBHandler::skipListSaveProc(void *priv, const std::string &obj) {
     FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
 
     // 存入key
-    fioAndCoord->coord->getFdbHandler()->saveRawString(fioAndCoord->fio, *obj);
+    fioAndCoord->coord->getFdbHandler()->saveRawString(fioAndCoord->fio, obj);
 }
 
 int FDBHandler::saveKeyValuePair(Fio *fio,
@@ -1005,7 +1005,7 @@ FlyObj* FDBHandler::loadObject(int type, Fio *fio) {
                 return obj;
             }
 
-            list->insertNode(0, val);
+            list->insertNode(0, *val);
         }
         obj = coordinator->getFlyObjLinkedListFactory()->getObject(list);
     } else if (FLY_TYPE_SET == type) {
