@@ -12,7 +12,7 @@
 class FlyObj {
 public:
     FlyObj(FlyObjType type);
-    FlyObj(void *ptr, FlyObjType type);
+    FlyObj(std::shared_ptr<char> ptr, FlyObjType type);
     FlyObjType getType() const;
     void setType(FlyObjType type);
     uint64_t getLru() const;

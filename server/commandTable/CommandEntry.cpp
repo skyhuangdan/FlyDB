@@ -307,8 +307,8 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
     std::string *key =
             reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
     AbstractFlyDB *flyDB = flyClient->getFlyDB();
-    std::list<std::string*> *list = reinterpret_cast<std::list<std::string*> *>
-    (flyDB->lookupKey(*key)->getPtr());
+    std::list<std::string> *list = reinterpret_cast<std::list<std::string> *>(
+            flyDB->lookupKey(*key)->getPtr());
     if (NULL == list) {
         FlyObj *obj = coordinator->getFlyObjLinkedListFactory()->getObject();
         flyDB->add(*key, obj);
@@ -316,10 +316,10 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
 
     for (int j = 2; j < flyClient->getArgc(); j++) {
         if (LIST_HEAD == location) {
-            list->push_front(reinterpret_cast<std::string*>
+            list->push_front(*reinterpret_cast<std::string*>
                              (flyClient->getArgv()[j]->getPtr()));
         } else {
-            list->push_back(reinterpret_cast<std::string*>
+            list->push_back(*reinterpret_cast<std::string*>
                             (flyClient->getArgv()[j]->getPtr()));
         }
     }

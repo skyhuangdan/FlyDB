@@ -4,11 +4,14 @@
 
 #include "FlyObjHashTable.h"
 #include "../../dataStructure/dict/Dict.h"
+#include "../FlyObjDeleter.h"
 
-FlyObjHashTable::FlyObjHashTable(FlyObjType type)
-        : FlyObj(new Dict<std::string, std::string>, type) {
+FlyObjHashTable::FlyObjHashTable(FlyObjType type) : FlyObj(
+        std::shared_ptr<char>((char*)new Dict<std::string, std::string>(),
+                MyDeleter<Dict<std::string, std::string>>()), type) {
 }
 
-FlyObjHashTable::FlyObjHashTable(void *ptr, FlyObjType type)
-        : FlyObj(ptr, type) {
+FlyObjHashTable::FlyObjHashTable(void *ptr, FlyObjType type) : FlyObj(
+        std::shared_ptr<char>((char*)ptr,
+                MyDeleter<Dict<std::string, std::string>>()), type) {
 }

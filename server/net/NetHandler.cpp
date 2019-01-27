@@ -756,9 +756,9 @@ int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
     flyClient->allocArgv(words.size());
 
     // 设置参数列表
+    extern AbstractCoordinator *coordinator;
     for (auto item : words) {
-        flyClient->addArgv(new FlyObj(
-                new std::string(item), FLY_TYPE_STRING));
+        coordinator->getFlyObjStringFactory()->getObject(new std::string(item));
     }
 
     // 裁剪输入缓冲区
