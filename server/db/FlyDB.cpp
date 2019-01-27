@@ -6,7 +6,7 @@
 #include "../dataStructure/dict/Dict.cpp"
 
 FlyDB::FlyDB(const AbstractCoordinator *coordinator) {
-    this->dict = new Dict<std::string, FlyObj>();
+    this->dict = new Dict<std::string, FlyObj*>();
     this->expires = new Dict<std::string, int64_t>();
     this->coordinator = coordinator;
 }
@@ -24,12 +24,12 @@ int FlyDB::expandExpire(uint64_t size) {
     this->expires->expand(size);
 }
 
-int FlyDB::add(const std::string &key, const FlyObj &val) {
+int FlyDB::add(const std::string &key, FlyObj *val) {
     return this->dict->addEntry(key, val);
 }
 
 int FlyDB::addExpire(const std::string &key,
-                     const FlyObj &val,
+                     FlyObj *val,
                      int64_t expire) {
     if (-1 == this->add(key, val)) {
         return -1;
@@ -55,7 +55,7 @@ void FlyDB::dictScan(Fio *fio, scan scanProc) {
 
 int64_t FlyDB::getExpire(const std::string &key) {
     int64_t ex;
-    int res = this->expires->fetchValue(key, ex);
+    int res = this->expires->fetchValue(key, &ex);
     if (-1 == res) {
         return -1;
     }
@@ -75,15 +75,15 @@ uint32_t FlyDB::expireSize() const {
 }
 
 FlyObj* FlyDB::lookupKey(const std::string &key) {
-    DictEntry<std::string, FlyObj> *entry = this->dict->findEntry(key);
+    DictEntry<std::string, FlyObj*> *entry = this->dict->findEntry(key);
     if (NULL == entry) {
         return NULL;
     }
 
-    FlyObj val = entry->getVal();
-    val.setLru(miscTool->mstime());
+    FlyObj* val = entry->getVal();
+    val->setLru(miscTool->mstime());
 
-    return &val;
+    return val;
 }
 
 void FlyDB::delKey(const std::string &key) {

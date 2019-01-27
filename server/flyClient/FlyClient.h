@@ -7,7 +7,7 @@
 
 #include <string>
 #include <list>
-#include "../flyObj/interface/FlyObj.h"
+#include "../flyObj/FlyObj.h"
 #include "../commandTable/CommandEntry.h"
 #include "ClientDef.h"
 #include "interface/AbstractFlyClient.h"
@@ -43,9 +43,9 @@ public:
     void addArgv(FlyObj *obj);
     void setArgc(int argc);
     const char *getBuf() const;
+    void clearBuf();
     bool bufSendOver();
     int getBufpos() const;
-    void setBufpos(int bufpos);
     const std::list<std::string*> &getReply() const;
     void replyPopFront();
     void setReply(const std::list<std::string*> &reply);
@@ -79,6 +79,7 @@ private:
     int addReplyToBuffer(const char *s, size_t len);
     int addReplyToReplyList(const char *s, size_t len);
     void addReplyRaw(const char *s);
+    void setBufpos(int bufpos);
 
     const AbstractCoordinator *coordinator;
     uint64_t id;

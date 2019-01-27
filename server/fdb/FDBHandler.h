@@ -26,8 +26,8 @@ public:
     int backgroundSave();
     void backgroundSaveDone(int exitCode, int bySignal);
     int saveKeyValuePair(Fio *fio,
-                         const std::string &key,
-                         const FlyObj &val,
+                         std::string key,
+                         FlyObj *val,
                          int64_t expireTime);
     ssize_t saveRawString(Fio *fio, const std::string &str);
     void deleteTempFile(pid_t pid);
@@ -54,11 +54,11 @@ public:
     uint64_t addDirty(uint64_t count);
 
 private:
-    static void dbScan(void *priv, const std::string &key, const FlyObj &val);
-    static void dictSaveScan(void *priv, const std::string &key, const FlyObj &val);
+    static void dbScan(void *priv, std::string key, FlyObj *val);
+    static void dictSaveScan(void *priv, std::string key, FlyObj *val);
     static void skipListSaveProc(void *priv, const std::string &obj);
     ssize_t saveLen(Fio *fio, uint64_t len);
-    ssize_t saveObject(Fio *fio, const FlyObj &obj);
+    ssize_t saveObject(Fio *fio, FlyObj *obj);
     int saveInfoAuxFields(Fio *fio,
                           int flags,
                           const FDBSaveInfo *saveInfo);

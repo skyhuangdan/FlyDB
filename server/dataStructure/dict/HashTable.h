@@ -14,13 +14,13 @@ class HashTable {
     HashTable(uint32_t size);
     virtual ~HashTable();
 
-    int addEntry(const KEY &key, const VAL &val);
-    DictEntry<KEY, VAL>* findEntry(const KEY &key);
-    int deleteEntry(const KEY &key);
+    int addEntry(const KEY key, const VAL val);
+    DictEntry<KEY, VAL>* findEntry(const KEY key);
+    int deleteEntry(const KEY key);
     bool needExpand(bool canResize) const;
     bool needShrink() const;
-    bool hasKey(const KEY &key);
-    uint32_t getIndexWithKey(const KEY &key) const;
+    bool hasKey(const KEY key);
+    uint32_t getIndexWithKey(const KEY key) const;
     uint32_t getIndex(uint32_t cursor) const;
     uint32_t getSize() const;
     uint32_t getUsed() const;
@@ -28,8 +28,8 @@ class HashTable {
     DictEntry<KEY, VAL>* getEntryBy(uint32_t index) const;
     void scanEntries(uint32_t index,
                      void (*scanProc)(void* priv,
-                                      const KEY &key,
-                                      const VAL &val),
+                                      const KEY key,
+                                      const VAL val),
                      void* priv);
     uint32_t getMask() const;
 

@@ -5,10 +5,11 @@
 #include "FlyObjIntSet.h"
 #include "../../dataStructure/intset/IntSet.h"
 
-FlyObjIntSet::FlyObjIntSet(FlyObjType type) : FlyObj(type) {
-    this->ptr = new IntSet();
+FlyObjIntSet::FlyObjIntSet(FlyObjType type)
+        : FlyObj(new IntSet(), type) {
 }
 
-FlyObjIntSet::FlyObjIntSet(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
+FlyObjIntSet::FlyObjIntSet(void *ptr, FlyObjType type)
+        : FlyObj(ptr, type) {
 
 }

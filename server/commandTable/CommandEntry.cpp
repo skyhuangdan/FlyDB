@@ -168,14 +168,13 @@ void getCommand(const AbstractCoordinator* coordinator,
 
     // 如果参数数量<2，直接返回
     if (flyClient->getArgc() < 2) {
-        char buf[100];
         flyClient->addReply("missing parameters!");
         return;
     }
 
     // 获取到key
-    std::string *key = reinterpret_cast<std::string*>
-    (flyClient->getArgv()[1]->getPtr());
+    std::string *key = reinterpret_cast<std::string*>(
+            flyClient->getArgv()[1]->getPtr());
 
     // 查看key是否已经过期
     AbstractFlyDB *flyDB = flyClient->getFlyDB();
@@ -196,7 +195,7 @@ void setGenericCommand(const AbstractCoordinator *coordinator,
                        FlyObj *val,
                        int64_t expireMilli) {
     // 将key和val添加到flydb中
-    if (-1 == flyClient->getFlyDB()->addExpire(*key, *val, expireMilli)) {
+    if (-1 == flyClient->getFlyDB()->addExpire(*key, val, expireMilli)) {
         flyClient->addReply("set error!");
         return;
     }
@@ -312,7 +311,7 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
     (flyDB->lookupKey(*key)->getPtr());
     if (NULL == list) {
         FlyObj *obj = coordinator->getFlyObjLinkedListFactory()->getObject();
-        flyDB->add(*key, *obj);
+        flyDB->add(*key, obj);
     }
 
     for (int j = 2; j < flyClient->getArgc(); j++) {
@@ -360,7 +359,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
     if (NULL == list) {
         FlyObj *obj = coordinator->getFlyObjLinkedListFactory()
                 ->getObject(list = new SkipList<std::string>());
-        flyDB->add(*key, *obj);
+        flyDB->add(*key, obj);
     }
 
     for (int j = 2; j < flyClient->getArgc(); j++) {
@@ -384,7 +383,6 @@ void popSortCommand(const AbstractCoordinator* coordinator,
         return;
     }
 
-    char buf[100];
     std::string *key =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
     FlyObj *val = flyClient->getFlyDB()->lookupKey(*key);
@@ -414,7 +412,6 @@ void popGenericCommand(const AbstractCoordinator *coordinator,
         return;
     }
 
-    char buf[100];
     std::string *key =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
     FlyObj *val = flyClient->getFlyDB()->lookupKey(*key);
@@ -485,7 +482,6 @@ void hgetCommand(const AbstractCoordinator* coordinator,
     }
 
     // 如果参数数量 < 2，直接返回
-    char buf[100];
     if (flyClient->getArgc() < 3) {
         flyClient->addReply("missing parameters!");
         return;
@@ -504,7 +500,7 @@ void hgetCommand(const AbstractCoordinator* coordinator,
     std::string *key =
             reinterpret_cast<std::string *>(flyClient->getArgv()[2]->getPtr());
     std::string val;
-    int res = dict->fetchValue(*key, val);
+    int res = dict->fetchValue(*key, &val);
     if (-1 == res) {
         flyClient->addReply("Don`t have key : %s", key);
         return;

@@ -25,7 +25,7 @@
 #include "../utils/MiscTool.h"
 #include "../flyClient/ClientDef.h"
 #include "../log/FileLogHandler.h"
-#include "../flyObj/interface/FlyObj.h"
+#include "../flyObj/FlyObj.h"
 #include "../log/FileLogFactory.h"
 #include "../flyObj/FlyObjString/FlyObjString.h"
 
@@ -582,8 +582,7 @@ int NetHandler::writeToClient(const AbstractCoordinator *coordinator,
 
             // 固定buf全部发送完
             if (flyClient->bufSendOver()) {
-                flyClient->setBufpos(0);
-                flyClient->setSendLen(0);
+                flyClient->clearBuf();
             }
         } else {
             std::string* reply = flyClient->getReply().front();

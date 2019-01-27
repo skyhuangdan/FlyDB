@@ -26,7 +26,7 @@ HashTable<KEY, VAL>::~HashTable() {
 }
 
 template<class KEY, class VAL>
-uint32_t HashTable<KEY, VAL>::getIndexWithKey(const KEY &key) const {
+uint32_t HashTable<KEY, VAL>::getIndexWithKey(const KEY key) const {
     return std::hash<KEY>()(key) & this->mask;
 }
 
@@ -38,7 +38,7 @@ uint32_t HashTable<KEY, VAL>::getIndex(uint32_t cursor) const {
 template<class KEY, class VAL>
 void HashTable<KEY, VAL>::scanEntries(
         uint32_t index,
-        void (*scanProc)(void* priv, const KEY &key, const VAL &val),
+        void (*scanProc)(void* priv, const KEY key, const VAL val),
         void* priv) {
     DictEntry<KEY, VAL>* entry = this->getEntryBy(index);
     while (NULL != entry) {
@@ -48,7 +48,7 @@ void HashTable<KEY, VAL>::scanEntries(
 }
 
 template<class KEY, class VAL>
-int HashTable<KEY, VAL>::addEntry(const KEY &key, const VAL &val) {
+int HashTable<KEY, VAL>::addEntry(const KEY key, const VAL val) {
     uint32_t index = getIndexWithKey(key);
 
     // 判断是否已经有相同的键，如果有，则不能继续插入
@@ -68,7 +68,7 @@ int HashTable<KEY, VAL>::addEntry(const KEY &key, const VAL &val) {
 }
 
 template<class KEY, class VAL>
-DictEntry<KEY, VAL>* HashTable<KEY, VAL>::findEntry(const KEY &key) {
+DictEntry<KEY, VAL>* HashTable<KEY, VAL>::findEntry(const KEY key) {
     uint32_t index = getIndexWithKey(key);
     DictEntry<KEY, VAL>* node = this->table[index];
     while (node != NULL) {
@@ -81,7 +81,7 @@ DictEntry<KEY, VAL>* HashTable<KEY, VAL>::findEntry(const KEY &key) {
 }
 
 template<class KEY, class VAL>
-int HashTable<KEY, VAL>::deleteEntry(const KEY &key) {
+int HashTable<KEY, VAL>::deleteEntry(const KEY key) {
     uint32_t index = getIndexWithKey(key);
     DictEntry<KEY, VAL>* node = this->table[index];
     if (node != NULL) {
@@ -110,7 +110,7 @@ int HashTable<KEY, VAL>::deleteEntry(const KEY &key) {
 }
 
 template<class KEY, class VAL>
-bool HashTable<KEY, VAL>::hasKey(const KEY &key) {
+bool HashTable<KEY, VAL>::hasKey(const KEY key) {
     return this->findEntry(key) != NULL;
 }
 

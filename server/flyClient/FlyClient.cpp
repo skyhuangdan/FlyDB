@@ -167,6 +167,12 @@ const char *FlyClient::getBuf() const {
     return this->buf;
 }
 
+void FlyClient::clearBuf(){
+    this->buf[0] = '/0';
+    this->setBufpos(0);
+    this->setSendLen(0);
+}
+
 bool FlyClient::bufSendOver() {
     return this->sendLen == this->bufpos;
 }
@@ -238,7 +244,7 @@ int FlyClient::getBufpos() const {
 }
 
 void FlyClient::setBufpos(int bufpos) {
-    FlyClient::bufpos = bufpos;
+    this->bufpos = bufpos;
 }
 
 void FlyClient::addReplyRaw(const char *s) {

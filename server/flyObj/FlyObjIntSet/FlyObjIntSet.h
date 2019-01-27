@@ -7,10 +7,9 @@
 
 
 #include "../FlyObjDef.h"
-#include "../interface/FlyObj.h"
+#include "../FlyObj.h"
 
 class FlyObjIntSet : public FlyObj {
-
 public:
     FlyObjIntSet(FlyObjType type);
     FlyObjIntSet(void *ptr, FlyObjType type);

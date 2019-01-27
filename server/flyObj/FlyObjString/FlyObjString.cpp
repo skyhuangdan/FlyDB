@@ -5,8 +5,8 @@
 #include <string>
 #include "FlyObjString.h"
 
-FlyObjString::FlyObjString(FlyObjType type) : FlyObj(type) {
-    this->ptr = new std::string;
+FlyObjString::FlyObjString(FlyObjType type)
+        : FlyObj(new std::string, type) {
 }
 
 FlyObjString::FlyObjString(void *ptr, FlyObjType type) : FlyObj(ptr, type) {

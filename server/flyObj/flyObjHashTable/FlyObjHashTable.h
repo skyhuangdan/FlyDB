@@ -5,10 +5,9 @@
 #ifndef FLYDB_FLYOBJHASHTABLE_H
 #define FLYDB_FLYOBJHASHTABLE_H
 
-#include "../interface/FlyObj.h"
+#include "../FlyObj.h"
 
 class FlyObjHashTable : public FlyObj {
-
 public:
     FlyObjHashTable(FlyObjType type);
     FlyObjHashTable(void *ptr, FlyObjType type);

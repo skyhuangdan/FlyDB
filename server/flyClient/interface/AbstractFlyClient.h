@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <string>
 #include <list>
-#include "../../flyObj/interface/FlyObj.h"
+#include "../../flyObj/FlyObj.h"
 
 class AbstractFlyDB;
 
@@ -65,8 +65,6 @@ public:
 
     virtual int getBufpos() const = 0;
 
-    virtual void setBufpos(int bufpos) = 0;
-
     virtual const std::list<std::string*> &getReply() const = 0;
 
     virtual void replyPopFront() = 0;
@@ -108,6 +106,8 @@ public:
     virtual void addReply(const char *s, size_t len) = 0;
 
     virtual void addReply(const char *fmt, ...) = 0;
+
+    virtual void clearBuf() = 0;
 
     virtual int getReqType() const = 0;
 

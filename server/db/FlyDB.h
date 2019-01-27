@@ -7,7 +7,7 @@
 
 #include <string>
 #include "interface/AbstractFlyDB.h"
-#include "../flyObj/interface/FlyObj.h"
+#include "../flyObj/FlyObj.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 
 template<class KEY, class VAL>
@@ -19,8 +19,8 @@ public:
     ~FlyDB();
     int expandDict(uint64_t size);
     int expandExpire(uint64_t size);
-    int add(const std::string &key, const FlyObj &val);
-    int addExpire(const std::string &key, const FlyObj &val, int64_t expire);
+    int add(const std::string &key, FlyObj *val);
+    int addExpire(const std::string &key, FlyObj *val, int64_t expire);
     void dictScan(Fio *fio, scan scanProc);
     int64_t getExpire(const std::string &key);
     const AbstractCoordinator* getCoordinator() const;
@@ -30,7 +30,7 @@ public:
     void delKey(const std::string &key);
 
 private:
-    Dict<std::string, FlyObj>* dict;
+    Dict<std::string, FlyObj*>* dict;
     Dict<std::string, int64_t>* expires;
     const AbstractCoordinator *coordinator;
 };

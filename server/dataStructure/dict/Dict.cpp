@@ -32,7 +32,7 @@ bool Dict<KEY, VAL>::isRehashing() const {
 }
 
 template<class KEY, class VAL>
-int Dict<KEY, VAL>::addEntry(const KEY &key, const VAL &val) {
+int Dict<KEY, VAL>::addEntry(const KEY key, const VAL val) {
     /** 如果正在执行rehash, 先执行一部rehash */
     int res = 0;
     if (isRehashing()) {
@@ -60,7 +60,7 @@ int Dict<KEY, VAL>::addEntry(const KEY &key, const VAL &val) {
 }
 
 template<class KEY, class VAL>
-DictEntry<KEY, VAL>* Dict<KEY, VAL>::findEntry(const KEY &key) {
+DictEntry<KEY, VAL>* Dict<KEY, VAL>::findEntry(const KEY key) {
     // 先进行一步rehash
     if (isRehashing()) {
         rehashSteps(1);
@@ -80,7 +80,7 @@ DictEntry<KEY, VAL>* Dict<KEY, VAL>::findEntry(const KEY &key) {
 }
 
 template<class KEY, class VAL>
-int Dict<KEY, VAL>::fetchValue(const KEY &key, VAL &val) {
+int Dict<KEY, VAL>::fetchValue(const KEY key, VAL *val) {
     // 先进行一步rehash
     if (isRehashing()) {
         rehashSteps(1);
@@ -92,12 +92,12 @@ int Dict<KEY, VAL>::fetchValue(const KEY &key, VAL &val) {
         return -1;
     }
 
-    val = entry->val;
+    *val = entry->val;
     return 1;
 }
 
 template<class KEY, class VAL>
-int Dict<KEY, VAL>::deleteEntry(const KEY &key) {
+int Dict<KEY, VAL>::deleteEntry(const KEY key) {
     // 先进行一步rehash
     if (isRehashing()) {
         rehashSteps(1);
@@ -124,7 +124,7 @@ int Dict<KEY, VAL>::deleteEntry(const KEY &key) {
 }
 
 template<class KEY, class VAL>
-int Dict<KEY, VAL>::replace(const KEY &key, const VAL &val) {
+int Dict<KEY, VAL>::replace(const KEY key, const VAL val) {
     // 先进行一步rehash
     if (isRehashing()) {
         rehashSteps(1);
@@ -172,9 +172,7 @@ void Dict<KEY, VAL>::rehashSteps(uint32_t steps) {
 template<class KEY, class VAL>
 uint32_t Dict<KEY, VAL>::dictScan(uint32_t cursor,
                         uint32_t steps,
-                        void (*scanProc)(void* priv,
-                                         const KEY &key,
-                                         const VAL &val),
+                        void (*scanProc)(void* priv, KEY key, VAL val),
                         void *priv) {
     uint32_t nextCursor = cursor;
     for (uint32_t i = 0; i < steps; i++) {
@@ -190,7 +188,7 @@ uint32_t Dict<KEY, VAL>::dictScan(uint32_t cursor,
 template<class KEY, class VAL>
 uint32_t Dict<KEY, VAL>::dictScanOneStep(
         uint32_t cursor,
-        void (*scanProc)(void* priv, const KEY &key, const VAL &val),
+        void (*scanProc)(void* priv, const KEY key, const VAL val),
         void *priv) {
     HashTable<KEY, VAL>* ht0 = this->ht[0];
     HashTable<KEY, VAL>* ht1 = this->ht[1];

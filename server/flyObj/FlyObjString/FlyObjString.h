@@ -7,10 +7,9 @@
 
 
 #include "../FlyObjDef.h"
-#include "../interface/FlyObj.h"
+#include "../FlyObj.h"
 
 class FlyObjString : public FlyObj {
-
 public:
     FlyObjString(FlyObjType type);
     FlyObjString(void *ptr, FlyObjType type);

@@ -33,7 +33,7 @@ struct FioAndCoord {
     const AbstractCoordinator *coord;
 };
 
-typedef void (*scan)(void* priv, const std::string &key, const FlyObj &val);
+typedef void (*scan)(void* priv, std::string key, FlyObj *val);
 
 class AbstractFlyDB {
 public:
@@ -42,10 +42,10 @@ public:
 
     virtual int expandExpire(uint64_t size) = 0;
 
-    virtual int add(const std::string &key, const FlyObj &val) = 0;
+    virtual int add(const std::string &key, FlyObj *val) = 0;
 
     virtual int addExpire(const std::string &key,
-                          const FlyObj &val,
+                          FlyObj *val,
                           int64_t expire) = 0;
 
     virtual void dictScan(Fio *fio, scan scanProc) = 0;

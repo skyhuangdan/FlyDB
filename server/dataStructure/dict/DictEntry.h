@@ -10,11 +10,11 @@
 template<class KEY, class VAL>
 struct DictEntry {
  public:
-    DictEntry(const KEY &key, const VAL &val);
+    DictEntry(const KEY key, const VAL val);
     virtual ~DictEntry();
-    const KEY& getKey() const;
-    const VAL& getVal() const;
-    void setVal(const VAL &val);
+    const KEY getKey() const;
+    const VAL getVal() const;
+    void setVal(const VAL val);
 
     KEY key;
     VAL val;

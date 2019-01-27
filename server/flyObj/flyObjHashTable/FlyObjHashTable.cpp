@@ -5,9 +5,10 @@
 #include "FlyObjHashTable.h"
 #include "../../dataStructure/dict/Dict.h"
 
-FlyObjHashTable::FlyObjHashTable(FlyObjType type) : FlyObj(type) {
-    this->ptr = new Dict<std::string, std::string>();
+FlyObjHashTable::FlyObjHashTable(FlyObjType type)
+        : FlyObj(new Dict<std::string, std::string>, type) {
 }
 
-FlyObjHashTable::FlyObjHashTable(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
+FlyObjHashTable::FlyObjHashTable(void *ptr, FlyObjType type)
+        : FlyObj(ptr, type) {
 }

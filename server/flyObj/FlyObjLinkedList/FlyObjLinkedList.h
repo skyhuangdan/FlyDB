@@ -6,10 +6,9 @@
 #define FLYDB_FLYOBJLINKEDLIST_H
 
 #include "../FlyObjDef.h"
-#include "../interface/FlyObj.h"
+#include "../FlyObj.h"
 
 class FlyObjLinkedList : public FlyObj {
-
 public:
     FlyObjLinkedList(FlyObjType type);
     FlyObjLinkedList(void *ptr, FlyObjType type);

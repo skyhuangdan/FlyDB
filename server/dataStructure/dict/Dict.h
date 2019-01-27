@@ -17,23 +17,21 @@ public:
     Dict();
     virtual ~Dict();
 
-    int addEntry(const KEY &key, const VAL &val);
-    int replace(const KEY &key, const VAL &val);
-    DictEntry<KEY, VAL>* findEntry(const KEY &key);
-    int fetchValue(const KEY &key, VAL &val);
-    int deleteEntry(const KEY &key);
+    int addEntry(const KEY key, const VAL val);
+    int replace(const KEY key, const VAL val);
+    DictEntry<KEY, VAL>* findEntry(const KEY key);
+    int fetchValue(const KEY key, VAL *val);
+    int deleteEntry(const KEY key);
     bool isRehashing() const;
     void rehashSteps(uint32_t steps);
     uint32_t dictScan(uint32_t cursor,
                       uint32_t steps,
-                      void (*scanProc)(void* priv, 
-                                       const KEY &key, 
-                                       const VAL &val),
+                      void (*scanProc)(void* priv, KEY key, VAL val),
                       void *priv);
     uint32_t dictScanOneStep(uint32_t cursor,
                              void (*scanProc)(void* priv, 
-                                              const KEY &key, 
-                                              const VAL &val),
+                                              const KEY key,
+                                              const VAL val),
                              void *priv);
     int expand(uint32_t size);              // 扩容/缩容
     int shrinkToMinSize();                  // 缩容至最小容量
