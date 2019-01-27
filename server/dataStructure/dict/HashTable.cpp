@@ -26,8 +26,8 @@ HashTable<KEY, VAL>::~HashTable() {
 }
 
 template<class KEY, class VAL>
-uint32_t HashTable<KEY, VAL>::getIndexWithKey(KEY* key) const {
-    return std::hash<KEY>()(*key) & this->mask;
+uint32_t HashTable<KEY, VAL>::getIndexWithKey(const KEY &key) const {
+    return std::hash<KEY>()(key) & this->mask;
 }
 
 template<class KEY, class VAL>
@@ -38,7 +38,7 @@ uint32_t HashTable<KEY, VAL>::getIndex(uint32_t cursor) const {
 template<class KEY, class VAL>
 void HashTable<KEY, VAL>::scanEntries(
         uint32_t index,
-        void (*scanProc)(void* priv, KEY *key, VAL *val),
+        void (*scanProc)(void* priv, const KEY &key, const VAL &val),
         void* priv) {
     DictEntry<KEY, VAL>* entry = this->getEntryBy(index);
     while (NULL != entry) {
@@ -48,12 +48,12 @@ void HashTable<KEY, VAL>::scanEntries(
 }
 
 template<class KEY, class VAL>
-int HashTable<KEY, VAL>::addEntry(KEY* key, VAL* val) {
+int HashTable<KEY, VAL>::addEntry(const KEY &key, const VAL &val) {
     uint32_t index = getIndexWithKey(key);
 
     // 判断是否已经有相同的键，如果有，则不能继续插入
     if (hasKey(key)) {
-        this->logHandler->logWarning("have same key in ht! key = %s\n", key);
+        this->logHandler->logWarning("have same key in ht!");
         return -1;
     }
 
@@ -68,11 +68,11 @@ int HashTable<KEY, VAL>::addEntry(KEY* key, VAL* val) {
 }
 
 template<class KEY, class VAL>
-DictEntry<KEY, VAL>* HashTable<KEY, VAL>::findEntry(KEY* key) {
+DictEntry<KEY, VAL>* HashTable<KEY, VAL>::findEntry(const KEY &key) {
     uint32_t index = getIndexWithKey(key);
     DictEntry<KEY, VAL>* node = this->table[index];
     while (node != NULL) {
-        if (*(node->key) == *key) {
+        if (node->key == key) {
            return node;
         }
         node = node->next;
@@ -81,12 +81,12 @@ DictEntry<KEY, VAL>* HashTable<KEY, VAL>::findEntry(KEY* key) {
 }
 
 template<class KEY, class VAL>
-int HashTable<KEY, VAL>::deleteEntry(KEY* key) {
+int HashTable<KEY, VAL>::deleteEntry(const KEY &key) {
     uint32_t index = getIndexWithKey(key);
     DictEntry<KEY, VAL>* node = this->table[index];
     if (node != NULL) {
         // 如果要删除的key是头结点
-        if (*(node->key) == *key) {
+        if (node->key == key) {
             this->table[index] = node->next;
             delete node;
             this->used--;
@@ -95,7 +95,7 @@ int HashTable<KEY, VAL>::deleteEntry(KEY* key) {
 
         // 如果不是头结点，则查找链表中是否有该节点
         while (node->next != NULL) {
-            if (*(node->next->key) == *key) {
+            if (node->next->key == key) {
                 DictEntry<KEY, VAL>* tmp = node->next;
                 node->next = node->next->next;
                 delete tmp;
@@ -110,7 +110,7 @@ int HashTable<KEY, VAL>::deleteEntry(KEY* key) {
 }
 
 template<class KEY, class VAL>
-bool HashTable<KEY, VAL>::hasKey(KEY* key) {
+bool HashTable<KEY, VAL>::hasKey(const KEY &key) {
     return this->findEntry(key) != NULL;
 }
 

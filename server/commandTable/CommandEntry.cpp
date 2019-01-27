@@ -179,14 +179,14 @@ void getCommand(const AbstractCoordinator* coordinator,
 
     // 查看key是否已经过期
     AbstractFlyDB *flyDB = flyClient->getFlyDB();
-    uint64_t expireTime = flyDB->getExpire(key);
+    uint64_t expireTime = flyDB->getExpire(*key);
     if (expireTime != -1 && expireTime < time(NULL)) {
-        flyDB->delKey(key);
+        flyDB->delKey(*key);
     }
 
     // 返回结果
     std::string* val = reinterpret_cast<std::string*>(
-            flyDB->lookupKey(key)->getPtr());
+            flyDB->lookupKey(*key)->getPtr());
     flyClient->addReply(val->c_str(), val->length());
 }
 
@@ -197,7 +197,7 @@ void setGenericCommand(const AbstractCoordinator *coordinator,
                        int64_t expireMilli) {
     char buf[1024];
     // 将key和val添加到flydb中
-    if (-1 == flyClient->getFlyDB()->addExpire(key, val, expireMilli)) {
+    if (-1 == flyClient->getFlyDB()->addExpire(*key, *val, expireMilli)) {
         flyClient->addReply("set error!");
         return;
     }
@@ -310,10 +310,10 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
             reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
     AbstractFlyDB *flyDB = flyClient->getFlyDB();
     std::list<std::string*> *list = reinterpret_cast<std::list<std::string*> *>
-    (flyDB->lookupKey(key)->getPtr());
+    (flyDB->lookupKey(*key)->getPtr());
     if (NULL == list) {
         FlyObj *obj = coordinator->getFlyObjLinkedListFactory()->getObject();
-        flyDB->add(key, obj);
+        flyDB->add(*key, *obj);
     }
 
     for (int j = 2; j < flyClient->getArgc(); j++) {
@@ -357,11 +357,11 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
             reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
     AbstractFlyDB *flyDB = flyClient->getFlyDB();
     SkipList<std::string> *list = reinterpret_cast<SkipList<std::string> *>
-    (flyDB->lookupKey(key)->getPtr());
+    (flyDB->lookupKey(*key)->getPtr());
     if (NULL == list) {
         FlyObj *obj = coordinator->getFlyObjLinkedListFactory()
                 ->getObject(list = new SkipList<std::string>());
-        flyDB->add(key, obj);
+        flyDB->add(*key, *obj);
     }
 
     for (int j = 2; j < flyClient->getArgc(); j++) {
@@ -388,7 +388,7 @@ void popSortCommand(const AbstractCoordinator* coordinator,
     char buf[100];
     std::string *key =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getFlyDB()->lookupKey(key);
+    FlyObj *val = flyClient->getFlyDB()->lookupKey(*key);
     if (NULL == val) {
         flyClient->addReply("don`t have key: %s", key);
     }
@@ -418,7 +418,7 @@ void popGenericCommand(const AbstractCoordinator *coordinator,
     char buf[100];
     std::string *key =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getFlyDB()->lookupKey(key);
+    FlyObj *val = flyClient->getFlyDB()->lookupKey(*key);
     if (NULL == val) {
         flyClient->addReply("don`t have key: %s", key);
     }
@@ -460,7 +460,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
 
     std::string *table =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getFlyDB()->lookupKey(table);
+    FlyObj *val = flyClient->getFlyDB()->lookupKey(*table);
     if (NULL == val) {
         val = coordinator->getFlyObjHashTableFactory()->getObject();
     }
@@ -468,11 +468,11 @@ void hsetCommand(const AbstractCoordinator* coordinator,
     Dict<std::string, std::string> *dict =
             reinterpret_cast<Dict<std::string, std::string> *>(val->getPtr());
     for (int i = 2; i < argc; i = i + 2) {
-        std::string *key = reinterpret_cast<std::string *>
-        (flyClient->getArgv()[i]->getPtr());
-        std::string *val = reinterpret_cast<std::string *>
-        (flyClient->getArgv()[i + 1]->getPtr());
-        dict->addEntry(key, val);
+        std::string *key = reinterpret_cast<std::string *>(
+                flyClient->getArgv()[i]->getPtr());
+        std::string *val = reinterpret_cast<std::string *>(
+                flyClient->getArgv()[i + 1]->getPtr());
+        dict->addEntry(*key, *val);
     }
 
     coordinator->getFdbHandler()->addDirty(argc / 2 - 1);
@@ -494,7 +494,7 @@ void hgetCommand(const AbstractCoordinator* coordinator,
 
     std::string *tableName =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *table = flyClient->getFlyDB()->lookupKey(tableName);
+    FlyObj *table = flyClient->getFlyDB()->lookupKey(*tableName);
     if (NULL == table) {
         flyClient->addReply("Don`t have this talbe: %s", tableName);
         return;
@@ -504,13 +504,14 @@ void hgetCommand(const AbstractCoordinator* coordinator,
             reinterpret_cast<Dict<std::string, std::string> *>(table->getPtr());
     std::string *key =
             reinterpret_cast<std::string *>(flyClient->getArgv()[2]->getPtr());
-    std::string *val = dict->fetchValue(key);
-    if (NULL == val) {
+    std::string val;
+    int res = dict->fetchValue(*key, val);
+    if (-1 == res) {
         flyClient->addReply("Don`t have key : %s", key);
         return;
     }
 
-    flyClient->addReply("value: %s", val);
+    flyClient->addReply("value: %s", val.c_str());
     return;
 }
 

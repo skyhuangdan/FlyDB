@@ -57,6 +57,7 @@ public:
      */
     AbstractFlyDB* getFlyDB(int dbnum);
     uint8_t getFlyDBCount() const;
+    void updateDictResizePolicy();
 
     /**
      *  client相关

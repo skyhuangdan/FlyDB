@@ -24,17 +24,19 @@ int FlyDB::expandExpire(uint64_t size) {
     this->expires->expand(size);
 }
 
-int FlyDB::add(std::string *key, FlyObj *val) {
+int FlyDB::add(const std::string &key, const FlyObj &val) {
     return this->dict->addEntry(key, val);
 }
 
-int FlyDB::addExpire(std::string *key, FlyObj *val, int64_t expire) {
+int FlyDB::addExpire(const std::string &key,
+                     const FlyObj &val,
+                     int64_t expire) {
     if (-1 == this->add(key, val)) {
         return -1;
     }
 
     if (expire != -1) {
-        this->expires->addEntry(key, new int64_t(expire));
+        this->expires->addEntry(key, expire);
     }
 
     return 1;
@@ -51,12 +53,13 @@ void FlyDB::dictScan(Fio *fio, scan scanProc) {
     } while (nextCur != 0);
 }
 
-int64_t FlyDB::getExpire(std::string *key) {
-    int64_t *ex = this->expires->fetchValue(key);
-    if (NULL == ex) {
+int64_t FlyDB::getExpire(const std::string &key) {
+    int64_t ex;
+    int res = this->expires->fetchValue(key, ex);
+    if (-1 == res) {
         return -1;
     }
-    return *ex;
+    return ex;
 }
 
 const AbstractCoordinator* FlyDB::getCoordinator() const {
@@ -71,19 +74,19 @@ uint32_t FlyDB::expireSize() const {
     return expires->size();
 }
 
-FlyObj* FlyDB::lookupKey(std::string *key) {
+FlyObj* FlyDB::lookupKey(const std::string &key) {
     DictEntry<std::string, FlyObj> *entry = this->dict->findEntry(key);
     if (NULL == entry) {
         return NULL;
     }
 
-    FlyObj *obj = entry->getVal();
-    obj->setLru(miscTool->mstime());
+    FlyObj val = entry->getVal();
+    val.setLru(miscTool->mstime());
 
-    return obj;
+    return &val;
 }
 
-void FlyDB::delKey(std::string *key) {
+void FlyDB::delKey(const std::string &key) {
     this->expires->deleteEntry(key);
     this->dict->deleteEntry(key);
 }

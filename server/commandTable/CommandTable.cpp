@@ -71,7 +71,7 @@ void CommandTable::populateCommand() {
             }
             f++;
         }
-        this->commands->addEntry(new std::string(entry->getName()), entry);
+        this->commands->addEntry(entry->getName(), *entry);
     }
 }
 
@@ -79,12 +79,12 @@ int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
     std::string *command = reinterpret_cast<std::string*>
             (flyClient->getArgv()[0]->getPtr());
     DictEntry<std::string, CommandEntry>* dictEntry =
-            this->commands->findEntry(command);
+            this->commands->findEntry(*command);
     if (NULL == dictEntry) {
         this->logHandler->logDebug("wrong command type: %s", command);
         return -1;
     }
-    dictEntry->getVal()->getProc()(this->coordinator, flyClient);
+    dictEntry->getVal().getProc()(this->coordinator, flyClient);
 
     return 1;
 }

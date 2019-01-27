@@ -5,26 +5,24 @@
 #include "DictEntry.h"
 
 template<class KEY, class VAL>
-DictEntry<KEY, VAL>::DictEntry(KEY *key, VAL *val)
+DictEntry<KEY, VAL>::DictEntry(const KEY &key, const VAL &val)
         : key(key), val(val) {}
 
 template<class KEY, class VAL>
 DictEntry<KEY, VAL>::~DictEntry() {
-    delete this->key;
-    delete this->val;
 }
 
 template<class KEY, class VAL>
-KEY *DictEntry<KEY, VAL>::getKey() const {
+const KEY& DictEntry<KEY, VAL>::getKey() const {
     return this->key;
 }
 
 template<class KEY, class VAL>
-VAL *DictEntry<KEY, VAL>::getVal() const {
+const VAL& DictEntry<KEY, VAL>::getVal() const {
     return this->val;
 }
 
 template<class KEY, class VAL>
-void DictEntry<KEY, VAL>::setVal(void *val) {
+void DictEntry<KEY, VAL>::setVal(const VAL &val) {
     this->val = val;
 }

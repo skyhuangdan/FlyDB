@@ -25,8 +25,8 @@ public:
     virtual int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) = 0;
 
     virtual int saveKeyValuePair(Fio *fio,
-                                 std::string &key,
-                                 FlyObj *val,
+                                 const std::string &key,
+                                 const FlyObj &val,
                                  int64_t expireTime) = 0;
 
     virtual ssize_t saveRawString(Fio *fio, const std::string &str) = 0;

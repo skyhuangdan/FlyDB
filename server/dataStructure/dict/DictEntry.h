@@ -10,18 +10,14 @@
 template<class KEY, class VAL>
 struct DictEntry {
  public:
-    DictEntry(KEY *key, VAL *val);
+    DictEntry(const KEY &key, const VAL &val);
     virtual ~DictEntry();
-    KEY *getKey() const;
-    VAL *getVal() const;
-    void setVal(void *val);
+    const KEY& getKey() const;
+    const VAL& getVal() const;
+    void setVal(const VAL &val);
 
-    /**
-     * 为了性能妥协而采取的丑陋的实现方式，
-     * 考虑以后参照std的实现方式去优化
-     **/
-    KEY* key;
-    VAL* val;
+    KEY key;
+    VAL val;
     DictEntry* next;
 
 };

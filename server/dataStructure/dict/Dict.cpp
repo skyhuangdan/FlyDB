@@ -7,6 +7,8 @@
 #include "../../log/FileLogHandler.h"
 #include "../../log/FileLogFactory.h"
 
+extern bool canResize;
+
 template<class KEY, class VAL>
 Dict<KEY, VAL>::Dict() {
     this->ht[0] = new HashTable<KEY, VAL>(HASH_TABLE_INITIAL_SIZE);
@@ -30,13 +32,7 @@ bool Dict<KEY, VAL>::isRehashing() const {
 }
 
 template<class KEY, class VAL>
-int Dict<KEY, VAL>::addEntry(KEY* key, VAL* val) {
-    if (NULL == key || NULL == val) {
-        this->logHandler->logWarning("key or value is NULL, key = %p, val = %p",
-                                     key, val);
-        return -1;
-    }
-
+int Dict<KEY, VAL>::addEntry(const KEY &key, const VAL &val) {
     /** 如果正在执行rehash, 先执行一部rehash */
     int res = 0;
     if (isRehashing()) {
@@ -50,7 +46,7 @@ int Dict<KEY, VAL>::addEntry(KEY* key, VAL* val) {
         res = this->ht[1]->addEntry(key, val);
     } else {  // 如果没在rehash, 执行插入操作；并判断是否需要扩容
         if ((res = this->ht[0]->addEntry(key, val)) > 0) {
-            if (this->ht[0]->needExpand(this->canResize)) {
+            if (this->ht[0]->needExpand(canResize)) {
                 this->ht[1] =
                         new HashTable<KEY, VAL>(this->ht[0]->getSize() * 2);
                 this->rehashIndex = 0;
@@ -64,11 +60,7 @@ int Dict<KEY, VAL>::addEntry(KEY* key, VAL* val) {
 }
 
 template<class KEY, class VAL>
-DictEntry<KEY, VAL>* Dict<KEY, VAL>::findEntry(KEY* key) {
-    if (NULL == key) {
-        return NULL;
-    }
-
+DictEntry<KEY, VAL>* Dict<KEY, VAL>::findEntry(const KEY &key) {
     // 先进行一步rehash
     if (isRehashing()) {
         rehashSteps(1);
@@ -88,28 +80,24 @@ DictEntry<KEY, VAL>* Dict<KEY, VAL>::findEntry(KEY* key) {
 }
 
 template<class KEY, class VAL>
-VAL* Dict<KEY, VAL>::fetchValue(KEY* key) {
-    if (NULL == key) {
-        this->logHandler->logWarning("key is NULL!");
-        return NULL;
-    }
-
+int Dict<KEY, VAL>::fetchValue(const KEY &key, VAL &val) {
     // 先进行一步rehash
     if (isRehashing()) {
         rehashSteps(1);
     }
 
+    /** 查询key, 获取不到返回-1 */
     DictEntry<KEY, VAL>* entry = findEntry(key);
-    return NULL == entry ? NULL : entry->val;
-}
-
-template<class KEY, class VAL>
-int Dict<KEY, VAL>::deleteEntry(KEY* key) {
-    if (NULL == key) {
-        this->logHandler->logWarning("key is NULL!");
+    if (NULL == entry) {
         return -1;
     }
 
+    val = entry->val;
+    return 1;
+}
+
+template<class KEY, class VAL>
+int Dict<KEY, VAL>::deleteEntry(const KEY &key) {
     // 先进行一步rehash
     if (isRehashing()) {
         rehashSteps(1);
@@ -136,13 +124,7 @@ int Dict<KEY, VAL>::deleteEntry(KEY* key) {
 }
 
 template<class KEY, class VAL>
-int Dict<KEY, VAL>::replace(KEY* key, VAL* val) {
-    if (NULL == key || NULL == val) {
-        this->logHandler->logWarning("key or value is NULL, key = %p, val = %p",
-                                     key, val);
-        return -1;
-    }
-
+int Dict<KEY, VAL>::replace(const KEY &key, const VAL &val) {
     // 先进行一步rehash
     if (isRehashing()) {
         rehashSteps(1);
@@ -190,7 +172,9 @@ void Dict<KEY, VAL>::rehashSteps(uint32_t steps) {
 template<class KEY, class VAL>
 uint32_t Dict<KEY, VAL>::dictScan(uint32_t cursor,
                         uint32_t steps,
-                        void (*scanProc)(void* priv, KEY *key, VAL *val),
+                        void (*scanProc)(void* priv,
+                                         const KEY &key,
+                                         const VAL &val),
                         void *priv) {
     uint32_t nextCursor = cursor;
     for (uint32_t i = 0; i < steps; i++) {
@@ -206,7 +190,7 @@ uint32_t Dict<KEY, VAL>::dictScan(uint32_t cursor,
 template<class KEY, class VAL>
 uint32_t Dict<KEY, VAL>::dictScanOneStep(
         uint32_t cursor,
-        void (*scanProc)(void* priv, KEY *key, VAL *val),
+        void (*scanProc)(void* priv, const KEY &key, const VAL &val),
         void *priv) {
     HashTable<KEY, VAL>* ht0 = this->ht[0];
     HashTable<KEY, VAL>* ht1 = this->ht[1];
@@ -266,7 +250,7 @@ uint32_t Dict<KEY, VAL>::revBits(uint32_t bits) {
 template<class KEY, class VAL>
 int Dict<KEY, VAL>::shrinkToMinSize() {
     /** 如果正处于rehash过程中，或者ht[0]不允许resize, 返回-1 */
-    if (this->isRehashing() || !this->canResize) {
+    if (this->isRehashing() || !canResize) {
         return -1;
     }
 
@@ -297,11 +281,6 @@ int Dict<KEY, VAL>::expand(uint32_t size) {
     rehashSteps(1);
 
     return 1;
-}
-
-template<class KEY, class VAL>
-void Dict<KEY, VAL>::setCanResize(bool canResize) {
-    this->canResize = canResize;
 }
 
 template<class KEY, class VAL>

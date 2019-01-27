@@ -17,6 +17,14 @@
 #include "../db/FlyDB.h"
 #include "../log/FileLogFactory.h"
 #include "../db/FlyDBFactory.h"
+#include "../dataStructure/dict/Dict.h"
+
+/**
+ * 当aof或者fdb子线程进行持久化的时候，可以设置canResize = true,
+ * 不允许进行resize操作(除非ht.used > ht.size * NEED_FORCE_REHASH_RATIO)，
+ * 这样可以减少内存搬移，以减少内存压力
+ */
+bool canResize = true;
 
 FlyServer::FlyServer(const AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
@@ -313,6 +321,13 @@ uint8_t FlyServer::getFlyDBCount() const {
     return this->dbArray.size();
 }
 
+void FlyServer::updateDictResizePolicy() {
+    if (coordinator->getAofHandler()->haveChildPid()
+        || coordinator->getFdbHandler()->haveChildPid()) {
+        canResize = false;
+    }
+    canResize = true;
+}
 
 AbstractFlyClient* FlyServer::createClient(int fd) {
     if (fd <= 0) {

@@ -59,6 +59,8 @@ public:
 
     virtual uint8_t getFlyDBCount() const = 0;
 
+    virtual void updateDictResizePolicy() = 0;
+
     virtual int getMaxClients() const = 0;
 
     virtual bool isShutdownASAP() const = 0;

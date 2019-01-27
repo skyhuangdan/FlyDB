@@ -19,15 +19,15 @@ public:
     ~FlyDB();
     int expandDict(uint64_t size);
     int expandExpire(uint64_t size);
-    int add(std::string *key, FlyObj *val);
-    int addExpire(std::string *key, FlyObj *val, int64_t expire);
+    int add(const std::string &key, const FlyObj &val);
+    int addExpire(const std::string &key, const FlyObj &val, int64_t expire);
     void dictScan(Fio *fio, scan scanProc);
-    int64_t getExpire(std::string *key);
+    int64_t getExpire(const std::string &key);
     const AbstractCoordinator* getCoordinator() const;
     uint32_t dictSize() const;
     uint32_t expireSize() const;
-    FlyObj* lookupKey(std::string *key);
-    void delKey(std::string *key);
+    FlyObj* lookupKey(const std::string &key);
+    void delKey(const std::string &key);
 
 private:
     Dict<std::string, FlyObj>* dict;
