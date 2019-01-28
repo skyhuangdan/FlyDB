@@ -192,7 +192,7 @@ void getCommand(const AbstractCoordinator* coordinator,
 void setGenericCommand(const AbstractCoordinator *coordinator,
                        AbstractFlyClient *flyClient,
                        std::string *key,
-                       FlyObj *val,
+                       std::shared_ptr<FlyObj> val,
                        int64_t expireMilli) {
     // 将key和val添加到flydb中
     if (-1 == flyClient->getFlyDB()->addExpire(*key, val, expireMilli)) {
@@ -219,7 +219,7 @@ void setCommand(const AbstractCoordinator* coordinator,
     // 获取到key和val
     std::string *key = reinterpret_cast<std::string*>
     (flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getArgv()[2];
+    std::shared_ptr<FlyObj> val = flyClient->getArgv()[2];
 
     setGenericCommand(coordinator, flyClient, key, val, -1);
 }
@@ -239,7 +239,7 @@ void setExCommand(const AbstractCoordinator* coordinator,
     // 获取到key和val
     std::string *key =
             reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getArgv()[2];
+    std::shared_ptr<FlyObj> val = flyClient->getArgv()[2];
 
     // 获取超时时间
     int64_t expireSeconds =
@@ -264,7 +264,7 @@ void psetExCommand(const AbstractCoordinator* coordinator,
     // 获取到key和val
     std::string *key =
             reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getArgv()[2];
+    std::shared_ptr<FlyObj> val = flyClient->getArgv()[2];
     int64_t expireMilli =
             *(reinterpret_cast<int*>(flyClient->getArgv()[3]->getPtr()));
 
@@ -310,7 +310,8 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
     std::list<std::string> *list = reinterpret_cast<std::list<std::string> *>(
             flyDB->lookupKey(*key)->getPtr());
     if (NULL == list) {
-        FlyObj *obj = coordinator->getFlyObjLinkedListFactory()->getObject();
+        std::shared_ptr<FlyObj> obj =
+                coordinator->getFlyObjLinkedListFactory()->getObject();
         flyDB->add(*key, obj);
     }
 
@@ -357,7 +358,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
     SkipList<std::string> *list = reinterpret_cast<SkipList<std::string> *>
     (flyDB->lookupKey(*key)->getPtr());
     if (NULL == list) {
-        FlyObj *obj = coordinator->getFlyObjLinkedListFactory()
+        std::shared_ptr<FlyObj> obj = coordinator->getFlyObjLinkedListFactory()
                 ->getObject(list = new SkipList<std::string>());
         flyDB->add(*key, obj);
     }
@@ -385,7 +386,7 @@ void popSortCommand(const AbstractCoordinator* coordinator,
 
     std::string *key =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getFlyDB()->lookupKey(*key);
+    std::shared_ptr<FlyObj> val = flyClient->getFlyDB()->lookupKey(*key);
     if (NULL == val) {
         flyClient->addReply("don`t have key: %s", key);
     }
@@ -414,7 +415,7 @@ void popGenericCommand(const AbstractCoordinator *coordinator,
 
     std::string *key =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getFlyDB()->lookupKey(*key);
+    std::shared_ptr<FlyObj> val = flyClient->getFlyDB()->lookupKey(*key);
     if (NULL == val) {
         flyClient->addReply("don`t have key: %s", key);
     }
@@ -456,7 +457,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
 
     std::string *table =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *val = flyClient->getFlyDB()->lookupKey(*table);
+    std::shared_ptr<FlyObj> val = flyClient->getFlyDB()->lookupKey(*table);
     if (NULL == val) {
         val = coordinator->getFlyObjHashTableFactory()->getObject();
     }
@@ -489,7 +490,8 @@ void hgetCommand(const AbstractCoordinator* coordinator,
 
     std::string *tableName =
             reinterpret_cast<std::string *>(flyClient->getArgv()[1]->getPtr());
-    FlyObj *table = flyClient->getFlyDB()->lookupKey(*tableName);
+    std::shared_ptr<FlyObj> table =
+            flyClient->getFlyDB()->lookupKey(*tableName);
     if (NULL == table) {
         flyClient->addReply("Don`t have this talbe: %s", tableName);
         return;

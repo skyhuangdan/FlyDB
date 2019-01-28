@@ -10,8 +10,8 @@
 class FlyObjLinkedListFactory : public AbstractFlyObjFactory {
 public:
     ~FlyObjLinkedListFactory();
-    FlyObj* getObject();
-    FlyObj* getObject(void *ptr);
+    std::shared_ptr<FlyObj> getObject();
+    std::shared_ptr<FlyObj> getObject(void *ptr);
 };
 
 

@@ -26,7 +26,7 @@ public:
 
     virtual int saveKeyValuePair(Fio *fio,
                                  std::string key,
-                                 FlyObj *val,
+                                 std::shared_ptr<FlyObj> val,
                                  int64_t expireTime) = 0;
 
     virtual ssize_t saveRawString(Fio *fio, const std::string &str) = 0;

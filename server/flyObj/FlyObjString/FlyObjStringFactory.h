@@ -10,8 +10,8 @@
 class FlyObjStringFactory : public AbstractFlyObjFactory {
 public:
     ~FlyObjStringFactory();
-    FlyObj* getObject(void *ptr);
-    FlyObj* getObject();
+    std::shared_ptr<FlyObj> getObject(void *ptr);
+    std::shared_ptr<FlyObj> getObject();
 };
 
 

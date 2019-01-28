@@ -16,9 +16,13 @@ FlyObj::FlyObj(FlyObjType type) {
     this->type = type;
 }
 
-FlyObj::FlyObj(std::shared_ptr<char> ptr, FlyObjType type) {
+FlyObj::FlyObj(void* ptr, FlyObjType type) {
     this->ptr = ptr;
     this->type = type;
+}
+
+FlyObj::~FlyObj() {
+
 }
 
 FlyObjType FlyObj::getType() const {
@@ -38,9 +42,5 @@ void FlyObj::setLru(uint64_t lru) {
 }
 
 void *FlyObj::getPtr() const {
-    /**
-     * 这里没有返回智能指针，因为该智能指针主要用于FlyObj浅拷贝时，
-     * 增加智能指针的引用计数，防止有FlyObj释放时释放了ptr所占用空间
-     **/
-    return this->ptr.get();
+    return this->ptr;
 }

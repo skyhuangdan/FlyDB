@@ -9,10 +9,10 @@ FlyObjSkipListFactory::~FlyObjSkipListFactory() {
 
 }
 
-FlyObj* FlyObjSkipListFactory::getObject() {
-    return new FlyObjSkipList(FLY_TYPE_SKIPLIST);
+std::shared_ptr<FlyObj> FlyObjSkipListFactory::getObject() {
+    return std::shared_ptr<FlyObj>(new FlyObjSkipList(FLY_TYPE_SKIPLIST));
 }
 
-FlyObj* FlyObjSkipListFactory::getObject(void *ptr) {
-    return new FlyObjSkipList(ptr, FLY_TYPE_SKIPLIST);
+std::shared_ptr<FlyObj> FlyObjSkipListFactory::getObject(void *ptr) {
+    return std::shared_ptr<FlyObj>(new FlyObjSkipList(ptr, FLY_TYPE_SKIPLIST));
 }

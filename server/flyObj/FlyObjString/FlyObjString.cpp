@@ -6,12 +6,13 @@
 #include "FlyObjString.h"
 #include "../FlyObjDeleter.h"
 
-FlyObjString::FlyObjString(FlyObjType type) : FlyObj(
-        std::shared_ptr<char>((char*)new std::string,
-                              MyDeleter<std::string>()), type) {
+FlyObjString::FlyObjString(FlyObjType type) : FlyObj(new std::string, type) {
 }
 
-FlyObjString::FlyObjString(void *ptr, FlyObjType type) : FlyObj(
-        std::shared_ptr<char>((char*)ptr, MyDeleter<std::string>()), type) {
+FlyObjString::FlyObjString(void *ptr, FlyObjType type) : FlyObj(ptr, type) {
 
+}
+
+FlyObjString::~FlyObjString() {
+    delete reinterpret_cast<std::string*>(this->ptr);
 }

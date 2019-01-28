@@ -15,8 +15,8 @@
  **/
 class AbstractFlyObjFactory {
 public:
-    virtual FlyObj* getObject() = 0;
-    virtual FlyObj* getObject(void *ptr) = 0;
+    virtual std::shared_ptr<FlyObj> getObject() = 0;
+    virtual std::shared_ptr<FlyObj> getObject(void *ptr) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYOBJFACTORY_H

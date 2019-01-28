@@ -6,7 +6,7 @@
 #include "../dataStructure/dict/Dict.cpp"
 
 FlyDB::FlyDB(const AbstractCoordinator *coordinator) {
-    this->dict = new Dict<std::string, FlyObj*>();
+    this->dict = new Dict<std::string, std::shared_ptr<FlyObj>>();
     this->expires = new Dict<std::string, int64_t>();
     this->coordinator = coordinator;
 }
@@ -24,12 +24,12 @@ int FlyDB::expandExpire(uint64_t size) {
     this->expires->expand(size);
 }
 
-int FlyDB::add(const std::string &key, FlyObj *val) {
+int FlyDB::add(const std::string &key, std::shared_ptr<FlyObj> val) {
     return this->dict->addEntry(key, val);
 }
 
 int FlyDB::addExpire(const std::string &key,
-                     FlyObj *val,
+                     std::shared_ptr<FlyObj> val,
                      int64_t expire) {
     if (-1 == this->add(key, val)) {
         return -1;
@@ -74,13 +74,14 @@ uint32_t FlyDB::expireSize() const {
     return expires->size();
 }
 
-FlyObj* FlyDB::lookupKey(const std::string &key) {
-    DictEntry<std::string, FlyObj*> *entry = this->dict->findEntry(key);
+std::shared_ptr<FlyObj> FlyDB::lookupKey(const std::string &key) {
+    DictEntry<std::string, std::shared_ptr<FlyObj>> *entry
+            = this->dict->findEntry(key);
     if (NULL == entry) {
         return NULL;
     }
 
-    FlyObj* val = entry->getVal();
+    std::shared_ptr<FlyObj> val = entry->getVal();
     val->setLru(miscTool->mstime());
 
     return val;

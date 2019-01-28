@@ -73,7 +73,7 @@ void TextConfigReader::loadConfigFromString(const std::string& config) {
 
     // 依次处理每行
     for (auto line : lines) {
-        if (0 == line.size() || '#' == line[0]) {
+        if (0 == line.size() || '#' == line.at(0)) {
             continue;
         }
         loadConfigFromLineString(line);

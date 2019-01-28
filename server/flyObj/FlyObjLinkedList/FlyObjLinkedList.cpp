@@ -8,12 +8,14 @@
 #include "../../dataStructure/skiplist/SkipList.h"
 #include "../FlyObjDeleter.h"
 
-FlyObjLinkedList::FlyObjLinkedList(FlyObjType type) : FlyObj(
-        std::shared_ptr<char>((char*)new std::list<std::string>,
-                MyDeleter<std::list<std::string>>()), type) {
+FlyObjLinkedList::FlyObjLinkedList(FlyObjType type)
+        : FlyObj(new std::list<std::string>, type) {
 }
 
-FlyObjLinkedList::FlyObjLinkedList(void *ptr, FlyObjType type) : FlyObj(
-        std::shared_ptr<char>((char*)ptr,
-                MyDeleter<std::list<std::string>>()), type) {
+FlyObjLinkedList::FlyObjLinkedList(void *ptr, FlyObjType type)
+        : FlyObj(ptr, type) {
+}
+
+FlyObjLinkedList::~FlyObjLinkedList() {
+    delete reinterpret_cast<std::list<std::string> *>(this->ptr);
 }

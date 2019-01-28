@@ -40,11 +40,11 @@ void FlyClient::setFd(int fd) {
     this->fd = fd;
 }
 
-FlyObj *FlyClient::getName() const {
+std::shared_ptr<FlyObj> FlyClient::getName() const {
     return name;
 }
 
-void FlyClient::setName(FlyObj *name) {
+void FlyClient::setName(std::shared_ptr<FlyObj> name) {
     this->name = name;
 }
 
@@ -64,14 +64,13 @@ void FlyClient::delFlag(int flag) {
     this->flags &= ~flag;
 }
 
-FlyObj **FlyClient::getArgv() const {
+std::shared_ptr<FlyObj> *FlyClient::getArgv() const {
     return this->argv;
 }
 
 void FlyClient::freeArgv() {
     if (NULL != this->argv) {
         for (int i = 0; i < this->argc; i++) {
-            delete this->argv[i];
             this->argv[i] = NULL;
         }
         delete[] this->argv;
@@ -81,10 +80,10 @@ void FlyClient::freeArgv() {
 }
 
 void FlyClient::allocArgv(int64_t count) {
-    this->argv = new FlyObj*[count];
+    this->argv = new std::shared_ptr<FlyObj> [count];
 }
 
-void FlyClient::addArgv(FlyObj *obj) {
+void FlyClient::addArgv(std::shared_ptr<FlyObj> obj) {
     this->argv[this->argc++] = obj;
 }
 

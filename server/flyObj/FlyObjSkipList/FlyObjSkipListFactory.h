@@ -10,8 +10,8 @@
 class FlyObjSkipListFactory : public AbstractFlyObjFactory {
 public:
     ~FlyObjSkipListFactory();
-    FlyObj* getObject();
-    FlyObj* getObject(void *ptr);
+    std::shared_ptr<FlyObj> getObject();
+    std::shared_ptr<FlyObj> getObject(void *ptr);
 };
 
 

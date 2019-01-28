@@ -12,7 +12,7 @@
 
 typedef void (*commandProc)(const AbstractCoordinator*, AbstractFlyClient*);
 typedef int (*getKeysProc)(struct CommandEntry *cmd,
-                           FlyObj **argv,
+                           std::shared_ptr<FlyObj> *argv,
                            int argc,
                            int *numkeys);
 

@@ -13,6 +13,7 @@ class FlyObjIntSet : public FlyObj {
 public:
     FlyObjIntSet(FlyObjType type);
     FlyObjIntSet(void *ptr, FlyObjType type);
+    ~FlyObjIntSet();
 };
 
 

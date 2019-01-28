@@ -206,7 +206,9 @@ int FDBHandler::saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo) {
     return 1;
 }
 
-void FDBHandler::dbScan(void *priv, std::string key, FlyObj *val) {
+void FDBHandler::dbScan(void *priv,
+                        std::string key,
+                        std::shared_ptr<FlyObj> val) {
     FioAndflyDB *fioAndflyDB = reinterpret_cast<FioAndflyDB *>(priv);
     AbstractFlyDB *flyDB = fioAndflyDB->flyDB;
     int64_t expireTime = flyDB->getExpire(key);
@@ -217,13 +219,11 @@ void FDBHandler::dbScan(void *priv, std::string key, FlyObj *val) {
 
 void FDBHandler::dictSaveScan(void *priv,
                               std::string key,
-                              FlyObj *val) {
+                              std::string val) {
     FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
 
     fioAndCoord->coord->getFdbHandler()->saveRawString(fioAndCoord->fio, key);
-    fioAndCoord->coord->getFdbHandler()->saveRawString(
-            fioAndCoord->fio,
-            *(reinterpret_cast<std::string *>(val->getPtr())));
+    fioAndCoord->coord->getFdbHandler()->saveRawString(fioAndCoord->fio, val);
 }
 
 void FDBHandler::skipListSaveProc(void *priv, const std::string &obj) {
@@ -235,7 +235,7 @@ void FDBHandler::skipListSaveProc(void *priv, const std::string &obj) {
 
 int FDBHandler::saveKeyValuePair(Fio *fio,
                                  std::string key,
-                                 FlyObj *val,
+                                 std::shared_ptr<FlyObj> val,
                                  int64_t expireTime) {
     // 如果是过期键，则存入过期时间
     if (-1 != expireTime) {
@@ -269,7 +269,7 @@ int FDBHandler::saveKeyValuePair(Fio *fio,
     return 1;
 }
 
-ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
+ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
     ssize_t written = 0;
     ssize_t n = 0;
 
@@ -297,8 +297,8 @@ ssize_t FDBHandler::saveObject(Fio *fio, FlyObj *obj) {
 
         sl->scanAll(skipListSaveProc, new FioAndCoord(fio, this->coordinator));
     } else if (FLY_TYPE_HASH == obj->getType()) {
-        Dict<std::string, FlyObj*> *dict =
-                (Dict<std::string, FlyObj*> *)obj->getPtr();
+        Dict<std::string, std::string> *dict =
+                (Dict<std::string, std::string> *)obj->getPtr();
         if (-1 == (n = saveLen(fio, dict->size()))) {
             return -1;
         }
@@ -670,7 +670,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
             }
             continue;
         } else if (FDB_OPCODE_AUX == type) {
-            FlyObj *auxkey = NULL, *auxval = NULL;
+            std::shared_ptr<FlyObj> auxkey = NULL, auxval = NULL;
             if (NULL == (auxkey = loadStringObject(fio))) {
                 fdbExitReportCorrupt("Unexpected EOF reading RDB file");
                 return -1;
@@ -716,9 +716,6 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
                 }
 
             }
-
-            delete auxkey;
-            delete auxval;
             continue;
         } else if (FDB_OPCODE_EOF == type) {
             break;
@@ -726,7 +723,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
 
         // load key-value, and insert into flydb
         std::string *key;
-        FlyObj *val = NULL;
+        std::shared_ptr<FlyObj> val = NULL;
         if (NULL == (key = loadStringPlain(fio))) {
             fdbExitReportCorrupt("Unexpected EOF reading RDB file");
             return -1;
@@ -738,7 +735,6 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
         }
 
         if (expireTime != -1 && expireTime < miscTool->mstime()) {
-            delete val;
             continue;
         }
 
@@ -794,9 +790,9 @@ uint8_t FDBHandler::loadUint8(Fio *fio) {
 }
 
 // 返回FlyObj类型数据
-FlyObj* FDBHandler::loadStringObject(Fio *fio) {
-    return reinterpret_cast<FlyObj*>(
-            this->genericLoadStringObject(fio, FDB_LOAD_OBJECT, NULL));
+std::shared_ptr<FlyObj> FDBHandler::loadStringObject(Fio *fio) {
+    return std::make_shared<FlyObj>(*reinterpret_cast<FlyObj*>(
+            this->genericLoadStringObject(fio, FDB_LOAD_OBJECT, NULL)));
 }
 
 // 返回string类型数据
@@ -835,7 +831,8 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
     // 根据flag返回FlyObj或者直接返回string
     std::string *str = new std::string(ch);
     if (flag & FDB_LOAD_OBJECT) {
-        return this->coordinator->getFlyObjStringFactory()->getObject(str);
+        return this->coordinator->getFlyObjStringFactory()
+                ->getObject(str).get();
     } else {
         return str;
     }
@@ -874,7 +871,8 @@ void* FDBHandler::loadIntegerObject(Fio *fio,
 
     void *res = new std::string(std::to_string(val));
     if (FDB_LOAD_OBJECT == flag) {
-        res = this->coordinator->getFlyObjStringFactory()->getObject(res);
+        res = this->coordinator->getFlyObjStringFactory()
+                ->getObject(res).get();
     }
 
     return res;
@@ -966,8 +964,8 @@ int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
     return 1;
 }
 
-FlyObj* FDBHandler::loadObject(int type, Fio *fio) {
-    FlyObj *obj = NULL;
+std::shared_ptr<FlyObj> FDBHandler::loadObject(int type, Fio *fio) {
+    std::shared_ptr<FlyObj> obj = NULL;
     uint64_t len = 0;
 
     if (FLY_TYPE_STRING == type) {

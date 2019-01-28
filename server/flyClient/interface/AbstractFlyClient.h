@@ -24,9 +24,9 @@ public:
 
     virtual void setFd(int fd) = 0;
 
-    virtual FlyObj *getName() const = 0;
+    virtual std::shared_ptr<FlyObj> getName() const = 0;
 
-    virtual void setName(FlyObj *name) = 0;
+    virtual void setName(std::shared_ptr<FlyObj> name) = 0;
 
     virtual int getFlags() const = 0;
 
@@ -47,7 +47,7 @@ public:
 
     virtual int getQueryBufSize() const = 0;
 
-    virtual FlyObj **getArgv() const = 0;
+    virtual std::shared_ptr<FlyObj> *getArgv() const = 0;
 
     virtual void freeArgv() = 0;
 
@@ -55,7 +55,7 @@ public:
 
     virtual int getArgc() const = 0;
 
-    virtual void addArgv(FlyObj *obj) = 0;
+    virtual void addArgv(std::shared_ptr<FlyObj> obj) = 0;
 
     virtual void setArgc(int argc) = 0;
 

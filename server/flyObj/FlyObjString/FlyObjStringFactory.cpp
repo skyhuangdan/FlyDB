@@ -9,10 +9,10 @@ FlyObjStringFactory::~FlyObjStringFactory() {
 
 }
 
-FlyObj* FlyObjStringFactory::getObject(void *ptr) {
-    return new FlyObjString(ptr, FLY_TYPE_STRING);
+std::shared_ptr<FlyObj> FlyObjStringFactory::getObject(void *ptr) {
+    return std::shared_ptr<FlyObj>(new FlyObjString(ptr, FLY_TYPE_STRING));
 }
 
-FlyObj* FlyObjStringFactory::getObject() {
-    return new FlyObjString(FLY_TYPE_STRING);
+std::shared_ptr<FlyObj> FlyObjStringFactory::getObject() {
+    return std::shared_ptr<FlyObj>(new FlyObjString(FLY_TYPE_STRING));
 }

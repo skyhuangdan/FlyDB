@@ -12,6 +12,7 @@ class FlyObjSkipList : public FlyObj {
 public:
     FlyObjSkipList(FlyObjType type);
     FlyObjSkipList(void *ptr, FlyObjType type);
+    ~FlyObjSkipList();
 };
 
 

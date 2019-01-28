@@ -9,10 +9,10 @@ FlyObjLinkedListFactory::~FlyObjLinkedListFactory() {
 
 }
 
-FlyObj* FlyObjLinkedListFactory::getObject() {
-    return new FlyObjLinkedList(FLY_TYPE_LIST);
+std::shared_ptr<FlyObj> FlyObjLinkedListFactory::getObject() {
+    return std::shared_ptr<FlyObj>(new FlyObjLinkedList(FLY_TYPE_LIST));
 }
 
-FlyObj* FlyObjLinkedListFactory::getObject(void *ptr) {
-    return new FlyObjLinkedList(ptr, FLY_TYPE_LIST);
+std::shared_ptr<FlyObj> FlyObjLinkedListFactory::getObject(void *ptr) {
+    return std::shared_ptr<FlyObj>(new FlyObjLinkedList(ptr, FLY_TYPE_LIST));
 }

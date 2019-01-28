@@ -9,10 +9,10 @@ FlyObjHashTableFactory::~FlyObjHashTableFactory() {
 
 }
 
-FlyObj* FlyObjHashTableFactory::getObject() {
-    return new FlyObjHashTable(FLY_TYPE_HASH);
+std::shared_ptr<FlyObj> FlyObjHashTableFactory::getObject() {
+    return std::shared_ptr<FlyObj>(new FlyObjHashTable(FLY_TYPE_HASH));
 }
 
-FlyObj* FlyObjHashTableFactory::getObject(void *ptr) {
-    return new FlyObjHashTable(ptr, FLY_TYPE_HASH);
+std::shared_ptr<FlyObj> FlyObjHashTableFactory::getObject(void *ptr) {
+    return std::shared_ptr<FlyObj>(new FlyObjHashTable(ptr, FLY_TYPE_HASH));
 }

@@ -12,7 +12,8 @@
 class FlyObj {
 public:
     FlyObj(FlyObjType type);
-    FlyObj(std::shared_ptr<char> ptr, FlyObjType type);
+    FlyObj(void* ptr, FlyObjType type);
+    ~FlyObj();
     FlyObjType getType() const;
     void setType(FlyObjType type);
     uint64_t getLru() const;
@@ -22,7 +23,7 @@ public:
 protected:
     FlyObjType type;
     uint64_t lru;
-    std::shared_ptr<char> ptr;
+    void* ptr;
 };
 
 #endif //FLYDB_FLYOBJ_H

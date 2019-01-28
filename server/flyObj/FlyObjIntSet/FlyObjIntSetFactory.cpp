@@ -9,10 +9,10 @@ FlyObjIntSetFactory::~FlyObjIntSetFactory() {
 
 }
 
-FlyObj* FlyObjIntSetFactory::getObject() {
-    return new FlyObjIntSet(FLY_TYPE_SET);
+std::shared_ptr<FlyObj> FlyObjIntSetFactory::getObject() {
+    return std::shared_ptr<FlyObj>(new FlyObjIntSet(FLY_TYPE_SET));
 }
 
-FlyObj* FlyObjIntSetFactory::getObject(void *ptr) {
-    return new FlyObjIntSet(ptr, FLY_TYPE_SET);
+std::shared_ptr<FlyObj> FlyObjIntSetFactory::getObject(void *ptr) {
+    return std::shared_ptr<FlyObj>(new FlyObjIntSet(ptr, FLY_TYPE_SET));
 }

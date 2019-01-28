@@ -758,7 +758,8 @@ int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
     // 设置参数列表
     extern AbstractCoordinator *coordinator;
     for (auto item : words) {
-        coordinator->getFlyObjStringFactory()->getObject(new std::string(item));
+        flyClient->addArgv(coordinator->getFlyObjStringFactory()->getObject(
+                new std::string(item)));
     }
 
     // 裁剪输入缓冲区
@@ -863,9 +864,9 @@ int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
     }
 
     size_t pos = 0;
-    if ('$' != flyClient->getQueryBuf()[pos]) {
+    if ('$' != flyClient->getQueryBuf().at(pos)) {
         addReplyErrorFormat(flyClient, "Protocol error: expected '$', got '%c'",
-                            flyClient->getQueryBuf()[pos]);
+                            flyClient->getQueryBuf().at(pos));
         setProtocolError("expected $ but got something else", flyClient, pos);
         return -1;
     }
@@ -906,8 +907,10 @@ int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
     }
 
     // 设置flyClient argv参数
-    flyClient->addArgv(coordinator->getFlyObjStringFactory()->getObject(
-            new std::string(flyClient->getQueryBuf().substr(begin, pos - begin))));
+    std::shared_ptr<FlyObj> valptr =
+            coordinator->getFlyObjStringFactory()->getObject(new std::string(
+                    flyClient->getQueryBuf().substr(begin, pos - begin)));
+    flyClient->addArgv(valptr);
 
     // 截取此次读取
     flyClient->trimQueryBuf(pos + 2, -1);

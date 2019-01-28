@@ -27,7 +27,7 @@ public:
     void backgroundSaveDone(int exitCode, int bySignal);
     int saveKeyValuePair(Fio *fio,
                          std::string key,
-                         FlyObj *val,
+                         std::shared_ptr<FlyObj> val,
                          int64_t expireTime);
     ssize_t saveRawString(Fio *fio, const std::string &str);
     void deleteTempFile(pid_t pid);
@@ -54,11 +54,11 @@ public:
     uint64_t addDirty(uint64_t count);
 
 private:
-    static void dbScan(void *priv, std::string key, FlyObj *val);
-    static void dictSaveScan(void *priv, std::string key, FlyObj *val);
+    static void dbScan(void *priv, std::string key, std::shared_ptr<FlyObj> val);
+    static void dictSaveScan(void *priv, std::string key, std::string val);
     static void skipListSaveProc(void *priv, const std::string &obj);
     ssize_t saveLen(Fio *fio, uint64_t len);
-    ssize_t saveObject(Fio *fio, FlyObj *obj);
+    ssize_t saveObject(Fio *fio, std::shared_ptr<FlyObj> obj);
     int saveInfoAuxFields(Fio *fio,
                           int flags,
                           const FDBSaveInfo *saveInfo);
@@ -83,14 +83,14 @@ private:
     uint64_t loadMillisecondTime(Fio *fio);
     int loadNum(Fio *fio, int *encoded);
     int loadNumByRef(Fio *fio, int *encoded, uint64_t *lenptr);
-    FlyObj* loadStringObject(Fio *fio);
+    std::shared_ptr<FlyObj> loadStringObject(Fio *fio);
     std::string* loadStringPlain(Fio *fio);
     void* genericLoadStringObject(Fio *fio, int flag, size_t *lenptr);
     void* loadIntegerObject(Fio *fio, int encoding, int flag, size_t *lenptr);
     void* loadLzfStringObject(Fio *fio, int flag, size_t *lenptr);
     int checkHeader(Fio *fio);
     void checkThenExit(int linenum, char *reason, ...);
-    FlyObj* loadObject(int type, Fio *fio);
+    std::shared_ptr<FlyObj> loadObject(int type, Fio *fio);
     void initSaveParams();
 
     char *filename;
