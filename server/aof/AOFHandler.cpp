@@ -45,7 +45,7 @@ int AOFHandler::start() {
 
     /**
      * wait for the rewrite complete:
-     * 无论是schedule运行还是直接运行完，都是等待rewrite完毕，
+     * 无论是schedule开始运行还是直接运行完，都是等待rewrite完毕，
      * 以便于之后执行append data on disk
      **/
     this->state = AOF_WAIT_REWRITE;
@@ -96,16 +96,12 @@ int AOFHandler::rewriteBackground() {
     } else {
         /** parent */
         if (-1 == childPid) {    /** 创建子线程失败 */
-            coordinator->getAofDataPipe()->closeAll();
-            coordinator->getAofAckToChildPipe()->closeAll();
-            coordinator->getAofAckToParentPipe()->closeAll();
-            coordinator->getChildInfoPipe()->closeAll();
+            coordinator->closeAllPipe();
         }
 
         this->childPid = childPid;
         this->scheduled = false;
-        // todo: updateDictResizePolicy
-
+        flyServer->updateDictResizePolicy();
     }
 
     return 1;
@@ -154,7 +150,7 @@ int AOFHandler::rewriteAppendOnlyFile() {
         return -1;
     }
 
-    /** write aof diff data which is from parent to aof file*/
+    /** write aof diff data which is from parent to aof pipe */
     return this->rewriteAppendOnlyFileDiff(tmpfile, fio);
 }
 
@@ -162,7 +158,7 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     FILE *fp = fio->getFp();
     /**
      * 从parent读取持久化之后的aof数据
-     *      只要一直有从parent到本线程的数据，那尽量多读一段时间（1000ms）
+     *      只要一直有从parent到本线程的数据，那尽量多读一段时间（最多不超过1000ms）
      *      否则，如果持续读20次都没有数据，那么退出循环
      **/
     uint64_t start = miscTool->mstime();
