@@ -107,6 +107,10 @@ int AOFHandler::rewriteBackground() {
     return 1;
 }
 
+void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
+
+}
+
 int AOFHandler::rewriteAppendOnlyFile() {
     char tmpfile[256];
 
@@ -301,5 +305,13 @@ void AOFHandler::setFsyncStragy(int stragy) {
 
 void AOFHandler::setRewriteIncrementalFsync(bool rewriteIncrementalFsync) {
     this->rewriteIncrementalFsync = rewriteIncrementalFsync;
+}
+
+bool AOFHandler::isScheduled() const {
+    return this->scheduled;
+}
+
+void AOFHandler::setScheduled(bool scheduled) {
+    this->scheduled = scheduled;
 }
 

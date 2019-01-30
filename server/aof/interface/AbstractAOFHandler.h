@@ -14,6 +14,8 @@ public:
 
     virtual int start() = 0;
 
+    virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
+
     virtual int rewriteBackground() = 0;
 
     virtual int rewriteAppendOnlyFile() = 0;
@@ -27,6 +29,10 @@ public:
     virtual bool IsStateOn() const = 0;
 
     virtual void setState(AOFState state) = 0;
+
+    virtual bool isScheduled() const = 0;
+
+    virtual void setScheduled(bool scheduled) = 0;
 };
 
 #endif //FLYDB_ABSTRACTAOFHANDLER_H

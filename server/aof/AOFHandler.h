@@ -15,12 +15,15 @@ public:
     int start();
     int rewriteBackground();
     int rewriteAppendOnlyFile();
+    void backgroundSaveDone(int exitCode, int bySignal);
 
     pid_t getChildPid() const;
     void setChildPid(pid_t childPid);
     bool haveChildPid() const;
     bool IsStateOn() const;
     void setState(AOFState aofState);
+    bool isScheduled() const;
+    void setScheduled(bool scheduled);
 
     void setCoordinator(AbstractCoordinator *coordinator);
     void setFileName(char *fileName);

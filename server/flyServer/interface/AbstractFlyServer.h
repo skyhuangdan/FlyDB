@@ -67,6 +67,8 @@ public:
 
     virtual void setShutdownASAP(bool shutdownASAP) = 0;
 
+    virtual int prepareForShutdown(int flags) = 0;
+
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

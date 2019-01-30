@@ -1076,3 +1076,7 @@ void FDBHandler::checkThenExit(int lineNum, char *reason, ...) {
 
     exit(1);
 }
+
+bool FDBHandler::isLoading() const {
+    return this->loading;
+}

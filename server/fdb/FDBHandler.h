@@ -52,6 +52,7 @@ public:
     const saveParam* getSaveParam(int pos) const;
     uint64_t getDirty() const;
     uint64_t addDirty(uint64_t count);
+    bool isLoading() const;
 
 private:
     static void dbScan(void *priv, std::string key, std::shared_ptr<FlyObj> val);

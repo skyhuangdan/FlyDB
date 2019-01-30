@@ -42,6 +42,7 @@ public:
     void setNowt(time_t nowt);
     bool isShutdownASAP() const;
     void setShutdownASAP(bool shutdownASAP);
+    int prepareForShutdown(int flags);
 
     /**
      * 网络相关

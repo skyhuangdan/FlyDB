@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <syslog.h>
+#include <signal.h>
 #include "FlyServer.h"
 #include "../commandTable/CommandTable.h"
 #include "../../def.h"
@@ -475,13 +476,53 @@ void FlyServer::setShutdownASAP(bool shutdownASAP) {
     this->shutdownASAP = shutdownASAP;
 }
 
+int FlyServer::prepareForShutdown(int flags) {
+    AbstractFDBHandler *fdbHandler = coordinator->getFdbHandler();
+
+    /** 如果有fdb子进程存在，kill并且删掉fdb的临时文件 */
+    if (fdbHandler->haveChildPid()) {
+        pid_t fdbPid = fdbHandler->getChildPid();
+        kill(fdbPid, SIGUSR1);
+        fdbHandler->deleteTempFile(fdbPid);
+    }
+
+    /** todo aof */
+
+    /** 如果flag设置了save或者saveParamsCount>0, 则执行fdb持久化 */
+    if ((fdbHandler->getSaveParamsCount() > 0 && !(flags & SHUTDOWN_NOSAVE))
+        || (flags & SHUTDOWN_SAVE)) {
+        if (fdbHandler->save() < 0) {
+            logHandler->logWarning("Error trying to save the DB, can't exit.");
+            return -1;
+        }
+    }
+
+    /** 关闭所有listen socket，这样重启快一些 */
+    closeListeningSockets(true);
+
+    this->setShutdownASAP(false);
+    this->logHandler->logWarning("now ready to exit, bye bye...");
+}
+
 void sigShutDownHandlers(int sig) {
     extern AbstractCoordinator *coordinator;
 
+    /**
+     * 如果是连续收到两次(isShutdownASAP表明上次已经收到过信号了)SIGINT信号，
+     * 表明用户想退出并且不持久化
+     **/
     if (coordinator->getFlyServer()->isShutdownASAP()
         && SIGINT == sig) {
         coordinator->getFdbHandler()->deleteTempFile(getpid());
         exit(1);
+    }
+
+    /**
+     * 如果正在进行fdb load，直接退出。否则如果后续执行持久化，
+     * 会污染数据(向DB中写入load了一半的数据)
+     **/
+    if (coordinator->getFdbHandler()->isLoading()) {
+        exit(0);
     }
 
     coordinator->getFlyServer()->setShutdownASAP(true);
@@ -498,8 +539,9 @@ int serverCron(const AbstractCoordinator *coordinator,
     // 释放所有异步删除的clients
     flyServer->freeClientsInAsyncFreeList();
 
+    /** 如果收到kill命令(SIGTERM信号)，执行fdb save操作 */
     if (coordinator->getFlyServer()->isShutdownASAP()) {
-        coordinator->getFdbHandler()->save();
+        flyServer->prepareForShutdown(SHUTDOWN_NOFLAGS);
     }
 
     // 如果有fdb或者aof子进程存在的话
@@ -526,11 +568,11 @@ int serverCron(const AbstractCoordinator *coordinator,
                 coordinator->getFdbHandler()->backgroundSaveDone(
                         exitCode, bySignal);
             } else if (coordinator->getAofHandler()->getChildPid() == pid) {
-                // todo:
+                coordinator->getAofHandler()->backgroundSaveDone(
+                        exitCode, bySignal);
             } else {
                 coordinator->getLogHandler()->logWarning(
                         "Warning, detected child with unmatched pid: %ld", pid);
-
             }
 
             coordinator->getChildInfoPipe()->closeAll();
@@ -552,19 +594,44 @@ int serverCron(const AbstractCoordinator *coordinator,
                 coordinator->getFdbHandler()->backgroundSave();
             }
         }
-    }
 
-    // 处理被AOF延迟了的FDB操作
-    if (!coordinator->getFdbHandler()->haveChildPid()
-        && !coordinator->getAofHandler()->haveChildPid()
-        && coordinator->getFdbHandler()->isBGSaveScheduled()
-        && coordinator->getFdbHandler()->canBgsaveNow()
-        && 1 == coordinator->getFdbHandler()->getLastBgsaveStatus()) {
-        // fdb被成功执行了，则下次不再schedule
-        if (1 == coordinator->getFdbHandler()->backgroundSave()) {
-            coordinator->getFdbHandler()->setBGSaveScheduled(false);
+        /**
+         * 不能因为haveChildPid这个条件判断与上面if判断重复，就不再做haveChildPid判断
+         * 因为saveParam那里有可能会导致进行backgroundSave操作，导致haveChildPid条件发生改变
+         **/
+        /**
+         * 处理被延迟了(schedule)的FDB操作:
+         *    1.当前没有fdb child thread正在运行
+         *    2.当前没有aof child thread挣在运行
+         *    3.schedule被标记
+         */
+        if (!coordinator->getAofHandler()->haveChildPid()
+            && !coordinator->getFdbHandler()->haveChildPid()
+            && coordinator->getAofHandler()->isScheduled()) {
+            if (1 == coordinator->getAofHandler()->rewriteBackground()) {
+                coordinator->getAofHandler()->setScheduled(false);
+            }
+        }
+
+        /**
+         * 处理被延迟了(schedule)的FDB操作：
+         *    1.没有fdb child thread正在运行
+         *    2.没有aof child thread正在运行
+         *    3.schedule被标记（即执行fdb时由于某些原因被延迟了）
+         *    4.上次执行bgsave成功了, 或者失败了但是nowt-上次尝试执行fdb的时间>指定时间（CONFIG_BGSAVE_RETRY_DELAY）
+         */
+        if (!coordinator->getFdbHandler()->haveChildPid()
+            && !coordinator->getAofHandler()->haveChildPid()
+            && coordinator->getFdbHandler()->isBGSaveScheduled()
+            && (coordinator->getFdbHandler()->canBgsaveNow()
+                || 1 == coordinator->getFdbHandler()->getLastBgsaveStatus())) {
+            // fdb被成功执行了，则下次不再schedule
+            if (1 == coordinator->getFdbHandler()->backgroundSave()) {
+                coordinator->getFdbHandler()->setBGSaveScheduled(false);
+            }
         }
     }
+
 
     static int times = 0;
     std::cout << "serverCron is running " << ++times << " times!" << std::endl;
