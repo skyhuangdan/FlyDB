@@ -55,8 +55,8 @@ public:
     bool isLoading() const;
 
 private:
-    static void dbScan(void *priv, std::string key, std::shared_ptr<FlyObj> val);
-    static void dictSaveScan(void *priv, std::string key, std::string val);
+    static int dbScan(void *priv, std::string key, std::shared_ptr<FlyObj> val);
+    static int dictSaveScan(void *priv, std::string key, std::string val);
     static void skipListSaveProc(void *priv, const std::string &obj);
     ssize_t saveLen(Fio *fio, uint64_t len);
     ssize_t saveObject(Fio *fio, std::shared_ptr<FlyObj> obj);

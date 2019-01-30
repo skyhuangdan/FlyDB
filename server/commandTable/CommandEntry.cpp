@@ -37,7 +37,7 @@ CommandEntry::CommandEntry(commandProc proc, int flag) {
     this->flag = flag;
 }
 
-CommandEntry::CommandEntry(char *name,
+CommandEntry::CommandEntry(const char *name,
                            commandProc proc,
                            int arity,
                            const std::string &sflags,
@@ -61,11 +61,11 @@ CommandEntry::CommandEntry(char *name,
     this->calls = calls;
 }
 
-char *CommandEntry::getName() const {
+const char *CommandEntry::getName() const {
     return this->name;
 }
 
-void CommandEntry::setName(char *name) {
+void CommandEntry::setName(const char *name) {
     this->name = name;
 }
 

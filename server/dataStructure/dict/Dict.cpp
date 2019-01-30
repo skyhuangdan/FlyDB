@@ -170,14 +170,15 @@ void Dict<KEY, VAL>::rehashSteps(uint32_t steps) {
 }
 
 template<class KEY, class VAL>
-uint32_t Dict<KEY, VAL>::dictScan(uint32_t cursor,
+int32_t Dict<KEY, VAL>::dictScan(uint32_t cursor,
                         uint32_t steps,
-                        void (*scanProc)(void* priv, KEY key, VAL val),
+                        int (*scanProc)(void* priv, KEY key, VAL val),
                         void *priv) {
     uint32_t nextCursor = cursor;
     for (uint32_t i = 0; i < steps; i++) {
         nextCursor = dictScanOneStep(nextCursor, scanProc, priv);
-        if (0 == nextCursor) {
+        /** nextCursor = 0代表scan完毕， nextCursor=-1代表遍历过程失败 */
+        if (nextCursor <= 0) {
             return nextCursor;
         }
     }
@@ -186,9 +187,9 @@ uint32_t Dict<KEY, VAL>::dictScan(uint32_t cursor,
 }
 
 template<class KEY, class VAL>
-uint32_t Dict<KEY, VAL>::dictScanOneStep(
+int32_t Dict<KEY, VAL>::dictScanOneStep(
         uint32_t cursor,
-        void (*scanProc)(void* priv, const KEY key, const VAL val),
+        int (*scanProc)(void* priv, const KEY key, const VAL val),
         void *priv) {
     HashTable<KEY, VAL>* ht0 = this->ht[0];
     HashTable<KEY, VAL>* ht1 = this->ht[1];
@@ -202,7 +203,9 @@ uint32_t Dict<KEY, VAL>::dictScanOneStep(
 
         // scan ht0
         uint32_t index = ht0->getIndex(cursor);
-        ht0->scanEntries(index, scanProc, priv);
+        if (-1 == ht0->scanEntries(index, scanProc, priv)) {
+            return -1;
+        }
 
         /**
          * scan ht1: 由于ht1 > ht0, 所以ht1的大小是ht0的二倍
@@ -214,14 +217,20 @@ uint32_t Dict<KEY, VAL>::dictScanOneStep(
          * 3.ht1中的第二个scan就是将index的第二位置1, 以遍历相应的第二个桶
          */
         index = ht1->getIndex(cursor);
-        ht1->scanEntries(index, scanProc, priv);
+        if (-1 == ht1->scanEntries(index, scanProc, priv)) {
+            return -1;
+        }
         index |= (~ht0->getMask() & ht1->getMask())
                 | (ht0->getMask() & ~ht1->getMask());
-        ht1->scanEntries(index, scanProc, priv);
+        if (-1 == ht1->scanEntries(index, scanProc, priv)) {
+            return -1;
+        }
     } else {
         // 如果未处于rehash, 只访问ht[0]就可以了
         uint32_t index = ht0->getIndex(cursor);
-        ht0->scanEntries(index, scanProc, priv);
+        if (-1 == ht0->scanEntries(index, scanProc, priv)) {
+            return -1;
+        }
     }
 
     cursor |= ~ht0->getMask();

@@ -24,20 +24,20 @@ public:
     int deleteEntry(const KEY key);
     bool isRehashing() const;
     void rehashSteps(uint32_t steps);
-    uint32_t dictScan(uint32_t cursor,
-                      uint32_t steps,
-                      void (*scanProc)(void* priv, KEY key, VAL val),
-                      void *priv);
-    uint32_t dictScanOneStep(uint32_t cursor,
-                             void (*scanProc)(void* priv, 
-                                              const KEY key,
-                                              const VAL val),
-                             void *priv);
+    int32_t dictScan(uint32_t cursor,
+                     uint32_t steps,
+                     int (*scanProc)(void* priv, KEY key, VAL val),
+                     void *priv);
     int expand(uint32_t size);              // 扩容/缩容
     int shrinkToMinSize();                  // 缩容至最小容量
     uint32_t size() const;
 
 private:
+    int32_t dictScanOneStep(uint32_t cursor,
+                            int (*scanProc)(void* priv,
+                                            const KEY key,
+                                            const VAL val),
+                            void *priv);
     uint32_t nextPower(uint32_t num);
     uint32_t revBits(uint32_t bits);
     std::array<HashTable<KEY, VAL>*, 2> ht;

@@ -36,13 +36,15 @@ uint32_t HashTable<KEY, VAL>::getIndex(uint32_t cursor) const {
 }
 
 template<class KEY, class VAL>
-void HashTable<KEY, VAL>::scanEntries(
+int HashTable<KEY, VAL>::scanEntries(
         uint32_t index,
-        void (*scanProc)(void* priv, const KEY key, const VAL val),
+        int (*scanProc)(void* priv, const KEY key, const VAL val),
         void* priv) {
     DictEntry<KEY, VAL>* entry = this->getEntryBy(index);
     while (NULL != entry) {
-        scanProc(priv, entry->getKey(), entry->getVal());
+        if (-1 == scanProc(priv, entry->getKey(), entry->getVal())) {
+            return -1;
+        }
         entry = entry->next;
     }
 }

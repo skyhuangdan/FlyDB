@@ -8,11 +8,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include "../../flyObj/FlyObj.h"
 
 class Fio {
 public:
     Fio(uint64_t maxProcessingChunk);
     Fio();
+    virtual ~Fio();
 
     virtual int tell() = 0;                         // get offset
     virtual int flush() = 0;                        // flush data to device

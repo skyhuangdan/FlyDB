@@ -23,7 +23,7 @@ public:
     int addExpire(const std::string &key, 
                   std::shared_ptr<FlyObj> val, 
                   int64_t expire);
-    void dictScan(Fio *fio, scan scanProc);
+    int dictScan(Fio *fio, scan scanProc);
     int64_t getExpire(const std::string &key);
     const AbstractCoordinator* getCoordinator() const;
     uint32_t dictSize() const;

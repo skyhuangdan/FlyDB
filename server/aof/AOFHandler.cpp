@@ -3,8 +3,11 @@
 //
 
 #include <fcntl.h>
+#include <list>
 #include "AOFHandler.h"
 #include "../io/FileFio.h"
+#include "../dataStructure/skiplist/SkipList.cpp"
+#include "../dataStructure/dict/Dict.cpp"
 
 AOFHandler::AOFHandler() {
 
@@ -263,8 +266,178 @@ int AOFHandler::readDiffFromParent() {
     return totalRead;
 }
 
-int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
+int AOFHandler::dbScan(void *priv,
+                        std::string key,
+                        std::shared_ptr<FlyObj> val) {
+    FioAndflyDB *fioAndflyDB = reinterpret_cast<FioAndflyDB *>(priv);
+    AbstractFlyDB *flyDB = fioAndflyDB->flyDB;
 
+    /** 存入该key-value */
+    int64_t expire = flyDB->getExpire(key);
+    return flyDB->getCoordinator()
+            ->getAofHandler()
+            ->saveKeyValuePair(fioAndflyDB->fio, key, val, expire);
+
+}
+
+int AOFHandler::saveKeyValuePair(Fio *fio,
+                                 std::string key,
+                                 std::shared_ptr<FlyObj> val,
+                                 int64_t expireTime) {
+    /** 如果该key已经过期，直接返回 */
+    if (-1 != expireTime && expireTime < miscTool->mstime()) {
+        return -1;
+    }
+
+    if (FLY_TYPE_STRING == val->getType()) {
+        std::string cmd = "*3\r\n$3\r\nSET\r\n";
+        if (0 == fio->writeBulkString(cmd)
+            || 0 == fio->writeBulkString(key)
+            || 0 == fio->writeBulkString(*(std::string*)val->getPtr())) {
+            return -1;
+        }
+    } else if (FLY_TYPE_LIST == val->getType()) {
+        this->rewriteList(fio, key, reinterpret_cast<
+                std::list<std::string>*>(val->getPtr()));
+    } else if (FLY_TYPE_SKIPLIST == val->getType()) {
+        this->rewriteSkipList(fio, key, reinterpret_cast<
+                SkipList<std::string> *>(val->getPtr()));
+    } else if (FLY_TYPE_HASH == val->getType()) {
+        this->rewriteHashTable(fio, key, reinterpret_cast<
+                Dict<std::string, std::string>*>(val->getPtr()));
+    } else if (FLY_TYPE_SET == val->getType()) {
+        this->rewriteIntSet(fio, key, reinterpret_cast<IntSet*>(val->getPtr()));
+    } else {
+        coordinator->getLogHandler()->logWarning("Unknown object type!");
+        exit(1);
+    }
+
+    /** 如果有过期时间，则写入 */
+    if (-1 != expireTime) {
+        std::string cmd = "*3\r\n$9\r\nPEXPIREAT\r\n";
+        if (0 == fio->writeBulkString(cmd)
+            || 0 == fio->writeBulkString(key)
+            || 0 == fio->writeBulkInt64(expireTime)) {
+            return -1;
+        }
+    }
+
+    return 1;
+}
+
+int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+    int dbCount = flyServer->getFlyDBCount();
+    for (int i = 0; i < dbCount; i++) {
+        std::string selectcmd = "2\r\n$6\r\nSELECT\r\n";
+        AbstractFlyDB *flyDB = flyServer->getFlyDB(i);
+        /** 写入select i */
+        if (0 == fio->write(selectcmd.c_str(), selectcmd.size())) {
+            return -1;
+        }
+        if (0 == fio->writeBulkInt64(i)) {
+            return -1;
+        }
+
+        flyDB->dictScan(fio, dbScan);
+    }
+
+    return 1;
+}
+
+int AOFHandler::rewriteList(Fio *fio,
+                           std::string key,
+                           std::list<std::string> *val) {
+    int valCount = val->size();
+
+    /** "*{count}\r\n$5\r\nRPUSH\r\n${keylength}\r\n{key}\r\n" */
+    if (0 == fio->writeBulkCount('*', valCount + 2)
+        || 0 == fio->writeBulkString("rpush")
+        || 0 == fio->writeBulkString(key)) {
+        return -1;
+    }
+
+    /** val list */
+    for (auto item : *val) {
+        fio->writeBulkString(item);
+    }
+
+    return 1;
+}
+
+int AOFHandler::rewriteSkipList(Fio *fio,
+                                std::string key,
+                                SkipList<std::string> *skipList) {
+    int length = skipList->getLength();
+
+    /** "*{count}\r\n$8\r\sortpush\r\n${keylength}\r\n{key}\r\n" */
+    if (0 == fio->writeBulkCount('*', length + 2)
+        || 0 == fio->writeBulkString("sortpush")
+        || 0 == fio->writeBulkString(key)) {
+        return -1;
+    }
+
+    /** 存入val list */
+    skipList->scanAll(skipListSaveProc,
+                      new FioAndCoord(fio, this->coordinator));
+
+    return 1;
+}
+
+void AOFHandler::skipListSaveProc(void *priv, const std::string &obj) {
+    FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
+    Fio *fio = fioAndCoord->fio;
+
+    /** 存入val */
+    fio->writeBulkString(obj);
+}
+
+int AOFHandler::rewriteHashTable(Fio *fio,
+                                 std::string key,
+                                 Dict<std::string, std::string> *dict) {
+    int size = dict->size();
+
+    /** "*{count}\r\n$5\r\hmset\r\n${keylength}\r\n{key}\r\n" */
+    if (0 == fio->writeBulkCount('*', size + 2)
+        || 0 == fio->writeBulkString("hmset")
+        || 0 == fio->writeBulkString(key)) {
+        return -1;
+    }
+
+    FioAndCoord* fioAndCoord = new FioAndCoord(fio, this->coordinator);
+    uint32_t nextCur = 0;
+    do {
+        nextCur = dict->dictScan(
+                nextCur,
+                1,
+                dictSaveScan,
+                fioAndCoord);
+    } while (nextCur != 0);
+
+    delete fioAndCoord;
+    return 1;
+}
+
+int AOFHandler::dictSaveScan(void *priv,
+                              std::string key,
+                              std::string val) {
+    FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
+    Fio *fio = fioAndCoord->fio;
+
+    /** 写入key-value，如果出错，返回-1 */
+    if (0 == fio->writeBulkString(key)
+        || 0 == fio->writeBulkString(val)) {
+        return -1;
+    }
+
+    return 1;
+}
+
+int AOFHandler::rewriteIntSet(Fio *fio,
+                              std::string key,
+                              IntSet *intset) {
+
+    return 1;
 }
 
 pid_t AOFHandler::getChildPid() const {
@@ -306,6 +479,7 @@ void AOFHandler::setFsyncStragy(int stragy) {
 void AOFHandler::setRewriteIncrementalFsync(bool rewriteIncrementalFsync) {
     this->rewriteIncrementalFsync = rewriteIncrementalFsync;
 }
+
 
 bool AOFHandler::isScheduled() const {
     return this->scheduled;

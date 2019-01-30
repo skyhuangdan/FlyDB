@@ -12,6 +12,8 @@ class FlyObj;
 
 class AbstractFDBHandler {
 public:
+    virtual ~AbstractFDBHandler() {};
+
     virtual int load(FDBSaveInfo *fdbSaveInfo) = 0;
 
     virtual int save() = 0;

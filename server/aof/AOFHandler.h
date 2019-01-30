@@ -5,9 +5,17 @@
 #ifndef FLYDB_AOFHANDLER_H
 #define FLYDB_AOFHANDLER_H
 
+#include <string>
 #include "interface/AbstractAOFHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 #include "../io/FileFio.h"
+#include "../dataStructure/intset/IntSet.h"
+
+template<class T>
+class SkipList;
+
+template<class KEY, class VAL>
+class Dict;
 
 class AOFHandler : public AbstractAOFHandler {
 public:
@@ -30,6 +38,10 @@ public:
     void setUseFdbPreamble(bool useFdbPreamble);
     void setFsyncStragy(int stragy);
     void setRewriteIncrementalFsync(bool rewriteIncrementalFsync);
+    int saveKeyValuePair(Fio *fio,
+                         std::string key,
+                         std::shared_ptr<FlyObj> val,
+                         int64_t expireTime);
 
     class Builder {
     public:
@@ -76,9 +88,24 @@ public:
     };
 
 private:
+    static int dbScan(void *priv,
+                       std::string key,
+                       std::shared_ptr<FlyObj> val);
+    static void skipListSaveProc(void *priv, const std::string &obj);
+    static int dictSaveScan(void *priv, std::string key, std::string val);
     int rewriteAppendOnlyFileDiff(char *tmpfile, FileFio* fio);
     int rewriteAppendOnlyFileFio(Fio *fio);
     int readDiffFromParent();
+    int rewriteList(Fio *fio,
+                    std::string key,
+                    std::list<std::string> *val);
+    int rewriteSkipList(Fio *fio,
+                        std::string key,
+                        SkipList<std::string> *skipList);
+    int rewriteHashTable(Fio *fio,
+                         std::string key,
+                         Dict<std::string, std::string> *dict);
+    int rewriteIntSet(Fio *fio, std::string key, IntSet *intset);
 
     AbstractCoordinator *coordinator;
     char *fileName;

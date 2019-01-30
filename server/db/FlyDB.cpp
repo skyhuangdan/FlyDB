@@ -17,11 +17,11 @@ FlyDB::~FlyDB() {
 }
 
 int FlyDB::expandDict(uint64_t size) {
-    this->dict->expand(size);
+    return this->dict->expand(size);
 }
 
 int FlyDB::expandExpire(uint64_t size) {
-    this->expires->expand(size);
+    return this->expires->expand(size);
 }
 
 int FlyDB::add(const std::string &key, std::shared_ptr<FlyObj> val) {
@@ -42,7 +42,7 @@ int FlyDB::addExpire(const std::string &key,
     return 1;
 }
 
-void FlyDB::dictScan(Fio *fio, scan scanProc) {
+int FlyDB::dictScan(Fio *fio, scan scanProc) {
     uint32_t nextCur = 0;
     do {
         nextCur = this->dict->dictScan(
@@ -50,6 +50,10 @@ void FlyDB::dictScan(Fio *fio, scan scanProc) {
                 1,
                 scanProc,
                 new FioAndflyDB(fio, this));
+        /** nextCur=-1代表遍历过程出错 */
+        if (-1 == nextCur) {
+            return -1;
+        }
     } while (nextCur != 0);
 }
 

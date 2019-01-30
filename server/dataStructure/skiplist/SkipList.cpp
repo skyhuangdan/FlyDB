@@ -267,8 +267,7 @@ template<class T>
 int SkipList<T>::isInRange(SkipListRange range) {
     // range入参有问题
     if (range.max < range.min
-        || range.max == range.min
-           && (range.maxex || range.minex)) {
+        || (range.max == range.min && (range.maxex || range.minex))) {
         return -1;
     }
 

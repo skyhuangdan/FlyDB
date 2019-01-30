@@ -13,6 +13,8 @@ class AbstractFlyClient;
 
 class AbstractNetHandler {
 public:
+    virtual ~AbstractNetHandler() {};
+    
     virtual int setV6Only(char *err, int fd) = 0;
 
     virtual int setSendTimeout(char *err, int fd, long long ms) = 0;

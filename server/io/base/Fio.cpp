@@ -11,6 +11,10 @@ Fio::Fio(uint64_t maxProcessingChunk) {
 Fio::Fio() {
 }
 
+Fio::~Fio() {
+
+}
+
 int Fio::updateChecksum(const void *buf, size_t len) {
     return 1;
 }
@@ -64,7 +68,7 @@ size_t Fio::read(void *buf, size_t len) {
 }
 
 size_t Fio::writeBulkCount(char perfix, int count) {
-    std::string str = perfix + std::to_string(count) + '\r' + '\n';
+    std::string str = perfix + std::to_string(count) + "\r\n";
     if (this->write(str.c_str(), str.size()) <= 0) {
         return 0;
     }

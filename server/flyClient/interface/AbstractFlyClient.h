@@ -15,6 +15,7 @@ class AbstractFlyDB;
 
 class AbstractFlyClient {
 public:
+    ~AbstractFlyClient() {}
 
     virtual uint64_t getId() const = 0;
 

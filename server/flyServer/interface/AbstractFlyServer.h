@@ -13,6 +13,8 @@
 
 class AbstractFlyServer {
 public:
+    virtual ~AbstractFlyServer() {};
+
     // 初始化函数
     virtual void init(ConfigCache *configCache) = 0;
 

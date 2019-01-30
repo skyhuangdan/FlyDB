@@ -18,7 +18,7 @@
 #include "../db/FlyDB.h"
 #include "../log/FileLogFactory.h"
 #include "../db/FlyDBFactory.h"
-#include "../dataStructure/dict/Dict.h"
+#include "../dataStructure/dict/Dict.cpp"
 
 /**
  * 当aof或者fdb子线程进行持久化的时候，可以设置canResize = true,
@@ -370,7 +370,7 @@ AbstractFlyClient* FlyServer::createClient(int fd) {
 
 int FlyServer::deleteClient(int fd) {
     std::list<AbstractFlyClient *>::iterator iter = this->clients.begin();
-    for (iter; iter != this->clients.end(); iter++) {
+    for (; iter != this->clients.end(); iter++) {
         if (fd == (*iter)->getFd()) {
             // 删除file event
             this->coordinator->getEventLoop()->deleteFileEvent(
@@ -403,7 +403,7 @@ int FlyServer::handleClientsWithPendingWrites() {
 
     std::list<AbstractFlyClient*>::iterator iter =
             this->clientsPendingWrite.begin();
-    for (iter; iter != this->clientsPendingWrite.end(); iter++) {
+    for (; iter != this->clientsPendingWrite.end(); iter++) {
         // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
         // 否则无法加入。也就无法处理其输出
         (*iter)->delFlag(CLIENT_PENDING_WRITE);
@@ -441,7 +441,7 @@ void FlyServer::freeClientAsync(AbstractFlyClient *flyClient) {
 void FlyServer::deleteFromPending(int fd) {
     std::list<AbstractFlyClient*>::iterator iter =
             this->clientsPendingWrite.begin();
-    for (iter; iter != this->clientsPendingWrite.end(); iter++) {
+    for (; iter != this->clientsPendingWrite.end(); iter++) {
         if ((*iter)->getFd() == fd) {
             this->clientsPendingWrite.erase(iter);
             return;
@@ -502,6 +502,8 @@ int FlyServer::prepareForShutdown(int flags) {
 
     this->setShutdownASAP(false);
     this->logHandler->logWarning("now ready to exit, bye bye...");
+
+    return 1;
 }
 
 void sigShutDownHandlers(int sig) {

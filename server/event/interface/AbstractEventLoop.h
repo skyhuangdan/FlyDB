@@ -9,6 +9,7 @@
 
 class AbstractEventLoop {
 public:
+    virtual ~AbstractEventLoop() {};
     virtual int processEvents(int flags) = 0;
     virtual void eventMain() = 0;
     virtual int getMaxfd() const = 0;

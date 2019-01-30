@@ -206,18 +206,18 @@ int FDBHandler::saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo) {
     return 1;
 }
 
-void FDBHandler::dbScan(void *priv,
+int FDBHandler::dbScan(void *priv,
                         std::string key,
                         std::shared_ptr<FlyObj> val) {
     FioAndflyDB *fioAndflyDB = reinterpret_cast<FioAndflyDB *>(priv);
     AbstractFlyDB *flyDB = fioAndflyDB->flyDB;
     int64_t expireTime = flyDB->getExpire(key);
 
-    flyDB->getCoordinator()->getFdbHandler()->saveKeyValuePair(
+    return flyDB->getCoordinator()->getFdbHandler()->saveKeyValuePair(
             fioAndflyDB->fio, key, val, expireTime);
 }
 
-void FDBHandler::dictSaveScan(void *priv,
+int FDBHandler::dictSaveScan(void *priv,
                               std::string key,
                               std::string val) {
     FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
@@ -285,7 +285,7 @@ ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
         written += n;
 
         std::list<std::string>::const_iterator iter = plist->begin();
-        for (iter; iter != plist->end(); iter++) {
+        for (; iter != plist->end(); iter++) {
             written += saveRawString(fio, *iter);
         }
     } else if (FLY_TYPE_SKIPLIST == obj->getType()) {
@@ -305,13 +305,15 @@ ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
         written += n;
 
         uint32_t nextCur = 0;
+        FioAndCoord* fioAndCoord = new FioAndCoord(fio, this->coordinator);
         do {
             nextCur = dict->dictScan(
                     nextCur,
                     1,
                     dictSaveScan,
-                    new FioAndCoord(fio, this->coordinator));
+                    fioAndCoord);
         } while (nextCur != 0);
+        delete fioAndCoord;
     }
 
     return written;

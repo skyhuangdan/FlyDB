@@ -20,7 +20,7 @@ class CommandEntry {
 public:
     CommandEntry();
     CommandEntry(commandProc proc, int flag);
-    CommandEntry(char *name,
+    CommandEntry(const char *name,
                  commandProc proc,
                  int arity,
                  const std::string &sflags,
@@ -32,8 +32,10 @@ public:
                  uint64_t microseconds,
                  uint64_t calls);
 
-    char *getName() const;
-    void setName(char *name);
+    const char *getName() const;
+
+    void setName(const char *name);
+
     commandProc getProc() const;
     void setProc(commandProc proc);
     int getArity() const;
@@ -61,7 +63,7 @@ public:
         CommandEntry *entry = new CommandEntry();
 
     public:
-        void name(char *name) {
+        void name(const char *name) {
             entry->setName(name);
         }
 
@@ -107,7 +109,7 @@ public:
     };
 
 private:
-    char *name;                      /** 命令名字 */
+    const char *name;                /** 命令名字 */
     commandProc proc;                /** 处理函数 */
     int arity;                       /** 参数数量 */
     std::string sflags;              /** 字符串形式的flag */

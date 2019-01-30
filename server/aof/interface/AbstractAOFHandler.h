@@ -7,10 +7,13 @@
 
 #include <sys/types.h>
 #include "../AOFDef.h"
+#include "../../io/base/Fio.h"
 
 class AbstractCoordinator;
 class AbstractAOFHandler {
 public:
+
+    virtual ~AbstractAOFHandler() {};
 
     virtual int start() = 0;
 
@@ -33,6 +36,11 @@ public:
     virtual bool isScheduled() const = 0;
 
     virtual void setScheduled(bool scheduled) = 0;
+
+    virtual int saveKeyValuePair(Fio *fio,
+                                 std::string key,
+                                 std::shared_ptr<FlyObj> val,
+                                 int64_t expireTime) = 0;
 };
 
 #endif //FLYDB_ABSTRACTAOFHANDLER_H
