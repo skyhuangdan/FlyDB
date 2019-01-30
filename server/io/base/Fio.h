@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 class Fio {
 public:
@@ -18,6 +19,12 @@ public:
     size_t write(const void *buf, size_t len);
     size_t read(void *buf, size_t len);
     virtual int updateChecksum(const void *buf, size_t len);
+
+    /** higher level interace */
+    size_t writeBulkCount(char perfix, int count);
+    size_t writeBulkString(std::string str);
+    size_t writeBulkInt64(int64_t i);
+    size_t writeBulkDouble(double d);
 
     void setMaxProcessingChunk(uint64_t maxProcessingChunk);
     uint64_t getMaxProcessingChunk() const;

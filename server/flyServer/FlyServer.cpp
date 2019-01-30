@@ -575,6 +575,7 @@ int serverCron(const AbstractCoordinator *coordinator,
                         "Warning, detected child with unmatched pid: %ld", pid);
             }
 
+            flyServer->updateDictResizePolicy();
             coordinator->getChildInfoPipe()->closeAll();
         }
     } else {
