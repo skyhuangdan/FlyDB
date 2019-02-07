@@ -186,13 +186,13 @@ int FDBHandler::saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo) {
         AbstractFlyDB *flyDB = this->coordinator->getFlyServer()->getFlyDB(i);
 
         if (-1 == saveType(fio, FDB_OPCODE_SELECTDB)
-            || -1 == saveLen(fio, i)) {
+            || -1 == saveNum(fio, i)) {
             return -1;
         }
 
         if (-1 == saveType(fio, FDB_OPCODE_RESIZEDB)
-            || -1 == saveLen(fio, flyDB->dictSize())
-            || -1 == saveLen(fio, flyDB->expireSize())) {
+            || -1 == saveNum(fio, flyDB->dictSize())
+            || -1 == saveNum(fio, flyDB->expireSize())) {
             return -1;
         }
 
@@ -279,7 +279,7 @@ ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
                 *reinterpret_cast<std::string*>(obj->getPtr()));
     } else if (FLY_TYPE_LIST == obj->getType()) {
         std::list<std::string> *plist = (std::list<std::string> *)obj->getPtr();
-        if (-1 == (n = saveLen(fio, plist->size()))) {
+        if (-1 == (n = saveNum(fio, plist->size()))) {
             return -1;
         }
         written += n;
@@ -290,7 +290,7 @@ ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
         }
     } else if (FLY_TYPE_SKIPLIST == obj->getType()) {
         SkipList<std::string> *sl = (SkipList<std::string> *)obj->getPtr();
-        if (-1 == (n = saveLen(fio, sl->getLength()))) {
+        if (-1 == (n = saveNum(fio, sl->getLength()))) {
             return -1;
         }
         written += n;
@@ -299,7 +299,7 @@ ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
     } else if (FLY_TYPE_HASH == obj->getType()) {
         Dict<std::string, std::string> *dict =
                 (Dict<std::string, std::string> *)obj->getPtr();
-        if (-1 == (n = saveLen(fio, dict->size()))) {
+        if (-1 == (n = saveNum(fio, dict->size()))) {
             return -1;
         }
         written += n;
@@ -314,6 +314,27 @@ ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
                     fioAndCoord);
         } while (nextCur != 0);
         delete fioAndCoord;
+    } else if (FLY_TYPE_SET == obj->getType()) {
+        IntSet *intset = reinterpret_cast<IntSet *>(obj->getPtr());
+        if (-1 == (n = saveNum(fio, intset->lenth()))) {
+            return -1;
+        }
+        written += n;
+
+        int length = intset->lenth();
+        for (int i = 0; i < length; i++) {
+            int64_t val = 0;
+            if (intset->get(i, &val) <= 0) {
+                return -1;
+            }
+
+            if (0 == (n = this->saveNum(fio, val))) {
+                return -1;
+            }
+
+            written += n;
+        }
+
     }
 
     return written;
@@ -410,7 +431,7 @@ int FDBHandler::saveType(Fio *fio, unsigned char type) {
 ssize_t FDBHandler::saveRawString(Fio *fio, const std::string &str) {
     ssize_t written = 0;
     ssize_t n;
-    if (-1 == (n = saveLen(fio, str.length()))) {
+    if (-1 == (n = saveNum(fio, str.length()))) {
         return -1;
     }
     written += n;
@@ -527,7 +548,7 @@ void FDBHandler::setLastSaveTime(time_t lastSaveTime) {
 }
 
 
-ssize_t FDBHandler::saveLen(Fio *fio, uint64_t len) {
+ssize_t FDBHandler::saveNum(Fio *fio, uint64_t len) {
     unsigned char buf[2];
     size_t nwritten;
 

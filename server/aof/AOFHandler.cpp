@@ -436,6 +436,22 @@ int AOFHandler::dictSaveScan(void *priv,
 int AOFHandler::rewriteIntSet(Fio *fio,
                               std::string key,
                               IntSet *intset) {
+    int32_t length = intset->lenth();
+
+    /** "*{count}\r\n$5\r\nset\r\n${keylength}\r\n{key}\r\n" */
+    if (0 == fio->writeBulkCount('*', length + 2)
+        || 0 == fio->writeBulkString("set")
+        || 0 == fio->writeBulkString(key)) {
+        return -1;
+    }
+
+    for (int i = 0; i < length; i++) {
+        int64_t val = 0;
+        intset->get(i, &val);
+        if (0 == fio->writeBulkInt64(val)) {
+            return -1;
+        }
+    }
 
     return 1;
 }

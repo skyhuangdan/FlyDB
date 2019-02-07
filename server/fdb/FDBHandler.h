@@ -7,6 +7,7 @@
 
 #include <ctime>
 #include <cstdint>
+#include <string>
 #include "FDBDef.h"
 #include "../io/base/Fio.h"
 #include "interface/AbstractFDBHandler.h"
@@ -58,7 +59,7 @@ private:
     static int dbScan(void *priv, std::string key, std::shared_ptr<FlyObj> val);
     static int dictSaveScan(void *priv, std::string key, std::string val);
     static void skipListSaveProc(void *priv, const std::string &obj);
-    ssize_t saveLen(Fio *fio, uint64_t len);
+    ssize_t saveNum(Fio *fio, uint64_t len);
     ssize_t saveObject(Fio *fio, std::shared_ptr<FlyObj> obj);
     int saveInfoAuxFields(Fio *fio,
                           int flags,

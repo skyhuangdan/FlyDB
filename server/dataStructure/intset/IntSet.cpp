@@ -25,13 +25,13 @@ int IntSet::add(int64_t value) {
         upgradeAndAdd(value);
     } else {
         uint32_t pos = 0;
-        if(search(value, &pos) > 0) {
+        if (search(value, &pos) > 0) {
             return 0;
         }
 
         // 扩容+1
         resize(this->length + 1);
-        if(pos < this->length) {
+        if (pos < this->length) {
             moveTail(pos, pos+1);
         }
         set(pos, value);
@@ -101,7 +101,6 @@ uint8_t IntSet::valueEncoding(int64_t value) {
 
 void IntSet::moveTail(uint32_t from, uint32_t to) {
     void *dst, *src;
-    uint64_t size = 0;
     if (INTSET_ENC_INT64 == this->encoding) {
         src = reinterpret_cast<int64_t*> (this->contents) + from;
         dst = reinterpret_cast<int64_t*> (this->contents) + to;
@@ -145,17 +144,23 @@ int IntSet::resize(uint32_t newLength) {
 int64_t IntSet::getEncoded(uint32_t pos, uint8_t encoding) {
     if (INTSET_ENC_INT64 == encoding) {
         int64_t res64;
-        memcpy(&res64, reinterpret_cast<int64_t*>(this->contents) + pos, encoding);
+        memcpy(&res64,
+               reinterpret_cast<int64_t*>(this->contents) + pos,
+               encoding);
         this->endianConvTool->memrev64ifbe(&res64);
         return res64;
     } else if (INTSET_ENC_INT32 == encoding) {
         int32_t res32;
-        memcpy(&res32, reinterpret_cast<int32_t*>(this->contents) + pos, encoding);
+        memcpy(&res32,
+               reinterpret_cast<int32_t*>(this->contents) + pos,
+               encoding);
         this->endianConvTool->memrev32ifbe(&res32);
         return res32;
     } else {
         int16_t res16;
-        memcpy(&res16, reinterpret_cast<int16_t*>(this->contents) + pos, encoding);
+        memcpy(&res16,
+               reinterpret_cast<int16_t*>(this->contents) + pos,
+               encoding);
         this->endianConvTool->memrev16ifbe(&res16);
         return res16;
     }
@@ -164,13 +169,16 @@ int64_t IntSet::getEncoded(uint32_t pos, uint8_t encoding) {
 void IntSet::set(uint32_t pos, int64_t value) {
     if (INTSET_ENC_INT64 == this->encoding) {
         reinterpret_cast<int64_t*>(this->contents)[pos] = value;
-        this->endianConvTool->memrev64ifbe(reinterpret_cast<int64_t*>(this->contents) + pos);
+        this->endianConvTool->memrev64ifbe(
+                reinterpret_cast<int64_t*>(this->contents) + pos);
     } else if (INTSET_ENC_INT32 == this->encoding) {
         reinterpret_cast<int32_t*>(this->contents)[pos] = (int32_t)value;
-        this->endianConvTool->memrev32ifbe(reinterpret_cast<int32_t*>(this->contents) + pos);
+        this->endianConvTool->memrev32ifbe(
+                reinterpret_cast<int32_t*>(this->contents) + pos);
     } else {
         reinterpret_cast<int16_t*>(this->contents)[pos] = (int16_t)value;
-        this->endianConvTool->memrev16ifbe(reinterpret_cast<int16_t*>(this->contents) + pos);
+        this->endianConvTool->memrev16ifbe(
+                reinterpret_cast<int16_t*>(this->contents) + pos);
     }
 }
 
@@ -191,7 +199,7 @@ int IntSet::search(int64_t value, uint32_t* pos) {
     int64_t dstValue;
     while (max >= min) {
         mid = (max + min) / 2;
-        get(mid , &dstValue);
+        get(mid, &dstValue);
         if (dstValue > value) {
             max = mid - 1;
         } else if (dstValue < value) {
