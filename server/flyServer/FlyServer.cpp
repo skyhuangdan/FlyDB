@@ -22,8 +22,8 @@
 
 /**
  * 当aof或者fdb子线程进行持久化的时候，可以设置canResize = true,
- * 不允许进行resize操作(除非ht.used > ht.size * NEED_FORCE_REHASH_RATIO)，
- * 这样可以减少内存搬移，以减少内存压力
+ * 不允许进行resize操作(除非在expand扩容时且ht.used > ht.size * NEED_FORCE_REHASH_RATIO)，
+ * 这样可以减少内存搬移，以减少内存压力。具体可以搜索canResize，查看其使用场景
  */
 bool canResize = true;
 
@@ -552,6 +552,10 @@ int serverCron(const AbstractCoordinator *coordinator,
         int statloc;
         pid_t pid = -1;
 
+        /**
+         * 当wait3的options设置为WNOHANG时，
+         * 如果没有发现已退出的子进程时、不用等待而直接返回，返回值为0
+         **/
         if ((pid = wait3(&statloc, WNOHANG, NULL)) != 0) {
             int exitCode = WEXITSTATUS(statloc);
             int bySignal = 0;
@@ -603,7 +607,7 @@ int serverCron(const AbstractCoordinator *coordinator,
          * 因为saveParam那里有可能会导致进行backgroundSave操作，导致haveChildPid条件发生改变
          **/
         /**
-         * 处理被延迟了(schedule)的FDB操作:
+         * 处理被延迟了(schedule)的AOF操作:
          *    1.当前没有fdb child thread正在运行
          *    2.当前没有aof child thread挣在运行
          *    3.schedule被标记
