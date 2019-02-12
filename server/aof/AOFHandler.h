@@ -93,6 +93,10 @@ private:
                        std::shared_ptr<FlyObj> val);
     static void skipListSaveProc(void *priv, const std::string &obj);
     static int dictSaveScan(void *priv, std::string key, std::string val);
+    static void childPipeReadable(const AbstractCoordinator *coordinator,
+                                  int fd,
+                                  void *clientdata,
+                                  int mask);
     int rewriteAppendOnlyFileDiff(char *tmpfile, FileFio* fio);
     int rewriteAppendOnlyFileFio(Fio *fio);
     int readDiffFromParent();
@@ -118,7 +122,7 @@ private:
     bool useFdbPreamble = CONFIG_DEFAULT_AOF_USE_FDB_PREAMBLE;
     int fsyncStragy = CONFIG_DEFAULT_AOF_FSYNC;
     bool rewriteIncrementalFsync = CONFIG_DEFAULT_AOF_REWRITE_INCREMENTAL_FSYNC;
-    bool stopSendingDiff = false;
+    static bool stopSendingDiff;
 
 };
 

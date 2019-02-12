@@ -9,6 +9,8 @@
 #include "../dataStructure/skiplist/SkipList.cpp"
 #include "../dataStructure/dict/Dict.cpp"
 
+bool AOFHandler::stopSendingDiff = false;
+
 AOFHandler::AOFHandler() {
 
 }
@@ -56,12 +58,15 @@ int AOFHandler::start() {
 }
 
 int AOFHandler::rewriteBackground() {
+    /**
+     * 有aof或者fdb子进程在运行，则直接返回
+     **/
     if (coordinator->getFdbHandler()->haveChildPid()
         || this->haveChildPid()) {
         return -1;
     }
 
-    /** 打开主线程与子线程之间的管道 */
+    /** 打开主线程与子进程之间的管道 */
     if (-1 == coordinator->openAllPipe()) {
         return -1;
     }
@@ -72,11 +77,11 @@ int AOFHandler::rewriteBackground() {
         return -1;
     }
 
-    /** 创建文件事件: 用于child-->parent ack的读取处理 */
+    /** 创建文件事件: 用于parent处理child发送过来的ack */
     if (-1 == this->coordinator->getEventLoop()->createFileEvent(
             coordinator->getAofAckToParentPipe()->getReadPipe(),
             ES_READABLE,
-            NULL,
+            childPipeReadable,
             NULL)) {
         coordinator->closeAllPipe();
         return -1;
@@ -90,6 +95,7 @@ int AOFHandler::rewriteBackground() {
          **/
         flyServer->closeListeningSockets(false);
         if (1 == this->rewriteAppendOnlyFile()) {
+            /** send child info */
             coordinator->getChildInfoPipe()->sendInfo(PIPE_TYPE_AOF, 0);
             exit(0);
         }
@@ -431,6 +437,31 @@ int AOFHandler::dictSaveScan(void *priv,
     }
 
     return 1;
+}
+
+/** 接收child发送的通知，该通知用于告知parent不要继续发送aof diff数据了 */
+void AOFHandler::childPipeReadable(const AbstractCoordinator *coordinator,
+                                   int fd,
+                                   void *clientdata,
+                                   int mask) {
+    char byte;
+    if (1 == read(fd, &byte, 1) && '!' == byte) {
+        coordinator->getLogHandler()->logWarning(
+                "AOF rewrite child asks to stop sending diffs.");
+        int writefd = coordinator->getAofAckToChildPipe()->getWritePipe();
+        stopSendingDiff = true;
+        if (1 != write(writefd, "!", 1)) {
+            coordinator->getLogHandler()->logWarning(
+                    "Can`t send ACK to AOF child: %s",
+                    strerror(errno));
+        }
+
+    }
+
+    /** 停止parent监控消息*/
+    coordinator->getEventLoop()->deleteFileEvent(
+            coordinator->getAofAckToParentPipe()->getReadPipe(),
+            ES_READABLE);
 }
 
 int AOFHandler::rewriteIntSet(Fio *fio,

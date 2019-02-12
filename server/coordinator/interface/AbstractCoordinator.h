@@ -46,7 +46,7 @@ public:
     virtual AbstractLogHandler *getLogHandler() const = 0;
 
     /** bio */
-    AbstractBIOHandler *getBioHandler() const;
+    virtual AbstractBIOHandler *getBioHandler() const = 0;
 
     /** ChildInfo Pipe: child-->parent */
     virtual AbstractPipe *getChildInfoPipe() const = 0;

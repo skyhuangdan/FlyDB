@@ -19,6 +19,8 @@ int main(int argc, char **argv) {
     std::cout << "Hello, flyDB. Wish you be better!" << std::endl;
 
     coordinator = new Coordinator();
+    coordinator->getAofHandler()->start();
+
     coordinator->getEventLoop()->eventMain();
 
     delete coordinator;
