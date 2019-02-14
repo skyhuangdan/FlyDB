@@ -44,7 +44,6 @@ int AOFHandler::start() {
                 "Redis needs to enable the AOF but can't trigger "
                 "a background AOF rewrite operation. Check the above "
                 "logs for more info about the error.");
-
         return -1;
     }
 
@@ -58,6 +57,9 @@ int AOFHandler::start() {
 }
 
 int AOFHandler::rewriteBackground() {
+    /** set stop sending diff flag to false */
+    stopSendingDiff = false;
+
     /**
      * 有aof或者fdb子进程在运行，则直接返回
      **/
@@ -117,7 +119,17 @@ int AOFHandler::rewriteBackground() {
 }
 
 void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
-
+    // todo: complete these code
+    if (0 == bySignal && 0 == exitCode) {
+        this->coordinator->getLogHandler()->logNotice(
+                "Background saving terminated with success");
+    } else if (0 == bySignal && 0 != exitCode) {
+        this->coordinator->getLogHandler()->logWarning(
+                "Background AOF rewrite terminated with error");
+    } else {
+        this->coordinator->getLogHandler()->logWarning(
+                "Background saving terminated by signal %d", bySignal);
+    }
 }
 
 int AOFHandler::rewriteAppendOnlyFile() {
@@ -182,7 +194,9 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
                 ES_READABLE,
                 1) <= 0) {
             loop++;
+            continue;
         }
+
         loop = 0;
         this->readDiffFromParent();
     }
@@ -485,6 +499,12 @@ int AOFHandler::rewriteIntSet(Fio *fio,
     }
 
     return 1;
+}
+
+void AOFHandler::removeTempFile(pid_t childpid) {
+    char temp[1024];
+    snprintf(temp, 256, "temp-rewriteaof-bg-%d.aof", (int) childpid);
+    unlink(temp);
 }
 
 pid_t AOFHandler::getChildPid() const {

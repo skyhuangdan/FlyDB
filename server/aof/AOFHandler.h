@@ -110,6 +110,9 @@ private:
                          std::string key,
                          Dict<std::string, std::string> *dict);
     int rewriteIntSet(Fio *fio, std::string key, IntSet *intset);
+    void removeTempFile(pid_t childpid);
+
+    static bool stopSendingDiff;
 
     AbstractCoordinator *coordinator;
     char *fileName;
@@ -122,8 +125,10 @@ private:
     bool useFdbPreamble = CONFIG_DEFAULT_AOF_USE_FDB_PREAMBLE;
     int fsyncStragy = CONFIG_DEFAULT_AOF_FSYNC;
     bool rewriteIncrementalFsync = CONFIG_DEFAULT_AOF_REWRITE_INCREMENTAL_FSYNC;
-    static bool stopSendingDiff;
-
+    /** Rewrite AOF if % growth is > M */
+    int rewritePerc = AOF_REWRITE_PERC;
+    /** AOf file is at least N bytes */
+    off_t rewriteMinSize = AOF_REWRITE_MIN_SIZE;
 };
 
 
