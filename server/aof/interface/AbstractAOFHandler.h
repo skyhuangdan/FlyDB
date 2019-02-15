@@ -17,6 +17,8 @@ public:
 
     virtual int start() = 0;
 
+    virtual int stop() = 0;
+
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
 
     virtual int rewriteBackground() = 0;

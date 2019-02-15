@@ -21,6 +21,7 @@ class AOFHandler : public AbstractAOFHandler {
 public:
     AOFHandler();
     int start();
+    int stop();
     int rewriteBackground();
     int rewriteAppendOnlyFile();
     void backgroundSaveDone(int exitCode, int bySignal);

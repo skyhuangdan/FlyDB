@@ -24,7 +24,8 @@ std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("hset",        hsetCommand,       -4, "wmF", 0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("hget",        hgetCommand,        3, "rF",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("save",        saveCommand,        1, "as",  0, NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0)
+       new CommandEntry("bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("config",      configCommand,     -2, "lat", 0, NULL, 0, 0, 0, 0, 0)
 };
 
 
@@ -567,6 +568,64 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
         flyClient->addReply("Background saving started");
     } else {
         flyClient->addReply("error to do fdb");
+    }
+
+    return;
+}
+
+void configSetCommand(const AbstractCoordinator* coordinator,
+                      AbstractFlyClient* flyClient) {
+    std::string *argv2 = reinterpret_cast<std::string*>(
+            flyClient->getArgv()[2]->getPtr());
+    std::string *argv3 = reinterpret_cast<std::string*>(
+            flyClient->getArgv()[3]->getPtr());
+
+    if (0 == argv2->compare("appendonly")) {
+        AbstractAOFHandler *aofHandler = coordinator->getAofHandler();
+        int enable = 0;
+        enable = miscTool->yesnotoi(argv3->c_str());
+        if (0 == enable && aofHandler->IsStateOn()) {
+            aofHandler->stop();
+        } else if (1 == enable && !aofHandler->IsStateOn()) {
+            if (-1 == aofHandler->start()) {
+                flyClient->addReply(
+                        "Unable to turn on AOF. Check server logs.");
+                return;
+            }
+        }
+    }
+
+    return;
+}
+
+void configGetCommand(const AbstractCoordinator* coordinator,
+                      AbstractFlyClient* flyClient) {
+
+}
+
+void configCommand(const AbstractCoordinator* coordinator,
+                   AbstractFlyClient* flyClient) {
+    std::string *argv1 = reinterpret_cast<std::string*>(
+            flyClient->getArgv()[1]->getPtr());
+    if (coordinator->getFdbHandler()->isLoading() && argv1->compare("get")) {
+        flyClient->addReply("Only CONFIG GET is allowed during loading");
+        return;
+    }
+
+    if (0 == argv1->compare("set")) {
+        if (4 != flyClient->getArgc()) {
+            flyClient->addReply("Wrong number of arguments for CONFIG %s",
+                                argv1->c_str());
+            return;
+        }
+        configSetCommand(coordinator, flyClient);
+    } else if (0 == argv1->compare("get")) {
+        if (3 != flyClient->getArgc()) {
+            flyClient->addReply("Wrong number of arguments for CONFIG %s",
+                                argv1->c_str());
+            return;
+        }
+        configGetCommand(coordinator, flyClient);
     }
 
     return;

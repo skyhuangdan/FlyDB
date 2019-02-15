@@ -56,6 +56,10 @@ int AOFHandler::start() {
     return 1;
 }
 
+int AOFHandler::stop() {
+
+}
+
 int AOFHandler::rewriteBackground() {
     /** set stop sending diff flag to false */
     stopSendingDiff = false;
