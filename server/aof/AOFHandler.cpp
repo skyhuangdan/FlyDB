@@ -85,6 +85,7 @@ void AOFHandler::flush(bool force) {
             /** 刚开始进入推迟，记录最初推迟时间，便于计算总统的推迟2s时间 */
             if (0 != this->flushPostponedStart) {
                 this->flushPostponedStart = flyServer->getNowt();
+                return;
             } else if (flyServer->getNowt() - this->flushPostponedStart < 2) {
                 return;
             }
@@ -97,6 +98,8 @@ void AOFHandler::flush(bool force) {
                     "complete, this may slow down FLYDB.");
         }
     }
+    /** reset to zero */
+    this->flushPostponedStart = 0;
 
     /** 执行写入操作 */
     this->doRealWrite();
@@ -556,14 +559,14 @@ int AOFHandler::rewriteIntSet(Fio *fio,
 
 void AOFHandler::removeTempFile(pid_t childpid) {
     char temp[1024];
-    snprintf(temp, 256, "temp-rewriteaof-bg-%d.aof", (int) childpid);
+    snprintf(temp, sizeof(temp), "temp-rewriteaof-bg-%d.aof", childpid);
     unlink(temp);
 }
 
 void AOFHandler::backgroundFsync() {
     coordinator->getBioHandler()->createBackgroundJob(
             BIO_AOF_FSYNC,
-            (void*)this->fd,
+            reinterpret_cast<void*>(this->fd),
             NULL,
             NULL);
 }
@@ -576,9 +579,6 @@ void AOFHandler::doRealWrite() {
     written = write(this->fd, this->buf.c_str(), this->buf.length());
 
     // todo: latency add sample
-
-    /** reset to zero */
-    this->flushPostponedStart = 0;
 
     bool canlog = false;
     /** 数据没有完全写入*/
@@ -625,8 +625,9 @@ void AOFHandler::doRealWrite() {
         }
 
         /**
-         * 如果是AOF_FSYNC_ALWAYS, aof写入的信息都已经传递给了client的output buffer，
+         * 如果是AOF_FSYNC_ALWAYS, 回复信息都已经传递给了client的output buffer，
          * 当通知了client，则代表已经做完了fsync，不能裁剪了。
+         * todo: 后续研究
          **/
         if (AOF_FSYNC_ALWAYS == this->fsyncStragy) {
             coordinator->getLogHandler()->logWarning(
@@ -767,5 +768,9 @@ void AOFHandler::setNoFsyncOnRewrite(bool noFsyncOnRewrite) {
 
 void AOFHandler::setLoadTruncated(bool loadTruncated) {
     this->loadTruncated = loadTruncated;
+}
+
+bool AOFHandler::flushPostponed() const {
+    return 0 != flushPostponedStart;
 }
 

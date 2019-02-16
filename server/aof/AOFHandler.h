@@ -6,6 +6,7 @@
 #define FLYDB_AOFHANDLER_H
 
 #include <string>
+#include <list>
 #include "interface/AbstractAOFHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 #include "../io/FileFio.h"
@@ -36,20 +37,11 @@ public:
     bool isScheduled() const;
     void setScheduled(bool scheduled);
     bool sizeMeetRewriteCondition();
-
-    void setCoordinator(AbstractCoordinator *coordinator);
-    void setFileName(char *fileName);
-    void setUseFdbPreamble(bool useFdbPreamble);
-    void setFsyncStragy(int stragy);
-    void setRewriteIncrementalFsync(bool rewriteIncrementalFsync);
-    void setRewritePerc(uint8_t rewritePerc);
-    void setRewriteMinSize(off_t rewriteMinSize);
-    void setNoFsyncOnRewrite(bool noFsyncOnRewrite);
-    void setLoadTruncated(bool loadTruncated);
     int saveKeyValuePair(Fio *fio,
                          std::string key,
                          std::shared_ptr<FlyObj> val,
                          int64_t expireTime);
+    bool flushPostponed() const;
 
     class Builder {
     public:
@@ -142,6 +134,18 @@ private:
     void backgroundFsync();
     void doRealWrite();
     void doRealFsync(bool syncInProgress);
+
+    /** set函数集合，给Builder使用 */
+    void setCoordinator(AbstractCoordinator *coordinator);
+    void setFileName(char *fileName);
+    void setUseFdbPreamble(bool useFdbPreamble);
+    void setFsyncStragy(int stragy);
+    void setRewriteIncrementalFsync(bool rewriteIncrementalFsync);
+    void setRewritePerc(uint8_t rewritePerc);
+    void setRewriteMinSize(off_t rewriteMinSize);
+    void setNoFsyncOnRewrite(bool noFsyncOnRewrite);
+    void setLoadTruncated(bool loadTruncated);
+
 
     static bool stopSendingDiff;
 

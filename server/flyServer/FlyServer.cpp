@@ -644,6 +644,8 @@ int serverCron(const AbstractCoordinator *coordinator,
             && coordinator->getAofHandler()->sizeMeetRewriteCondition()) {
             coordinator->getAofHandler()->rewriteBackground();
         }
+
+        //if (coordinator->getAofHandler()->)
     }
 
     static int times = 0;

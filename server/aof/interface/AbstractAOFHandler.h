@@ -49,6 +49,8 @@ public:
                                  std::string key,
                                  std::shared_ptr<FlyObj> val,
                                  int64_t expireTime) = 0;
+
+    virtual bool flushPostponed() const = 0;
 };
 
 #endif //FLYDB_ABSTRACTAOFHANDLER_H
