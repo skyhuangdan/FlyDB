@@ -584,9 +584,9 @@ void configSetCommand(const AbstractCoordinator* coordinator,
         AbstractAOFHandler *aofHandler = coordinator->getAofHandler();
         int enable = 0;
         enable = miscTool->yesnotoi(argv3->c_str());
-        if (0 == enable && aofHandler->IsStateOn()) {
+        if (0 == enable && !aofHandler->IsStateOff()) {
             aofHandler->stop();
-        } else if (1 == enable && !aofHandler->IsStateOn()) {
+        } else if (1 == enable && aofHandler->IsStateOff()) {
             if (-1 == aofHandler->start()) {
                 flyClient->addReply(
                         "Unable to turn on AOF. Check server logs.");

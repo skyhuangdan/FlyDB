@@ -33,6 +33,8 @@ public:
 
     virtual bool IsStateOn() const = 0;
 
+    virtual bool IsStateOff() const = 0;
+
     virtual void setState(AOFState state) = 0;
 
     virtual bool isScheduled() const = 0;

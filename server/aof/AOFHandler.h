@@ -30,6 +30,7 @@ public:
     void setChildPid(pid_t childPid);
     bool haveChildPid() const;
     bool IsStateOn() const;
+    bool IsStateOff() const;
     void setState(AOFState aofState);
     bool isScheduled() const;
     void setScheduled(bool scheduled);
@@ -39,6 +40,10 @@ public:
     void setUseFdbPreamble(bool useFdbPreamble);
     void setFsyncStragy(int stragy);
     void setRewriteIncrementalFsync(bool rewriteIncrementalFsync);
+    void setRewritePerc(int rewritePerc);
+    void setRewriteMinSize(off_t rewriteMinSize);
+    void setNoFsyncOnRewrite(bool noFsyncOnRewrite);
+    void setLoadTruncated(bool loadTruncated);
     int saveKeyValuePair(Fio *fio,
                          std::string key,
                          std::shared_ptr<FlyObj> val,
@@ -77,6 +82,26 @@ public:
 
         Builder& rewriteIncrementalFsync(bool rewriteIncrementalFsync) {
             this->handler->setRewriteIncrementalFsync(rewriteIncrementalFsync);
+            return *this;
+        }
+
+        Builder& rewritePerc(int perc) {
+            this->handler->setRewritePerc(perc);
+            return *this;
+        }
+
+        Builder& noFsyncOnRewrite(bool nofyncOnRewrite) {
+            this->handler->setNoFsyncOnRewrite(nofyncOnRewrite);
+            return *this;
+        }
+
+        Builder& rewriteMinSize(off_t rewriteMinSize) {
+            this->handler->setRewriteMinSize(rewriteMinSize);
+            return *this;
+        }
+
+        Builder& loadTruncated(bool loadTruncated) {
+            this->handler->setLoadTruncated(loadTruncated);
             return *this;
         }
 
@@ -130,6 +155,10 @@ private:
     int rewritePerc = AOF_REWRITE_PERC;
     /** AOf file is at least N bytes */
     off_t rewriteMinSize = AOF_REWRITE_MIN_SIZE;
+    /** Don`t fsync when the rewrite iis in progress */
+    bool noFsyncOnRewrite = CONFIG_DEFAULT_AOF_NO_FSYNC_ON_REWRITE;
+    /** Don't stop on unexpected AOF EOF. */
+    bool loadTruncated = CONFIG_DEFAULT_AOF_LOAD_TRUNCATED;
 };
 
 

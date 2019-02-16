@@ -215,7 +215,7 @@ void TextConfigReader::loadConfigFromLineString(const std::string &line) {
         }
 
         this->configCache->setAofFsync(fsync);
-    } else if (0 == words[0].compare("aof-rewrite-incremental-fsyncStragy")
+    } else if (0 == words[0].compare("aof-rewrite-incremental-fsync")
                && 2 == words.size()) {
         int yes;
         if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {
@@ -223,7 +223,37 @@ void TextConfigReader::loadConfigFromLineString(const std::string &line) {
             exit(1);
         }
         this->configCache->setAofRewriteIncrementalFsync(yes ? true : false);
+    } else if (0 == words[0].compare("no-appendfsync-on-rewrite")
+               && 2 == words.size()) {
+        int yes;
+        if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {
+            std::cout <<  "argument must be 'yes' or 'no'";
+            exit(1);
+        }
+        this->configCache->setAofNoFsyncOnRewrite(yes ? true : false);
+    } else if (0 == words[0].compare("auto-aof-rewrite-percentage")
+               && 2 == words.size()) {
+        int perc = atoi(words[1].c_str());
+        if (perc < 0) {
+            std::cout<< "Invalid negative percentage for AOF auto rewrite";
+            exit(1);
+        }
+        this->configCache->setAofRewritePerc(perc);
+    } else if (0 == words[0].compare("auto-aof-rewrite-min-size")
+               && 2 == words.size()) {
+        this->configCache->setAofRewriteMinSize(
+                miscTool->memtoll(words[1].c_str(), NULL));
+    } else if (0 == words[0].compare("aof-load-truncated")
+               && 2 == words.size()) {
+        int yes;
+        if ((yes = this->miscTool->yesnotoi(words[1].c_str())) == -1) {
+            std::cout <<  "argument must be 'yes' or 'no'";
+            exit(1);
+        }
+        this->configCache->setAofLoadTruncated(yes ? true : false);
     }
+
+    return;
 }
 
 int TextConfigReader::configMapGetValue(configMap *config, const char *name) {

@@ -70,6 +70,24 @@ public:
 
     void setAofRewriteIncrementalFsync(bool aofRewriteIncrementalFsync);
 
+    void setBindAddrs(const std::vector<std::string> &bindAddrs);
+
+    bool isAofNoFsyncOnRewrite() const;
+
+    void setAofNoFsyncOnRewrite(bool aofNoFsyncOnRewrite);
+
+    int getAofRewritePerc() const;
+
+    void setAofRewritePerc(int aofRewritePerc);
+
+    off_t getAofRewriteMinSize() const;
+
+    void setAofRewriteMinSize(off_t aofRewriteMinSize);
+
+    bool isAofLoadTruncated() const;
+
+    void setAofLoadTruncated(bool aofLoadTruncated);
+
     int getPort() const;
 
     void setPort(int port);
@@ -110,6 +128,10 @@ private:
      * 便于均摊磁盘IO压力，增量每次写入自动进行fsync
      **/
     bool aofRewriteIncrementalFsync;
+    bool aofNoFsyncOnRewrite;
+    int aofRewritePerc;
+    off_t aofRewriteMinSize;
+    bool aofLoadTruncated;               /** Don't stop on unexpected AOF EOF. */
 };
 
 #endif //FLYDB_FILECONFIG_H

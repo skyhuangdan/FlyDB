@@ -846,7 +846,7 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
     }
 
     // 根据len从fio中读取字符串
-    char *ch = new char[FDB_STRINT_MAX_LEN];
+    char ch[FDB_STRINT_MAX_LEN];
     if (-1 == fio->read(ch, len)) {
         this->logHandler->logWarning("error to load string from fio!");
     }

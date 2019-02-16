@@ -59,6 +59,12 @@ Coordinator::Coordinator() {
             .state(configCache->getAofState())
             .useFdbPreamble(configCache->isAofUseFdbPreamble())
             .fsyncStragy(configCache->getAofFsync())
+            .rewritePerc(configCache->getAofRewritePerc())
+            .rewriteMinSize(configCache->getAofRewriteMinSize())
+            .loadTruncated(configCache->isAofLoadTruncated())
+            .noFsyncOnRewrite(configCache->isAofNoFsyncOnRewrite())
+            .rewriteIncrementalFsync(
+                    configCache->isAofRewriteIncrementalFsync())
             .build();
 
     /** event loop **/

@@ -158,3 +158,38 @@ void ConfigCache::setAofRewriteIncrementalFsync(
     this->aofRewriteIncrementalFsync = aofRewriteIncrementalFsync;
 }
 
+void ConfigCache::setBindAddrs(const std::vector<std::string> &bindAddrs) {
+    this->bindAddrs = bindAddrs;
+}
+
+bool ConfigCache::isAofNoFsyncOnRewrite() const {
+    return this->aofNoFsyncOnRewrite;
+}
+
+void ConfigCache::setAofNoFsyncOnRewrite(bool aofNoFsyncOnRewrite) {
+    this->aofNoFsyncOnRewrite = aofNoFsyncOnRewrite;
+}
+
+int ConfigCache::getAofRewritePerc() const {
+    return this->aofRewritePerc;
+}
+
+void ConfigCache::setAofRewritePerc(int aofRewritePerc) {
+    this->aofRewritePerc = aofRewritePerc;
+}
+
+off_t ConfigCache::getAofRewriteMinSize() const {
+    return this->aofRewriteMinSize;
+}
+
+void ConfigCache::setAofRewriteMinSize(off_t aofRewriteMinSize) {
+    this->aofRewriteMinSize = aofRewriteMinSize;
+}
+
+bool ConfigCache::isAofLoadTruncated() const {
+    return this->aofLoadTruncated;
+}
+
+void ConfigCache::setAofLoadTruncated(bool aofLoadTruncated) {
+    this->aofLoadTruncated = aofLoadTruncated;
+}

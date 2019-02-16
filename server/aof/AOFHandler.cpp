@@ -527,6 +527,10 @@ bool AOFHandler::IsStateOn() const {
     return this->state == AOF_ON;
 }
 
+bool AOFHandler::IsStateOff() const {
+    return this->state == AOF_OFF;
+}
+
 void AOFHandler::setState(AOFState aofState) {
     this->state = aofState;
 }
@@ -558,5 +562,21 @@ bool AOFHandler::isScheduled() const {
 
 void AOFHandler::setScheduled(bool scheduled) {
     this->scheduled = scheduled;
+}
+
+void AOFHandler::setRewritePerc(int rewritePerc) {
+    this->rewritePerc = rewritePerc;
+}
+
+void AOFHandler::setRewriteMinSize(off_t rewriteMinSize) {
+    this->rewriteMinSize = rewriteMinSize;
+}
+
+void AOFHandler::setNoFsyncOnRewrite(bool noFsyncOnRewrite) {
+    this->noFsyncOnRewrite = noFsyncOnRewrite;
+}
+
+void AOFHandler::setLoadTruncated(bool loadTruncated) {
+    this->loadTruncated = loadTruncated;
 }
 
