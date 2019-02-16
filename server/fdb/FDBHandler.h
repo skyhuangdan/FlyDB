@@ -87,7 +87,8 @@ private:
     int loadNumByRef(Fio *fio, int *encoded, uint64_t *lenptr);
     std::shared_ptr<FlyObj> loadStringObject(Fio *fio);
     std::string* loadStringPlain(Fio *fio);
-    void* genericLoadStringObject(Fio *fio, int flag, size_t *lenptr);
+    void* genericLoadString(Fio *fio, size_t *lenptr);
+    std::shared_ptr<FlyObj> genericLoadStringObject(Fio *fio, size_t *lenptr);
     void* loadIntegerObject(Fio *fio, int encoding, int flag, size_t *lenptr);
     void* loadLzfStringObject(Fio *fio, int flag, size_t *lenptr);
     int checkHeader(Fio *fio);

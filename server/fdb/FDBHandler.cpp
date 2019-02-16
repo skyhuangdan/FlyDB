@@ -765,7 +765,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
     }
 
     // check sum
-    uint64_t cksum;
+    uint64_t cksum = 0;
     if (0 == fio->read(&cksum, 8)) {
         fdbExitReportCorrupt("Unexpected EOF reading RDB file");
         return -1;
@@ -814,25 +814,15 @@ uint8_t FDBHandler::loadUint8(Fio *fio) {
 
 // 返回FlyObj类型数据
 std::shared_ptr<FlyObj> FDBHandler::loadStringObject(Fio *fio) {
-    return std::make_shared<FlyObj>(*reinterpret_cast<FlyObj*>(
-            this->genericLoadStringObject(fio, FDB_LOAD_OBJECT, NULL)));
+    return this->genericLoadStringObject(fio, NULL);
 }
 
 // 返回string类型数据
 std::string* FDBHandler::loadStringPlain(Fio *fio) {
-    return reinterpret_cast<std::string*>(
-            this->genericLoadStringObject(fio, FDB_LOAD_STRING, NULL));
+    return reinterpret_cast<std::string*>(this->genericLoadString(fio, NULL));
 }
 
-/**
- * 从FDB中加载string object
- *
- * FDB_LOAD_STRING: 返回string类型数据
- * FDB_LOAD_OBJECT: 返回FlyObj类型数据
- *
- * On I/O error NULL is returned.
- */
-void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
+void* FDBHandler::genericLoadString(Fio *fio, size_t *lenptr) {
     int encoded = 0;
     int len;
     if (-1 == (len = loadNum(fio, &encoded))) {
@@ -847,18 +837,46 @@ void* FDBHandler::genericLoadStringObject(Fio *fio, int flag, size_t *lenptr) {
 
     // 根据len从fio中读取字符串
     char ch[FDB_STRINT_MAX_LEN];
-    if (-1 == fio->read(ch, len)) {
+    int readlen = 0;
+    if (-1 == (readlen = fio->read(ch, len))) {
         this->logHandler->logWarning("error to load string from fio!");
     }
+    ch[readlen] = '\0';
+
+    return new std::string(ch);
+}
+
+/**
+ * 从FDB中加载string object
+ * On I/O error NULL is returned.
+ */
+std::shared_ptr<FlyObj> FDBHandler::genericLoadStringObject(
+        Fio *fio,
+        size_t *lenptr) {
+    int encoded = 0;
+    int len;
+    if (-1 == (len = loadNum(fio, &encoded))) {
+        return NULL;
+    }
+
+    // len <= 0
+    if (len <= 0) {
+        this->logHandler->logWarning("the len <= 0! len = %d", len);
+        return NULL;
+    }
+
+    // 根据len从fio中读取字符串
+    char ch[FDB_STRINT_MAX_LEN];
+    int readlen = 0;
+    if (-1 == (readlen = fio->read(ch, len))) {
+        this->logHandler->logWarning("error to load string from fio!");
+    }
+    ch[readlen] = '\0';
 
     // 根据flag返回FlyObj或者直接返回string
     std::string *str = new std::string(ch);
-    if (flag & FDB_LOAD_OBJECT) {
-        return this->coordinator->getFlyObjStringFactory()
-                ->getObject(str).get();
-    } else {
-        return str;
-    }
+    return this->coordinator->getFlyObjStringFactory()
+            ->getObject(str);
 }
 
 void* FDBHandler::loadIntegerObject(Fio *fio,

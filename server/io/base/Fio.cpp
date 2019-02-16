@@ -20,24 +20,25 @@ int Fio::updateChecksum(const void *buf, size_t len) {
 }
 
 size_t Fio::write(const void *buf, size_t len) {
-    size_t written = 0;
+    size_t totalWrite = 0;
     while (len > 0) {
         // 如果设置了读写byte上线，则单次读写不应超过其上线
-        size_t writeBytes = (haveProcessedBytes() && getProcessedBytes() < len)
-                            ? getProcessedBytes() : len;
-        written += writeBytes;
+        size_t writeBytes =
+                (haveProcessedBytes() && getMaxProcessingChunk() < len)
+                ? getMaxProcessingChunk() : len;
+        totalWrite += writeBytes;
 
         // 执行校验
         updateChecksum(buf, len);
 
         // 单次写入
         if (0 == this->basewrite(buf, len)) {
-            return written;
+            return totalWrite;
         }
 
-        buf = (char*)buf - writeBytes;
+        buf = (char*)buf + writeBytes;
         len -= writeBytes;
-        this->processedBytes + writeBytes;
+        this->processedBytes += writeBytes;
     }
 
     return len;
@@ -47,8 +48,9 @@ size_t Fio::read(void *buf, size_t len) {
     size_t totalRead = 0;
     while (len > 0) {
         // 如果设置了读写byte上线，则单次读写不应超过其上线
-        size_t readBytes = (haveProcessedBytes() && getProcessedBytes() < len)
-                           ? getProcessedBytes() : len;
+        size_t readBytes =
+                (haveProcessedBytes() && getMaxProcessingChunk() < len)
+                ? getMaxProcessingChunk() : len;
         totalRead += readBytes;
 
         // 执行校验
@@ -59,7 +61,7 @@ size_t Fio::read(void *buf, size_t len) {
             return totalRead;
         }
 
-        buf = (char*)buf - readBytes;
+        buf = (char*)buf + readBytes;
         len -= readBytes;
         this->processedBytes += readBytes;
     }
