@@ -21,6 +21,7 @@ class AOFHandler : public AbstractAOFHandler {
 public:
     AOFHandler();
     int start();
+    void flush(bool force);
     int stop();
     int rewriteBackground();
     int rewriteAppendOnlyFile();
@@ -34,13 +35,14 @@ public:
     void setState(AOFState aofState);
     bool isScheduled() const;
     void setScheduled(bool scheduled);
+    bool sizeMeetRewriteCondition();
 
     void setCoordinator(AbstractCoordinator *coordinator);
     void setFileName(char *fileName);
     void setUseFdbPreamble(bool useFdbPreamble);
     void setFsyncStragy(int stragy);
     void setRewriteIncrementalFsync(bool rewriteIncrementalFsync);
-    void setRewritePerc(int rewritePerc);
+    void setRewritePerc(uint8_t rewritePerc);
     void setRewriteMinSize(off_t rewriteMinSize);
     void setNoFsyncOnRewrite(bool noFsyncOnRewrite);
     void setLoadTruncated(bool loadTruncated);
@@ -85,7 +87,7 @@ public:
             return *this;
         }
 
-        Builder& rewritePerc(int perc) {
+        Builder& rewritePerc(uint8_t perc) {
             this->handler->setRewritePerc(perc);
             return *this;
         }
@@ -137,6 +139,7 @@ private:
                          Dict<std::string, std::string> *dict);
     int rewriteIntSet(Fio *fio, std::string key, IntSet *intset);
     void removeTempFile(pid_t childpid);
+    void backgroundFsync();
 
     static bool stopSendingDiff;
 
@@ -145,20 +148,36 @@ private:
     AOFState state;
     pid_t childPid = -1;
     std::string childDiff;
-    time_t lastFsync;
     int fd = -1;
     bool scheduled = false;
     bool useFdbPreamble = CONFIG_DEFAULT_AOF_USE_FDB_PREAMBLE;
     int fsyncStragy = CONFIG_DEFAULT_AOF_FSYNC;
     bool rewriteIncrementalFsync = CONFIG_DEFAULT_AOF_REWRITE_INCREMENTAL_FSYNC;
     /** Rewrite AOF if % growth is > M */
-    int rewritePerc = AOF_REWRITE_PERC;
-    /** AOf file is at least N bytes */
+    uint8_t rewritePerc = AOF_REWRITE_PERC;
+    /** AOF file is at least N bytes */
     off_t rewriteMinSize = AOF_REWRITE_MIN_SIZE;
+    /** AOF size on latest startup or rewrite */
+    off_t rewriteBaseSize = 0;
+    off_t currentSize = 0;
     /** Don`t fsync when the rewrite iis in progress */
     bool noFsyncOnRewrite = CONFIG_DEFAULT_AOF_NO_FSYNC_ON_REWRITE;
     /** Don't stop on unexpected AOF EOF. */
     bool loadTruncated = CONFIG_DEFAULT_AOF_LOAD_TRUNCATED;
+    /** UNIX time of postponed AOF flush */
+    time_t flushPostponedStart = 0;
+    /** UNIX time of last fsync() */
+    time_t lastFsync = 0;
+    /** Time used by last AOF rewrite run. */
+    time_t rewriteTimeLast = 0;
+    /** Current AOF rewrite start time. */
+    time_t rewriteTimeStart = 0;
+    /** AOF buffer, written before entering the event loop */
+    std::string buf;
+    /** delayed AOF fsync() counter */
+    uint32_t delayedFsync;
+    int lastWriteError;
+    int lastWriteStatus;
 };
 
 

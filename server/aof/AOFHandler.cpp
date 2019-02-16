@@ -4,10 +4,12 @@
 
 #include <fcntl.h>
 #include <list>
+#include <cassert>
 #include "AOFHandler.h"
 #include "../io/FileFio.h"
 #include "../dataStructure/skiplist/SkipList.cpp"
 #include "../dataStructure/dict/Dict.cpp"
+#include "../bio/BIODef.h"
 
 bool AOFHandler::stopSendingDiff = false;
 
@@ -18,6 +20,7 @@ AOFHandler::AOFHandler() {
 int AOFHandler::start() {
     this->lastFsync = time(NULL);
     this->fd = open(this->fileName, O_WRONLY | O_APPEND | O_CREAT, 0644);
+    assert(AOF_OFF == this->state);
     if (-1 == this->fd) {
         coordinator->getLogHandler()->logWarning(
                 "FLYDB needs to enable the AOF but can't open the "
@@ -54,6 +57,144 @@ int AOFHandler::start() {
      **/
     this->state = AOF_WAIT_REWRITE;
     return 1;
+}
+
+void AOFHandler::flush(bool force) {
+    if (0 == this->buf.length()) {
+        return;
+    }
+
+    AbstractFlyServer *flyServer = this->coordinator->getFlyServer();
+    bool syncInProgress = false;
+    if (AOF_FSYNC_EVERYSEC == this->fsyncStragy) {
+        syncInProgress = 0 < this->coordinator->getBioHandler()
+                ->getPendingJobCount(BIO_AOF_FSYNC);
+    }
+
+    /**
+     * 如果当前有fsync操作，则推迟当前操作，最大推迟2s
+     **/
+    if (AOF_FSYNC_EVERYSEC == this->fsyncStragy && !force) {
+        if (syncInProgress) {
+            /** 刚开始进入推迟，记录最初推迟时间，便于计算总统的推迟2s时间 */
+            if (0 != this->flushPostponedStart) {
+                this->flushPostponedStart = flyServer->getNowt();
+            } else if (flyServer->getNowt() - this->flushPostponedStart < 2) {
+                return;
+            }
+
+            /** 如果推迟超过了2s，则进行fsync，不继续推迟了 */
+            this->delayedFsync++;
+            coordinator->getLogHandler()->logNotice(
+                    "Asynchronous AOF fsync is taking too long(disk is busy?). "
+                    "Writing the AOF buffer without waiting for fsync to "
+                    "complete, this may slow down FLYDB.");
+        }
+    }
+
+    /** perform a single write */
+    ssize_t written = 0;
+    written = write(this->fd, this->buf.c_str(), this->buf.length());
+
+    // todo: latency add sample
+
+    /** reset to zero */
+    this->flushPostponedStart = 0;
+
+    bool canlog = false;
+    /** 数据没有完全写入*/
+    if (written != this->buf.length()) {
+        static time_t lastWriteErrorLogTime = 0;
+        if (flyServer->getNowt() - lastWriteErrorLogTime
+            > AOF_WRITE_LOG_ERROR_RATE) {
+            canlog = true;
+            lastWriteErrorLogTime = flyServer->getNowt();
+        }
+
+        if (-1 == written) {
+            if (canlog) {
+                coordinator->getLogHandler()->logWarning(
+                        "Error writing to the AOF file: %s", strerror(errno));
+            }
+            this->lastWriteError = errno;
+        } else {
+            if (canlog) {
+                coordinator->getLogHandler()->logWarning(
+                        "Short write while writing to "
+                        "the AOF file: (nwritten = %lld, "
+                        "expected = %lld)",
+                        written,
+                        this->buf.length());
+            }
+
+            /** 裁剪aof文件，将部分写入的数据裁剪掉 */
+            if (-1 == ftruncate(this->fd, this->currentSize)) {
+                if (canlog) {
+                    coordinator->getLogHandler()->logWarning(
+                            "Could not remove short write "
+                             "from the append-only file.  Redis may refuse "
+                             "to load the AOF the next time it starts.  "
+                             "ftruncate: %s", strerror(errno));
+                }
+
+                /** ENOSPC: 空间不足 */
+                this->lastWriteError = ENOSPC;
+            } else {
+                /** 裁剪成功了，说明一丢丢都没有写入 */
+                written = -1;
+            }
+        }
+
+        /**
+         * 如果是AOF_FSYNC_ALWAYS, aof写入的信息都已经传递给了client的output buffer，
+         * 当通知了client，则代表已经做完了fsync，不能裁剪了。
+         **/
+        if (AOF_FSYNC_ALWAYS == this->fsyncStragy) {
+            coordinator->getLogHandler()->logWarning(
+                    "Can't recover from AOF write error when "
+                    "the AOF fsync policy is 'always'. Exiting...");
+            exit(1);
+        }
+
+        /** 对于无法裁剪（恢复）的部分写入，裁剪buf，等待下次再继续写入 */
+        if (written > 0) {
+            this->currentSize += written;
+            this->buf = this->buf.substr(written);
+            this->lastWriteStatus = -1;
+        }
+    } else { /** 完全写入了 */
+        if (-1 == this->lastWriteStatus) {
+            coordinator->getLogHandler()->logWarning(
+                    "AOF write error looks solved, can write again.");
+            this->lastWriteStatus = 0;
+        }
+    }
+
+    this->currentSize += written;
+
+    /** 清空aof buf */
+    this->buf.clear();
+
+    /**
+     * 如果配置了no fsync on write或者当前有子进程在进行aof或fdb,
+     * 则直接返回，不进行fsync
+     **/
+    if (this->noFsyncOnRewrite
+        || this->haveChildPid()
+        || coordinator->getFdbHandler()->haveChildPid()) {
+        return;
+    }
+
+    /** fsync operation */
+    if (AOF_FSYNC_ALWAYS == this->fsyncStragy) {
+        aof_fsync(this->fd);
+    } else if (AOF_FSYNC_EVERYSEC && flyServer->getNowt() > this->lastFsync) {
+        /** 如果没有background fsync，则添加一个background fsync操作 */
+        if (!syncInProgress) {
+            this->backgroundFsync();
+        }
+    }
+    this->lastFsync = flyServer->getNowt();
 }
 
 int AOFHandler::stop() {
@@ -511,6 +652,14 @@ void AOFHandler::removeTempFile(pid_t childpid) {
     unlink(temp);
 }
 
+void AOFHandler::backgroundFsync() {
+    coordinator->getBioHandler()->createBackgroundJob(
+            BIO_AOF_FSYNC,
+            (void*)this->fd,
+            NULL,
+            NULL);
+}
+
 pid_t AOFHandler::getChildPid() const {
     return this->childPid;
 }
@@ -564,7 +713,21 @@ void AOFHandler::setScheduled(bool scheduled) {
     this->scheduled = scheduled;
 }
 
-void AOFHandler::setRewritePerc(int rewritePerc) {
+bool AOFHandler::sizeMeetRewriteCondition() {
+    if (this->currentSize < this->rewriteMinSize) {
+        return false;
+    }
+
+    uint64_t base = this->rewriteBaseSize ? rewriteBaseSize : 1;
+    uint64_t growth = (this->currentSize * 100 / base) - 100;
+    if (this->rewritePerc != 0 && growth >= this->rewritePerc) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void AOFHandler::setRewritePerc(uint8_t rewritePerc) {
     this->rewritePerc = rewritePerc;
 }
 

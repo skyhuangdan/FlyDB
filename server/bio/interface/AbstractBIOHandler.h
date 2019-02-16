@@ -14,7 +14,10 @@ public:
 
     virtual uint64_t waitStep(int type) = 0;
 
-    virtual void createBackgroundJob(int type, void *arg1, void *arg2, void *arg3) = 0;
+    virtual void createBackgroundJob(int type,
+                                     void *arg1,
+                                     void *arg2,
+                                     void *arg3) = 0;
 
     virtual void killThreads(void) = 0;
 };

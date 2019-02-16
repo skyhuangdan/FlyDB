@@ -17,6 +17,8 @@ public:
 
     virtual int start() = 0;
 
+    virtual void flush(bool force) = 0;
+
     virtual int stop() = 0;
 
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
@@ -40,6 +42,8 @@ public:
     virtual bool isScheduled() const = 0;
 
     virtual void setScheduled(bool scheduled) = 0;
+
+    virtual bool sizeMeetRewriteCondition() = 0;
 
     virtual int saveKeyValuePair(Fio *fio,
                                  std::string key,

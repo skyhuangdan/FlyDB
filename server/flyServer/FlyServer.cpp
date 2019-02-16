@@ -637,8 +637,14 @@ int serverCron(const AbstractCoordinator *coordinator,
                 coordinator->getFdbHandler()->setBGSaveScheduled(false);
             }
         }
-    }
 
+        /** 当前aof文件的大小达到rewrite的要求(minsize and growth percentage) */
+        if (!coordinator->getAofHandler()->haveChildPid()
+            && !coordinator->getFdbHandler()->haveChildPid()
+            && coordinator->getAofHandler()->sizeMeetRewriteCondition()) {
+            coordinator->getAofHandler()->rewriteBackground();
+        }
+    }
 
     static int times = 0;
     std::cout << "serverCron is running " << ++times << " times!" << std::endl;
