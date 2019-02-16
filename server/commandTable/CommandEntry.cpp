@@ -25,7 +25,8 @@ std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("hget",        hgetCommand,        3, "rF",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("save",        saveCommand,        1, "as",  0, NULL, 0, 0, 0, 0, 0),
        new CommandEntry("bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("config",      configCommand,     -2, "lat", 0, NULL, 0, 0, 0, 0, 0)
+       new CommandEntry("config",      configCommand,     -2, "lat", 0, NULL, 0, 0, 0, 0, 0),
+       new CommandEntry{"bgrewriteaof",bgrewriteaofCommand,1, "a",   0, NULL, 0, 0, 0, 0, 0}
 };
 
 
@@ -528,7 +529,7 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
 
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
-    // 如果参数数量 < 2，直接返回
+    /** 获取schedule */
     bool schedule = false;
     if (2 == flyClient->getArgc()) {
         std::string *argv1 = reinterpret_cast<std::string *>(
@@ -572,6 +573,32 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
 
     return;
 }
+
+void bgrewriteaofCommand(const AbstractCoordinator *coordinator,
+                         AbstractFlyClient *flyClient) {
+    /** have aof background thread */
+    if (coordinator->getAofHandler()->haveChildPid()) {
+        flyClient->addReply(
+                "Background append only file rewriting already in progress");
+        return;
+    }
+
+    /** have fdb background thread, then schedule this aof command */
+    if (coordinator->getFdbHandler()->haveChildPid()) {
+        flyClient->addReply("Background append only file rewriting scheduled");
+        coordinator->getFdbHandler()->setBGSaveScheduled(true);
+        return;
+    }
+
+    if (coordinator->getAofHandler()->start() > 0) {
+        flyClient->addReply("Background append only file rewriting started");
+    } else {
+        flyClient->addReply("Background append only file rewriting error!");
+    }
+
+    return;
+}
+
 
 void configSetCommand(const AbstractCoordinator* coordinator,
                       AbstractFlyClient* flyClient) {
