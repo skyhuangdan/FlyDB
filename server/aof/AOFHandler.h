@@ -140,6 +140,8 @@ private:
     int rewriteIntSet(Fio *fio, std::string key, IntSet *intset);
     void removeTempFile(pid_t childpid);
     void backgroundFsync();
+    void doRealWrite();
+    void doRealFsync(bool syncInProgress);
 
     static bool stopSendingDiff;
 
