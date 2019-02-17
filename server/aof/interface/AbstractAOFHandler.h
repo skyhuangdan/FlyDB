@@ -21,6 +21,8 @@ public:
 
     virtual int stop() = 0;
 
+    virtual int getFd() const = 0;
+
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
 
     virtual int rewriteBackground() = 0;
@@ -37,6 +39,8 @@ public:
 
     virtual bool IsStateOff() const = 0;
 
+    virtual bool IsStateWaitRewrite() const = 0;
+
     virtual void setState(AOFState state) = 0;
 
     virtual bool isScheduled() const = 0;
@@ -51,6 +55,10 @@ public:
                                  int64_t expireTime) = 0;
 
     virtual bool flushPostponed() const = 0;
+
+    virtual bool lastWriteHasError() const = 0;
+
+    virtual void removeTempFile(pid_t childpid) = 0;
 };
 
 #endif //FLYDB_ABSTRACTAOFHANDLER_H

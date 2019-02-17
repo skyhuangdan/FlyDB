@@ -76,7 +76,7 @@ uint64_t BIOHandler::getPendingJobCount(int type) {
  * 如果当前type没有pending jobs, 直接返回pending jobs count，即0
  * 如果有pending jobs，则等待下一个job执行完（下一个job执行完后会唤醒条件）
  * 并返回此时pending jobs count
- * 该函数用户当领一个进程想等当前执行bio的进程执行完时使用
+ * 该函数用户当领一个线程想等当前执行bio的进程执行完时使用
  **/
 uint64_t BIOHandler::waitStep(int type) {
     uint64_t count = 0;
@@ -135,7 +135,7 @@ void *BIOHandler::processBackgroundJobs(void *arg) {
         /** 获取第一个job */
         BIOJob * bioJob = jobList.front();
 
-        /** unlock mutex: 不会有其他进程来竞争bioJob */
+        /** unlock mutex: 不会有其他线程来竞争bioJob */
         pthread_mutex_unlock(&mutex[type]);
 
         switch (type) {

@@ -21,12 +21,13 @@
 #include "../utils/MiscTool.h"
 #include "../pipe/Pipe.h"
 
-void sigShutDownHandlers(int sig);
+class CommandTable;
+
 int serverCron(const AbstractCoordinator *coordinator,
                uint64_t id,
                void *clientData);
-
-class CommandTable;
+bool meetPeriod(AbstractFlyServer *flyServer,
+                uint32_t periodGap);
 
 class FlyServer : public AbstractFlyServer {
 public:
@@ -43,6 +44,8 @@ public:
     bool isShutdownASAP() const;
     void setShutdownASAP(bool shutdownASAP);
     int prepareForShutdown(int flags);
+    void addCronLoops();
+    uint64_t getCronLoops() const;
 
     /**
      * 网络相关
@@ -82,8 +85,10 @@ private:
     void loadFromConfig(ConfigCache *configCache);
     void setupSignalHandlers();
 
+    static void sigShutDownHandlers(int sig);
+
     /** General */
-    pid_t pid;                                          // 运行server的线程标识
+    pid_t pid;                                        // 运行server的进程标识
     AbstractFlyDBFactory *flyDBFactory;
     std::array<AbstractFlyDB*, DB_NUM> dbArray;       // db列表
     std::string version = VERSION;                    // 版本号
@@ -125,6 +130,7 @@ private:
     uint64_t statRejectedConn;
     /** client buff最大长度 */
     size_t clientMaxQuerybufLen;
+    uint64_t cronloops = 0;
 
     AbstractLogHandler *logHandler;
     const AbstractCoordinator *coordinator;

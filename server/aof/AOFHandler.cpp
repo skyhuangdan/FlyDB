@@ -124,7 +124,7 @@ int AOFHandler::rewriteBackground() {
         return -1;
     }
 
-    /** 打开主线程与子进程之间的管道 */
+    /** 打开主进程与子进程之间的管道 */
     if (-1 == coordinator->openAllPipe()) {
         return -1;
     }
@@ -149,7 +149,7 @@ int AOFHandler::rewriteBackground() {
     pid_t childPid;
     if (0 == (childPid = fork())) {
         /**
-         * child thread
+         * child process
          **/
         flyServer->closeListeningSockets(false);
         if (1 == this->rewriteAppendOnlyFile()) {
@@ -162,7 +162,7 @@ int AOFHandler::rewriteBackground() {
         exit(1);
     } else {
         /** parent */
-        if (-1 == childPid) {    /** 创建子线程失败 */
+        if (-1 == childPid) {    /** 创建子进程失败 */
             coordinator->closeAllPipe();
         }
 
@@ -239,7 +239,7 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     FILE *fp = fio->getFp();
     /**
      * 从parent读取持久化之后的aof数据
-     *      只要一直有从parent到本线程的数据，那尽量多读一段时间（最多不超过1000ms）
+     *      只要一直有从parent到本进程的数据，那尽量多读一段时间（最多不超过1000ms）
      *      否则，如果持续读20次都没有数据，那么退出循环
      **/
     uint64_t start = miscTool->mstime();
@@ -637,8 +637,8 @@ void AOFHandler::doRealWrite() {
         }
 
         /**
-         * 对于无法裁剪（恢复）的部分写入，裁剪buf，
-         * 等待下次再继续写入, 不执行后续fsync
+         * 对于无法裁剪（恢复）的部分写入，裁剪buf，将lastWriteStatus标记为-1，
+         * 这样在serverCron中等待下次再继续写入, 本次不执行后续fsync
          **/
         if (written > 0) {
             this->currentSize += written;
@@ -672,7 +672,12 @@ void AOFHandler::doRealFsync(bool syncInProgress) {
         return;
     }
 
-    /** fsync operation */
+    /**
+     * fsync operation: 如果满足下述两个条件中的一个，则会执行fsync操作
+     *  1.是always
+     *  2.every second并且当前时间-上次执行fsync时间 > 1秒
+     *  对于2执行的是background fsync（将fsync操作放入bio中）
+     * */
     if (AOF_FSYNC_ALWAYS == this->fsyncStragy) {
         aof_fsync(this->fd);
     } else if (AOF_FSYNC_EVERYSEC && flyServer->getNowt() > this->lastFsync) {
@@ -705,6 +710,10 @@ bool AOFHandler::IsStateOn() const {
 
 bool AOFHandler::IsStateOff() const {
     return this->state == AOF_OFF;
+}
+
+bool AOFHandler::IsStateWaitRewrite() const {
+    return this->state == AOF_WAIT_REWRITE;
 }
 
 void AOFHandler::setState(AOFState aofState) {
@@ -771,6 +780,14 @@ void AOFHandler::setLoadTruncated(bool loadTruncated) {
 }
 
 bool AOFHandler::flushPostponed() const {
-    return 0 != flushPostponedStart;
+    return 0 != this->flushPostponedStart;
+}
+
+bool AOFHandler::lastWriteHasError() const {
+    return -1 == this->lastWriteStatus;
+}
+
+int AOFHandler::getFd() const {
+    return this->fd;
 }
 

@@ -62,7 +62,7 @@ public:
     virtual uint8_t getFlyDBCount() const = 0;
 
     /**
-     * 当aof或者fdb子线程进行持久化的时候，可以设置canResize = true,
+     * 当aof或者fdb子进程进行持久化的时候，可以设置canResize = true,
      * 不允许进行resize操作(除非ht.used > ht.size * NEED_FORCE_REHASH_RATIO)，
      * 这样可以减少内存搬移，以减少内存压力
      */
@@ -75,6 +75,10 @@ public:
     virtual void setShutdownASAP(bool shutdownASAP) = 0;
 
     virtual int prepareForShutdown(int flags) = 0;
+
+    virtual void addCronLoops() = 0;
+
+    virtual uint64_t getCronLoops() const = 0;
 
 };
 

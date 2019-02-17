@@ -27,12 +27,14 @@ public:
     int rewriteBackground();
     int rewriteAppendOnlyFile();
     void backgroundSaveDone(int exitCode, int bySignal);
+    int getFd() const;
 
     pid_t getChildPid() const;
     void setChildPid(pid_t childPid);
     bool haveChildPid() const;
     bool IsStateOn() const;
     bool IsStateOff() const;
+    bool IsStateWaitRewrite() const;
     void setState(AOFState aofState);
     bool isScheduled() const;
     void setScheduled(bool scheduled);
@@ -42,6 +44,9 @@ public:
                          std::shared_ptr<FlyObj> val,
                          int64_t expireTime);
     bool flushPostponed() const;
+    bool lastWriteHasError() const;
+    void removeTempFile(pid_t childpid);
+
 
     class Builder {
     public:
@@ -130,7 +135,6 @@ private:
                          std::string key,
                          Dict<std::string, std::string> *dict);
     int rewriteIntSet(Fio *fio, std::string key, IntSet *intset);
-    void removeTempFile(pid_t childpid);
     void backgroundFsync();
     void doRealWrite();
     void doRealFsync(bool syncInProgress);
@@ -145,7 +149,6 @@ private:
     void setRewriteMinSize(off_t rewriteMinSize);
     void setNoFsyncOnRewrite(bool noFsyncOnRewrite);
     void setLoadTruncated(bool loadTruncated);
-
 
     static bool stopSendingDiff;
 

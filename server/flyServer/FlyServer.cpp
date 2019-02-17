@@ -19,9 +19,12 @@
 #include "../log/FileLogFactory.h"
 #include "../db/FlyDBFactory.h"
 #include "../dataStructure/dict/Dict.cpp"
+#include "../bio/BIODef.h"
+
+#define runWithPeriod(flyServer, period) if(meetPeriod(flyServer, period))
 
 /**
- * 当aof或者fdb子线程进行持久化的时候，可以设置canResize = true,
+ * 当aof或者fdb子进程进行持久化的时候，可以设置canResize = true,
  * 不允许进行resize操作(除非在expand扩容时且ht.used > ht.size * NEED_FORCE_REHASH_RATIO)，
  * 这样可以减少内存搬移，以减少内存压力。具体可以搜索canResize，查看其使用场景
  */
@@ -478,6 +481,7 @@ void FlyServer::setShutdownASAP(bool shutdownASAP) {
 
 int FlyServer::prepareForShutdown(int flags) {
     AbstractFDBHandler *fdbHandler = coordinator->getFdbHandler();
+    AbstractAOFHandler *aofHandler = coordinator->getAofHandler();
 
     /** 如果有fdb子进程存在，kill并且删掉fdb的临时文件 */
     if (fdbHandler->haveChildPid()) {
@@ -486,7 +490,28 @@ int FlyServer::prepareForShutdown(int flags) {
         fdbHandler->deleteTempFile(fdbPid);
     }
 
-    /** todo aof */
+    /** aof关闭前处理 */
+    if (!aofHandler->IsStateOff()) {
+        if (aofHandler->haveChildPid()) {
+            /** 如果还没执行完aof步骤，不允许shutdown, 否则db数据会丢 */
+            if (aofHandler->IsStateWaitRewrite()) {
+                logHandler->logWarning("Writing initial AOF, can't exit.");
+                return -1;
+            }
+
+            logHandler->logWarning(
+                    "There is a child rewriting the AOF. Killing it!");
+            kill(aofHandler->getChildPid(), SIGUSR1);
+            aofHandler->removeTempFile(aofHandler->getChildPid());
+        }
+
+        /**
+         * 多加了个fsync操作，防止flush中的fsync放入bio中,
+         * 而shutdown后没来得及执行
+         * */
+        aofHandler->flush(true);
+        aof_fsync(aofHandler->getFd());
+    }
 
     /** 如果flag设置了save或者saveParamsCount>0, 则执行fdb持久化 */
     if ((fdbHandler->getSaveParamsCount() > 0 && !(flags & SHUTDOWN_NOSAVE))
@@ -502,11 +527,18 @@ int FlyServer::prepareForShutdown(int flags) {
 
     this->setShutdownASAP(false);
     this->logHandler->logWarning("now ready to exit, bye bye...");
-
     return 1;
 }
 
-void sigShutDownHandlers(int sig) {
+void FlyServer::addCronLoops() {
+    this->cronloops++;
+}
+
+uint64_t FlyServer::getCronLoops() const {
+    return this->cronloops;
+}
+
+void FlyServer::sigShutDownHandlers(int sig) {
     extern AbstractCoordinator *coordinator;
 
     /**
@@ -531,8 +563,8 @@ void sigShutDownHandlers(int sig) {
 }
 
 int serverCron(const AbstractCoordinator *coordinator,
-               uint64_t id,
-               void *clientData) {
+                          uint64_t id,
+                          void *clientData) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
     // 设置当前时间
@@ -543,7 +575,15 @@ int serverCron(const AbstractCoordinator *coordinator,
 
     /** 如果收到kill命令(SIGTERM信号)，执行fdb save操作 */
     if (coordinator->getFlyServer()->isShutdownASAP()) {
-        flyServer->prepareForShutdown(SHUTDOWN_NOFLAGS);
+        if (flyServer->prepareForShutdown(SHUTDOWN_NOFLAGS)) {
+            exit(0);
+        }
+
+        /** shutdown失败 */
+        coordinator->getLogHandler()->logWarning(
+                "SIGTERM received but errors trying to shut down the server, "
+                "check the logs for more information");
+        coordinator->getFlyServer()->setShutdownASAP(false);
     }
 
     // 如果有fdb或者aof子进程存在的话
@@ -644,12 +684,46 @@ int serverCron(const AbstractCoordinator *coordinator,
             && coordinator->getAofHandler()->sizeMeetRewriteCondition()) {
             coordinator->getAofHandler()->rewriteBackground();
         }
-
-        //if (coordinator->getAofHandler()->)
     }
 
-    static int times = 0;
-    std::cout << "serverCron is running " << ++times << " times!" << std::endl;
+    /** 如果有被推迟的flush操作，则在每次循环的时候都试图执行一遍 */
+    if (coordinator->getAofHandler()->flushPostponed()) {
+        coordinator->getAofHandler()->flush(false);
+    }
+
+    /**
+     * 如果上次flush产生失败（执行了部分写入），则重新执行flush，
+     * 不需要每次cron loop都执行，每秒（1000ms）执行一次就可以了
+     **/
+    runWithPeriod(flyServer, 3000) {
+        if (coordinator->getAofHandler()->lastWriteHasError()) {
+            coordinator->getAofHandler()->flush(false);
+        }
+    }
+
+    flyServer->addCronLoops();
+    std::cout << "serverCron is running "
+              << flyServer->getCronLoops()
+              << " times!" << std::endl;
 
     return 1000 / flyServer->getHz();
+}
+
+/** 用于判断当前cron loop下是否满足了周期要求：
+ *  periodGap单位是毫秒
+ **/
+bool meetPeriod(AbstractFlyServer *flyServer, uint32_t periodGap) {
+    int cronGap = 1000 / flyServer->getHz();
+
+    /** 周期小于每次循环间隔时间，则当前循环肯定满足周期 */
+    if (periodGap <= cronGap) {
+        return true;
+    }
+
+    /** 达到period / cronGap表示循环几次时满足周期要求 */
+    if (0 == flyServer->getCronLoops() % (periodGap / cronGap)) {
+        return true;
+    }
+
+    return false;
 }
