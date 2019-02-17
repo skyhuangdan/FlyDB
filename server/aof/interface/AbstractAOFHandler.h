@@ -6,6 +6,7 @@
 #define FLYDB_ABSTRACTAOFHANDLER_H
 
 #include <sys/types.h>
+#include <string>
 #include "../AOFDef.h"
 #include "../../io/base/Fio.h"
 
@@ -21,7 +22,7 @@ public:
 
     virtual int stop() = 0;
 
-    virtual int getFd() const = 0;
+    virtual void rewriteBufferAppend(unsigned char *s, uint64_t len) = 0;
 
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
 
@@ -58,7 +59,13 @@ public:
 
     virtual bool lastWriteHasError() const = 0;
 
-    virtual void removeTempFile(pid_t childpid) = 0;
+    virtual void removeTempFile() = 0;
+
+    virtual int getFd() const = 0;
+
+    virtual RewriteBufBlock* getFrontRewriteBufBlock() const = 0;
+
+    virtual void popFrontRewriteBufBlock() = 0;
 };
 
 #endif //FLYDB_ABSTRACTAOFHANDLER_H

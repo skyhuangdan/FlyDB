@@ -22,9 +22,15 @@ const int EVENT_ALL_EVENTS = EVENT_FILE_EVENTS | EVENT_TIME_EVENTS;
 const int EVENT_CALL_AFTER_SLEEP = 8;
 const int EVENT_DONT_WAIT = 4;
 
-typedef int timeEventProc(const AbstractCoordinator *coorinator, uint64_t id, void *clientData);
-typedef void fileEventProc(const AbstractCoordinator *coorinator, int fd, void *clientdata, int mask);
-typedef void eventFinalizerProc(const AbstractCoordinator *coorinator, void *clientData);
+typedef int timeEventProc(const AbstractCoordinator *coorinator,
+                          uint64_t id,
+                          void *clientData);
+typedef void fileEventProc(const AbstractCoordinator *coorinator,
+                           int fd,
+                           void *clientdata,
+                           int mask);
+typedef void eventFinalizerProc(const AbstractCoordinator *coorinator,
+                                void *clientData);
 typedef void beforeAndAfterSleepProc(const AbstractCoordinator *coorinator);
 
 #endif //FLYDB_EVENTDEF_H

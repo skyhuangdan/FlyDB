@@ -502,7 +502,7 @@ int FlyServer::prepareForShutdown(int flags) {
             logHandler->logWarning(
                     "There is a child rewriting the AOF. Killing it!");
             kill(aofHandler->getChildPid(), SIGUSR1);
-            aofHandler->removeTempFile(aofHandler->getChildPid());
+            aofHandler->removeTempFile();
         }
 
         /**

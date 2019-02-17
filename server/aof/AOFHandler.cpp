@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <list>
 #include <cassert>
+#include <signal.h>
 #include "AOFHandler.h"
 #include "../io/FileFio.h"
 #include "../dataStructure/skiplist/SkipList.cpp"
@@ -60,7 +61,12 @@ int AOFHandler::start() {
 }
 
 /**
- * 写入并同步
+ * 写入并同步:
+ *  1.由于要求写入aof在给客户回复之前，客户端的回复在serverCron中,
+ *    所以将调用flushd的操作放在beforeSleep中
+ *  2.对于everysec模式，采用background fsync（bio中执行fsync）
+ *    如果bio中已经有background fsync操作，则不执行write操作，
+ *    因为fsync操作会阻塞write(除非设置了force)
  **/
 void AOFHandler::flush(bool force) {
     if (0 == this->buf.length()) {
@@ -109,7 +115,37 @@ void AOFHandler::flush(bool force) {
 }
 
 int AOFHandler::stop() {
+    assert(AOF_OFF != this->state);
 
+    /** flush aof file and close it */
+    this->flush(true);
+    aof_fsync(this->fd);
+    close(this->fd);
+
+    this->fd = -1;
+    this->state = AOF_OFF;
+    if (-1 != this->childPid) {
+        int statloc;
+        /** 如果杀不死，则一直等其(子进程)执行完 */
+        if (kill(this->childPid, SIGUSR1) == -1) {
+            while (this->childPid != wait3(&statloc, 0, NULL)) {
+                continue;
+            }
+        }
+
+        /** 删除aof临时文件 */
+        this->removeTempFile();
+        this->childPid = -1;
+        this->rewriteTimeStart = -1;
+        /** 清空aof rewrite buffer */
+        this->resetRewriteBuffer();
+        /** 清空文件事件 */
+        this->clearFileEvent();
+        /** 关闭所有管道 */
+        this->coordinator->closeAllPipe();
+    }
+
+    return 1;
 }
 
 int AOFHandler::rewriteBackground() {
@@ -168,6 +204,7 @@ int AOFHandler::rewriteBackground() {
 
         this->childPid = childPid;
         this->scheduled = false;
+        this->rewriteTimeStart = flyServer->getNowt();
         flyServer->updateDictResizePolicy();
     }
 
@@ -514,6 +551,7 @@ void AOFHandler::childPipeReadable(const AbstractCoordinator *coordinator,
                                    int fd,
                                    void *clientdata,
                                    int mask) {
+    /** 当接parent收到'!'时，代表child通知parent停止传输 */
     char byte;
     if (1 == read(fd, &byte, 1) && '!' == byte) {
         coordinator->getLogHandler()->logWarning(
@@ -526,12 +564,11 @@ void AOFHandler::childPipeReadable(const AbstractCoordinator *coordinator,
                     strerror(errno));
         }
 
+        /** 停止接收parent发来的消息*/
+        coordinator->getEventLoop()->deleteFileEvent(
+                coordinator->getAofAckToParentPipe()->getReadPipe(),
+                ES_READABLE);
     }
-
-    /** 停止parent监控消息*/
-    coordinator->getEventLoop()->deleteFileEvent(
-            coordinator->getAofAckToParentPipe()->getReadPipe(),
-            ES_READABLE);
 }
 
 int AOFHandler::rewriteIntSet(Fio *fio,
@@ -557,9 +594,93 @@ int AOFHandler::rewriteIntSet(Fio *fio,
     return 1;
 }
 
-void AOFHandler::removeTempFile(pid_t childpid) {
+void AOFHandler::rewriteBufferAppend(unsigned char *s, uint64_t len) {
+    RewriteBufBlock *block = this->rewriteBufBlocks.back();
+    while (len > 0) {
+        /** 如果block不为空，则先向该block中填入*/
+        if (NULL != block) {
+            int writeBytes = block->free < len ? block->free : len;
+            memcpy(block->buf + block->used, s, writeBytes);
+            block->free -= writeBytes;
+            block->used += writeBytes;
+            len -= writeBytes;
+        }
+        /** 如果该block能够完全容下，直接返回 */
+        if (len <= 0) {
+            return;
+        }
+
+        block = new RewriteBufBlock();
+        this->rewriteBufBlocks.push_back(block);
+    }
+
+    /** 添加向child process进行同步的文件事件 */
+    int aofDataWriteFd = coordinator->getAofDataPipe()->getWritePipe();
+    AbstractEventLoop *eventLoop = coordinator->getEventLoop();
+    if (eventLoop->getFileEvents(aofDataWriteFd) <= 0) {
+        eventLoop->createFileEvent(aofDataWriteFd,
+                                   ES_WRITABLE,
+                                   childWriteDiffData,
+                                   NULL);
+    }
+
+    return;
+}
+
+void AOFHandler::childWriteDiffData(const AbstractCoordinator *coorinator,
+                                    int fd,
+                                    void *clientdata,
+                                    int mask) {
+    AbstractAOFHandler *aofHandler = coorinator->getAofHandler();
+    AbstractEventLoop *eventLoop = coorinator->getEventLoop();
+
+    RewriteBufBlock* block = aofHandler->getFrontRewriteBufBlock();
+    /**
+     * 判断是否需要删除相应的文件事件：
+     *  1.如果block为空，说明已经全部写完
+     *  2.如果标记了停止向child process发送
+     * 满足1或者2两者中的一个，则删除该文件事件
+     **/
+    if (stopSendingDiff || NULL == block) {
+        eventLoop->deleteFileEvent(
+                coorinator->getAofDataPipe()->getWritePipe(),
+                ES_WRITABLE);
+        return;
+    }
+
+    /** 向该管道中写入 */
+    int written = write(coorinator->getAofDataPipe()->getWritePipe(),
+            block->buf, block->used);
+    if (-1 == written) {
+        return;
+    }
+
+    /** 如果该block已经写完，则将其删除 */
+    block->used -= written;
+    block->free += written;
+    if (0 == block->used) {
+        aofHandler->popFrontRewriteBufBlock();
+    } else {
+        memmove(block->buf, block->buf + written, block->used);
+    }
+
+    return;
+}
+
+RewriteBufBlock* AOFHandler::getFrontRewriteBufBlock() const {
+    return this->rewriteBufBlocks.front();
+}
+
+void AOFHandler::popFrontRewriteBufBlock() {
+    /** 先释放空间，再从列表中摘除掉 */
+    RewriteBufBlock *block = this->rewriteBufBlocks.front();
+    delete block;
+    this->rewriteBufBlocks.pop_front();
+}
+
+void AOFHandler::removeTempFile() {
     char temp[1024];
-    snprintf(temp, sizeof(temp), "temp-rewriteaof-bg-%d.aof", childpid);
+    snprintf(temp, sizeof(temp), "temp-rewriteaof-bg-%d.aof", this->childPid);
     unlink(temp);
 }
 
@@ -637,13 +758,14 @@ void AOFHandler::doRealWrite() {
         }
 
         /**
-         * 对于无法裁剪（恢复）的部分写入，裁剪buf，将lastWriteStatus标记为-1，
+         * 对于没有正确写入的情况，将lastWriteStatus标记为-1，
          * 这样在serverCron中等待下次再继续写入, 本次不执行后续fsync
          **/
+        this->lastWriteStatus = -1;
+        /** 对于无法裁剪（恢复）的部分写入，裁剪buf */
         if (written > 0) {
             this->currentSize += written;
             this->buf = this->buf.substr(written);
-            this->lastWriteStatus = -1;
         }
     } else { /** 完全写入了 */
         if (-1 == this->lastWriteStatus) {
@@ -791,3 +913,28 @@ int AOFHandler::getFd() const {
     return this->fd;
 }
 
+uint64_t AOFHandler::getRewriteBufSize() {
+    uint64_t size = 0;
+    for (auto iter : this->rewriteBufBlocks) {
+        size += iter->used;
+    }
+
+    return size;
+}
+
+void AOFHandler::resetRewriteBuffer() {
+    for (auto iter : this->rewriteBufBlocks) {
+        delete iter;
+    }
+
+    this->rewriteBufBlocks.clear();
+}
+
+void AOFHandler::clearFileEvent() {
+    this->coordinator->getEventLoop()->deleteFileEvent(
+            this->coordinator->getAofDataPipe()->getWritePipe(),
+            ES_WRITABLE);
+    this->coordinator->getEventLoop()->deleteFileEvent(
+            this->coordinator->getAofDataPipe()->getReadPipe(),
+            ES_READABLE);
+}

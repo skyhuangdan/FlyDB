@@ -19,7 +19,22 @@ enum AOFFsyncEnum {
     AOF_FSYNC_EVERYSEC
 };
 
-const uint32_t AOF_AUTOSYNC_BYTES = 1024 * 1024 * 32;    /** fdatasync every 32MB */
-const int AOF_WRITE_LOG_ERROR_RATE = 30;                 /** Seconds between errors logging. */
+/** fdatasync every 32MB */
+const uint32_t AOF_AUTOSYNC_BYTES = 1024 * 1024 * 32;
+/** Seconds between errors logging. */
+const int AOF_WRITE_LOG_ERROR_RATE = 30;
+/** 10 MB per block */
+const uint32_t AOF_RW_BUF_BLOCK_SIZE = 1024 * 1024 * 10;
+
+struct RewriteBufBlock {
+    RewriteBufBlock() {
+        this->used = 0;
+        this->free = AOF_RW_BUF_BLOCK_SIZE;
+    }
+
+    uint64_t used, free;
+    char buf[AOF_RW_BUF_BLOCK_SIZE];
+};
+
 
 #endif //FLYDB_AOFDEF_H

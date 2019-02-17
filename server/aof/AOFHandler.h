@@ -5,7 +5,6 @@
 #ifndef FLYDB_AOFHANDLER_H
 #define FLYDB_AOFHANDLER_H
 
-#include <string>
 #include <list>
 #include "interface/AbstractAOFHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
@@ -26,9 +25,10 @@ public:
     int stop();
     int rewriteBackground();
     int rewriteAppendOnlyFile();
+    void rewriteBufferAppend(unsigned char *s, uint64_t len);
     void backgroundSaveDone(int exitCode, int bySignal);
-    int getFd() const;
 
+    int getFd() const;
     pid_t getChildPid() const;
     void setChildPid(pid_t childPid);
     bool haveChildPid() const;
@@ -45,8 +45,9 @@ public:
                          int64_t expireTime);
     bool flushPostponed() const;
     bool lastWriteHasError() const;
-    void removeTempFile(pid_t childpid);
-
+    void removeTempFile();
+    RewriteBufBlock* getFrontRewriteBufBlock() const;
+    void popFrontRewriteBufBlock();
 
     class Builder {
     public:
@@ -122,6 +123,10 @@ private:
                                   int fd,
                                   void *clientdata,
                                   int mask);
+    static void childWriteDiffData(const AbstractCoordinator *coorinator,
+                                   int fd,
+                                   void *clientdata,
+                                   int mask);
     int rewriteAppendOnlyFileDiff(char *tmpfile, FileFio* fio);
     int rewriteAppendOnlyFileFio(Fio *fio);
     int readDiffFromParent();
@@ -149,6 +154,11 @@ private:
     void setRewriteMinSize(off_t rewriteMinSize);
     void setNoFsyncOnRewrite(bool noFsyncOnRewrite);
     void setLoadTruncated(bool loadTruncated);
+    /** 获取当前rewrite buf的所有block.used总大小 */
+    uint64_t getRewriteBufSize();
+    /** 清空rewrite buf */
+    void resetRewriteBuffer();
+    void clearFileEvent();
 
     static bool stopSendingDiff;
 
@@ -187,7 +197,9 @@ private:
     uint32_t delayedFsync;
     int lastWriteError;
     int lastWriteStatus;
-};
 
+    /** 在进行aof rewrite过程中所保存的修改操作 */
+    std::list<RewriteBufBlock *> rewriteBufBlocks;
+};
 
 #endif //FLYDB_AOFHANDLER_H
