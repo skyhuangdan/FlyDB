@@ -138,7 +138,7 @@ int AOFHandler::stop() {
         this->childPid = -1;
         this->rewriteTimeStart = -1;
         /** 清空aof rewrite buffer */
-        this->resetRewriteBuffer();
+        this->clearRewriteBuffer();
         /** 清空文件事件 */
         this->clearFileEvent();
         /** 关闭所有管道 */
@@ -216,13 +216,106 @@ void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
     if (0 == bySignal && 0 == exitCode) {
         this->coordinator->getLogHandler()->logNotice(
                 "Background saving terminated with success");
+        this->terminateWithSuccess();
     } else if (0 == bySignal && 0 != exitCode) {
         this->coordinator->getLogHandler()->logWarning(
                 "Background AOF rewrite terminated with error");
+        this->lastWriteStatus = -1;
     } else {
         this->coordinator->getLogHandler()->logWarning(
                 "Background saving terminated by signal %d", bySignal);
+        if (bySignal != SIGUSR1) {
+            this->lastWriteStatus = -1;
+        }
     }
+}
+
+void AOFHandler::terminateWithSuccess() {
+    char tempfile[256];
+    snprintf(tempfile,
+             sizeof(tempfile),
+             "temp-rewriteaof-bg-%d.aof",
+             this->childPid);
+    int newfd = open(tempfile, O_WRONLY | O_APPEND);
+    if (-1 == newfd) {
+        coordinator->getLogHandler()->logWarning(
+                "Unable to open the temporary AOF produced by the child: %s",
+                strerror(errno));
+        // todo: clean up
+    }
+
+    /** 将buffer中数据写入新文件中 */
+    if (-1 == this->rewriteBufferWriteToFile(newfd)) {
+        close(newfd);
+        // todo: clean up
+    }
+
+    /**
+     * 剩下我们要做的就是rename临时文件名字成配置aof文件名，以便用于之后的aof写入。
+     * 在删除旧文件时，我们不想让close和rename阻塞服务器，这里有两种场景下可以导致阻塞发生：
+     *      场景1: rename函数导致的。AOF被禁止了（即aof文件关闭了），但是当前有一次aof rewrite，
+     *            临时文件将会被重命名成配置的aof文件名。当该文件已经存在时，它将会被unlink，该操作会block服务器
+     *      场景2. close函数导致的。AOF是enable的（此时aof文件是打开的），rewrite AOF将会立即开始接收写入。
+     *            在临时文件被rename成配置文件名之后（rename不会导致该文件被unlink），原来的AOF文件描述符将会被close，
+     *            因为该文件描述符是对该文件的最后一个引用了，所以关闭该文件描述符将会导致这个文件被unlink，这样也会block服务器。
+     * 为了消除block的影响，我们使用background thread来处理：
+     *      1.首先，我们将场景1转换成场景2。当原有aof文件存在时，这时使用open功能，将原有aof文件打开
+     *      2.这样在rename操作之后的close操作会导致unlink，将该操作放入background thread来处理，我们就不必关心其关闭操作持续多久了
+     */
+    int oldfd;
+    if (this->IsStateOff()) {
+        /** aof disable */
+        oldfd = open(this->fileName, O_WRONLY | O_APPEND);
+    } else {
+        /** aof enable:
+         * 令oldfd为-1，用于在rename失败的时候判断是否手动打开过aof原文件
+         **/
+        oldfd = -1;
+    }
+
+    /** rename文件 */
+    if (-1 == rename(tempfile, this->fileName)) {
+        close(newfd);
+        if (-1 != oldfd) {
+            close(oldfd);
+        }
+        // todo: clean up
+    }
+
+    if (this->IsStateOff()) {
+        /** 如果aof是关闭状态，没必要打开aof文件 */
+        close(newfd);
+    } else {
+        /** aof是打开状态 */
+        this->fd = newfd;
+        /** do fsync operation */
+        if (AOF_FSYNC_ALWAYS == this->fsyncStragy) {
+            aof_fsync(this->fd);
+        } else if (AOF_FSYNC_EVERYSEC == this->fsyncStragy) {
+            /** every second模式都是background fsync */
+            coordinator->getBioHandler()
+                    ->createBackgroundJob(BIO_AOF_FSYNC,
+                                          reinterpret_cast<void*>(this->fd),
+                                          NULL,
+                                          NULL);
+        }
+        // todo: update current size
+        this->rewriteBaseSize = this->currentSize;
+
+        this->buf.clear();
+
+        /** 真正导致unlink阻塞的关闭文件操作交给background thread */
+        if (-1 != oldfd) {
+            coordinator->getBioHandler()
+                    ->createBackgroundJob(BIO_CLOSE_FILE,
+                                          reinterpret_cast<void*>(oldfd),
+                                          NULL,
+                                          NULL);
+
+        }
+    }
+
+    this->lastWriteStatus = 0;
 }
 
 int AOFHandler::rewriteAppendOnlyFile() {
@@ -634,37 +727,45 @@ void AOFHandler::childWriteDiffData(const AbstractCoordinator *coorinator,
     AbstractAOFHandler *aofHandler = coorinator->getAofHandler();
     AbstractEventLoop *eventLoop = coorinator->getEventLoop();
 
-    RewriteBufBlock* block = aofHandler->getFrontRewriteBufBlock();
-    /**
-     * 判断是否需要删除相应的文件事件：
-     *  1.如果block为空，说明已经全部写完
-     *  2.如果标记了停止向child process发送
-     * 满足1或者2两者中的一个，则删除该文件事件
-     **/
-    if (stopSendingDiff || NULL == block) {
-        eventLoop->deleteFileEvent(
-                coorinator->getAofDataPipe()->getWritePipe(),
-                ES_WRITABLE);
-        return;
-    }
+    /** 循环一直到所有buffer都写完 */
+    uint64_t totalWrittenOneBlock = 0;
+    while(1) {
+        RewriteBufBlock* block = aofHandler->getFrontRewriteBufBlock();
 
-    /** 向该管道中写入 */
-    int written = write(coorinator->getAofDataPipe()->getWritePipe(),
-            block->buf, block->used);
-    if (-1 == written) {
-        return;
-    }
+        /**
+         * 判断是否需要删除相应的文件事件：
+         *  1.如果block为空，说明已经全部写完
+         *  2.如果标记了停止向child process发送
+         * 满足1或者2两者中的一个，则删除该文件事件
+         **/
+        if (AOFHandler::stopSendingDiff || NULL == block) {
+            eventLoop->deleteFileEvent(
+                    coorinator->getAofDataPipe()->getWritePipe(),
+                    ES_WRITABLE);
+            return;
+        }
 
-    /** 如果该block已经写完，则将其删除 */
-    block->used -= written;
-    block->free += written;
-    if (0 == block->used) {
-        aofHandler->popFrontRewriteBufBlock();
-    } else {
-        memmove(block->buf, block->buf + written, block->used);
-    }
+        /** 向该管道中写入:
+         *      此处与redis相比，减少了memmove的可能性，进行了优化
+         * */
+        int written = write(coorinator->getAofDataPipe()->getWritePipe(),
+                            block->buf, block->used);
+        if (written <= 0) { /** 写入出错 */
+            block->used -= totalWrittenOneBlock;
+            block->free += totalWrittenOneBlock;
+            memmove(block->buf,
+                    block->buf + totalWrittenOneBlock,
+                    block->used - totalWrittenOneBlock);
+            return;
+        }
 
-    return;
+        totalWrittenOneBlock += written;
+        /** 如果该block已经写完，则将其删除 */
+        if (totalWrittenOneBlock == block->used) {
+            aofHandler->popFrontRewriteBufBlock();
+            totalWrittenOneBlock = 0;
+        }
+    }
 }
 
 RewriteBufBlock* AOFHandler::getFrontRewriteBufBlock() const {
@@ -922,7 +1023,7 @@ uint64_t AOFHandler::getRewriteBufSize() {
     return size;
 }
 
-void AOFHandler::resetRewriteBuffer() {
+void AOFHandler::clearRewriteBuffer() {
     for (auto iter : this->rewriteBufBlocks) {
         delete iter;
     }
@@ -937,4 +1038,44 @@ void AOFHandler::clearFileEvent() {
     this->coordinator->getEventLoop()->deleteFileEvent(
             this->coordinator->getAofDataPipe()->getReadPipe(),
             ES_READABLE);
+}
+
+/**
+ * 将rewrite buf block中的所有数据都写入aof file中，
+ **/
+ssize_t AOFHandler::rewriteBufferWriteToFile(int fd) {
+    ssize_t count = 0;
+
+    for (auto iter : this->rewriteBufBlocks) {
+        /** onceWriten记录当前该block已经写入了多少 */
+        int totalWriten = 0;
+        while (1) {
+            int written = write(fd,
+                                iter->buf + totalWriten,
+                                iter->used - totalWriten);
+            /** 写入失败 */
+            if (written <= 0) {
+                if (0 == written) {
+                    errno = EIO;
+                }
+
+                iter->used -= totalWriten;
+                iter->free += totalWriten;
+                memmove(iter->buf,
+                        iter->buf + totalWriten,
+                        iter->used - totalWriten);
+                return -1;
+            }
+
+            count += written;
+            totalWriten += written;
+            /** 如果已经全部写入，删除该block */
+            if (totalWriten == iter->used) {
+                this->popFrontRewriteBufBlock();
+                break;
+            }
+        }
+    }
+
+    return count;
 }

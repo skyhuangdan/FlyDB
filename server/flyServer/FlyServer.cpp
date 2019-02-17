@@ -486,7 +486,7 @@ int FlyServer::prepareForShutdown(int flags) {
     /** 如果有fdb子进程存在，kill并且删掉fdb的临时文件 */
     if (fdbHandler->haveChildPid()) {
         pid_t fdbPid = fdbHandler->getChildPid();
-        kill(fdbPid, SIGUSR1);
+        kill(fdbPid, SIGUSR1);      // 像子进程发送SIGUSR1，子进程退出，但不标记异常
         fdbHandler->deleteTempFile(fdbPid);
     }
 
@@ -501,6 +501,7 @@ int FlyServer::prepareForShutdown(int flags) {
 
             logHandler->logWarning(
                     "There is a child rewriting the AOF. Killing it!");
+            /** 像子进程发送SIGUSR1，子进程退出，但不标记异常 */
             kill(aofHandler->getChildPid(), SIGUSR1);
             aofHandler->removeTempFile();
         }

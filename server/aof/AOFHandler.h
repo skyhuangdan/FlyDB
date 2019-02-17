@@ -143,6 +143,7 @@ private:
     void backgroundFsync();
     void doRealWrite();
     void doRealFsync(bool syncInProgress);
+    void terminateWithSuccess();
 
     /** set函数集合，给Builder使用 */
     void setCoordinator(AbstractCoordinator *coordinator);
@@ -157,8 +158,9 @@ private:
     /** 获取当前rewrite buf的所有block.used总大小 */
     uint64_t getRewriteBufSize();
     /** 清空rewrite buf */
-    void resetRewriteBuffer();
+    void clearRewriteBuffer();
     void clearFileEvent();
+    ssize_t rewriteBufferWriteToFile(int fd);
 
     static bool stopSendingDiff;
 
