@@ -157,8 +157,9 @@ private:
     /** 获取当前rewrite buf的所有block.used总大小 */
     uint64_t getRewriteBufSize();
     /** 清空rewrite buf */
-    void resetRewriteBuffer();
+    void clearRewriteBuffer();
     void clearFileEvent();
+    ssize_t rewriteBufferWriteToFile();
 
     static bool stopSendingDiff;
 
