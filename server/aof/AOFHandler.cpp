@@ -6,6 +6,7 @@
 #include <list>
 #include <cassert>
 #include <signal.h>
+#include <sys/stat.h>
 #include "AOFHandler.h"
 #include "../io/FileFio.h"
 #include "../dataStructure/skiplist/SkipList.cpp"
@@ -285,8 +286,7 @@ void AOFHandler::terminateWithSuccess() {
     if (this->IsStateOff()) {
         /** 如果aof是关闭状态，没必要打开aof文件 */
         close(newfd);
-    } else {
-        /** aof是打开状态 */
+    } else {    /** aof是打开状态 */
         this->fd = newfd;
         /** do fsync operation */
         if (AOF_FSYNC_ALWAYS == this->fsyncStragy) {
@@ -299,9 +299,8 @@ void AOFHandler::terminateWithSuccess() {
                                           NULL,
                                           NULL);
         }
-        // todo: update current size
+        this->updateCurrentSize();
         this->rewriteBaseSize = this->currentSize;
-
         this->buf.clear();
 
         /** 真正导致unlink阻塞的关闭文件操作交给background thread */
@@ -316,6 +315,17 @@ void AOFHandler::terminateWithSuccess() {
     }
 
     this->lastWriteStatus = 0;
+}
+
+void AOFHandler::updateCurrentSize() {
+    struct stat sb;
+    if (-1 == fstat(this->fd, &sb)) {
+        coordinator->getLogHandler()->logWarning(
+                "Unable to obtain the AOF file length. stat: %s",
+                strerror(errno));
+    }
+
+    this->currentSize = sb.st_size;
 }
 
 int AOFHandler::rewriteAppendOnlyFile() {

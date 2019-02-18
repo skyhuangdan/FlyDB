@@ -144,6 +144,7 @@ private:
     void doRealWrite();
     void doRealFsync(bool syncInProgress);
     void terminateWithSuccess();
+    void updateCurrentSize();
 
     /** set函数集合，给Builder使用 */
     void setCoordinator(AbstractCoordinator *coordinator);
