@@ -19,6 +19,7 @@ AOFHandler::AOFHandler() {
 
 }
 
+/** 打开AOF, 首先rewrite一遍AOF数据，并在保存完之后设置AOF状态为AOF_ON */
 int AOFHandler::start() {
     this->lastFsync = time(NULL);
     this->fd = open(this->fileName, O_WRONLY | O_APPEND | O_CREAT, 0644);
@@ -52,11 +53,6 @@ int AOFHandler::start() {
         return -1;
     }
 
-    /**
-     * wait for the rewrite complete:
-     * 无论是schedule开始运行还是直接运行完，都是等待rewrite完毕，
-     * 以便于之后执行append data on disk
-     **/
     this->state = AOF_WAIT_REWRITE;
     return 1;
 }
@@ -213,7 +209,6 @@ int AOFHandler::rewriteBackground() {
 }
 
 void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
-    // todo: complete these code
     if (0 == bySignal && 0 == exitCode) {
         this->coordinator->getLogHandler()->logNotice(
                 "Background saving terminated with success");
@@ -221,16 +216,34 @@ void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
     } else if (0 == bySignal && 0 != exitCode) {
         this->coordinator->getLogHandler()->logWarning(
                 "Background AOF rewrite terminated with error");
-        this->lastWriteStatus = -1;
     } else {
         this->coordinator->getLogHandler()->logWarning(
                 "Background saving terminated by signal %d", bySignal);
-        if (bySignal != SIGUSR1) {
-            this->lastWriteStatus = -1;
-        }
+    }
+
+    /** do some clean up operation */
+    this->rewriteCleanup();
+}
+
+void AOFHandler::rewriteCleanup() {
+    coordinator->closeAllPipe();
+    this->removeTempFile();
+    this->clearRewriteBuffer();
+    this->childPid = -1;
+    this->rewriteTimeLast = coordinator->getFlyServer()->getNowt()
+            - this->rewriteTimeStart;
+    this->rewriteTimeStart = -1;
+    /**
+     * 如果运行失败, 设置schedule，使在servercron中重新运行rewrite
+     * 如果正常rewrite完或者非start操作，state会被设置成AOF_ON，
+     * 此时state为rewrite一定是start操作aof执行失败了, 此处为了保证start操作一定aof执行完
+     **/
+    if (AOF_WAIT_REWRITE == this->state) {
+        this->scheduled = 1;
     }
 }
 
+/** 成功执行完rewrite操作 */
 void AOFHandler::terminateWithSuccess() {
     char tempfile[256];
     snprintf(tempfile,
@@ -242,13 +255,13 @@ void AOFHandler::terminateWithSuccess() {
         coordinator->getLogHandler()->logWarning(
                 "Unable to open the temporary AOF produced by the child: %s",
                 strerror(errno));
-        // todo: clean up
+        this->rewriteCleanup();
     }
 
-    /** 将buffer中数据写入新文件中 */
+    /** 将剩余的所有buffer block list中数据写入新文件中 */
     if (-1 == this->rewriteBufferWriteToFile(newfd)) {
         close(newfd);
-        // todo: clean up
+        this->rewriteCleanup();
     }
 
     /**
@@ -280,7 +293,7 @@ void AOFHandler::terminateWithSuccess() {
         if (-1 != oldfd) {
             close(oldfd);
         }
-        // todo: clean up
+        this->rewriteCleanup();
     }
 
     if (this->IsStateOff()) {
@@ -293,28 +306,30 @@ void AOFHandler::terminateWithSuccess() {
             aof_fsync(this->fd);
         } else if (AOF_FSYNC_EVERYSEC == this->fsyncStragy) {
             /** every second模式都是background fsync */
-            coordinator->getBioHandler()
-                    ->createBackgroundJob(BIO_AOF_FSYNC,
-                                          reinterpret_cast<void*>(this->fd),
-                                          NULL,
-                                          NULL);
+            coordinator->getBioHandler()->createBackgroundJob(
+                    BIO_AOF_FSYNC,
+                    reinterpret_cast<void*>(this->fd),
+                    NULL,
+                    NULL);
         }
         this->updateCurrentSize();
         this->rewriteBaseSize = this->currentSize;
         this->buf.clear();
+        /** rewrite完毕，设置该AOF state为打开 */
+        if (AOF_WAIT_REWRITE == this->state) {
+            this->state = AOF_ON;
+        }
 
         /** 真正导致unlink阻塞的关闭文件操作交给background thread */
         if (-1 != oldfd) {
-            coordinator->getBioHandler()
-                    ->createBackgroundJob(BIO_CLOSE_FILE,
-                                          reinterpret_cast<void*>(oldfd),
-                                          NULL,
-                                          NULL);
-
+            coordinator->getBioHandler()->createBackgroundJob(
+                    BIO_CLOSE_FILE,
+                    reinterpret_cast<void*>(oldfd),
+                    NULL,
+                    NULL);
         }
     }
 
-    this->lastWriteStatus = 0;
 }
 
 void AOFHandler::updateCurrentSize() {

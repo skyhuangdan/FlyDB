@@ -145,6 +145,7 @@ private:
     void doRealFsync(bool syncInProgress);
     void terminateWithSuccess();
     void updateCurrentSize();
+    void rewriteCleanup();
 
     /** set函数集合，给Builder使用 */
     void setCoordinator(AbstractCoordinator *coordinator);
@@ -193,7 +194,7 @@ private:
     /** Time used by last AOF rewrite run. */
     time_t rewriteTimeLast = 0;
     /** Current AOF rewrite start time. */
-    time_t rewriteTimeStart = 0;
+    time_t rewriteTimeStart = -1;
     /** AOF buffer, written before entering the event loop */
     std::string buf;
     /** delayed AOF fsync() counter */
