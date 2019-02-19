@@ -200,6 +200,10 @@ private:
     /** delayed AOF fsync() counter */
     uint32_t delayedFsync;
     int lastWriteError;
+    /**
+     * 标记同步时，是否正常写入, 如果没有正常写入，
+     * 则设置该标记位，便于servercron中再次执行同步
+     **/
     int lastWriteStatus;
 
     /** 在进行aof rewrite过程中所保存的修改操作 */

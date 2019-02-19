@@ -145,6 +145,7 @@ int AOFHandler::stop() {
     return 1;
 }
 
+/** 具体的AOF rewrite操作都是放在子进程里的，这里与FDB不同 */
 int AOFHandler::rewriteBackground() {
     /** set stop sending diff flag to false */
     stopSendingDiff = false;
@@ -202,6 +203,7 @@ int AOFHandler::rewriteBackground() {
         this->childPid = childPid;
         this->scheduled = false;
         this->rewriteTimeStart = flyServer->getNowt();
+        this->state = AOF_WAIT_REWRITE;
         flyServer->updateDictResizePolicy();
     }
 
@@ -235,8 +237,7 @@ void AOFHandler::rewriteCleanup() {
     this->rewriteTimeStart = -1;
     /**
      * 如果运行失败, 设置schedule，使在servercron中重新运行rewrite
-     * 如果正常rewrite完或者非start操作，state会被设置成AOF_ON，
-     * 此时state为rewrite一定是start操作aof执行失败了, 此处为了保证start操作一定aof执行完
+     * 如果正常rewrite完，state会被设置成AOF_ON，
      **/
     if (AOF_WAIT_REWRITE == this->state) {
         this->scheduled = 1;
