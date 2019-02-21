@@ -62,6 +62,9 @@ public:
     AbstractFlyDB* getFlyDB(int dbnum);
     uint8_t getFlyDBCount() const;
     void updateDictResizePolicy();
+    void startToLoad();
+    void stopLoad();
+    bool isLoading() const;
 
     /**
      *  client相关
@@ -98,6 +101,11 @@ private:
     uint32_t lruclock;                                // LRU
     bool shutdownASAP = false;
 
+    /** flydb相关 */
+    bool loading = false;
+    time_t loadingStartTime = 0;
+    uint64_t loadBytes = 0;
+    uint64_t loadTotalBytes = 0;
 
     /**
      *  网络相关

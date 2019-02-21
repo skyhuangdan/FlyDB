@@ -634,7 +634,7 @@ void configCommand(const AbstractCoordinator* coordinator,
                    AbstractFlyClient* flyClient) {
     std::string *argv1 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
-    if (coordinator->getFdbHandler()->isLoading() && argv1->compare("get")) {
+    if (coordinator->getFlyServer()->isLoading() && argv1->compare("get")) {
         flyClient->addReply("Only CONFIG GET is allowed during loading");
         return;
     }

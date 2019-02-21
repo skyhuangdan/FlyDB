@@ -21,10 +21,10 @@ class AOFHandler : public AbstractAOFHandler {
 public:
     AOFHandler();
     int start();
-    void flush(bool force);
     int stop();
+    void flush(bool force);
+    int load();
     int rewriteBackground();
-    int rewriteAppendOnlyFile();
     void rewriteBufferAppend(unsigned char *s, uint64_t len);
     void backgroundSaveDone(int exitCode, int bySignal);
 
@@ -114,6 +114,7 @@ public:
     };
 
 private:
+    int rewriteAppendOnlyFile();
     static int dbScan(void *priv,
                        std::string key,
                        std::shared_ptr<FlyObj> val);

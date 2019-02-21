@@ -22,13 +22,13 @@ public:
 
     virtual int stop() = 0;
 
+    virtual int load() = 0;
+
     virtual void rewriteBufferAppend(unsigned char *s, uint64_t len) = 0;
 
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
 
     virtual int rewriteBackground() = 0;
-
-    virtual int rewriteAppendOnlyFile() = 0;
 
     virtual pid_t getChildPid() const = 0;
 

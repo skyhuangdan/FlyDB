@@ -76,8 +76,6 @@ public:
     virtual uint64_t getDirty() const = 0;
 
     virtual uint64_t addDirty(uint64_t count) = 0;
-
-    virtual bool isLoading() const = 0;
 };
 
 #endif //FLYDB_ABSTRACTFDBHANDLER_H

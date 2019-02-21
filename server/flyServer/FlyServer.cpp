@@ -333,6 +333,19 @@ void FlyServer::updateDictResizePolicy() {
     canResize = true;
 }
 
+void FlyServer::startToLoad() {
+    this->loading = true;
+    this->loadingStartTime = time(NULL);
+}
+
+void FlyServer::stopLoad() {
+    this->loading = false;
+}
+
+bool FlyServer::isLoading() const {
+    return this->loading;
+}
+
 AbstractFlyClient* FlyServer::createClient(int fd) {
     if (fd <= 0) {
         return NULL;
@@ -553,10 +566,11 @@ void FlyServer::sigShutDownHandlers(int sig) {
     }
 
     /**
-     * 如果正在进行fdb load，直接退出。否则如果后续执行持久化，
-     * 会污染数据(向DB中写入load了一半的数据)
+     * 如果正在进行持久化文件load，直接退出。
+     *  持久化文件load只有在系统启动init server的时候，
+     *  此时说明系统处于启动过程中，可以直接退出了
      **/
-    if (coordinator->getFdbHandler()->isLoading()) {
+    if (coordinator->getFlyServer()->isLoading()) {
         exit(0);
     }
 

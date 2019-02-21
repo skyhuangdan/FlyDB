@@ -53,7 +53,6 @@ public:
     const saveParam* getSaveParam(int pos) const;
     uint64_t getDirty() const;
     uint64_t addDirty(uint64_t count);
-    bool isLoading() const;
 
 private:
     static int dbScan(void *priv, std::string key, std::shared_ptr<FlyObj> val);
@@ -76,9 +75,7 @@ private:
     int saveMillisecondTime(Fio *fio, int64_t t);
     int saveType(Fio *fio, unsigned char type);
     int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo);
-    void startToLoad();
     int loadFromFile(FILE *fp, FDBSaveInfo *saveInfo);
-    void stopLoad();
     char loadChar(Fio *fio);
     uint8_t loadUint8(Fio *fio);
     time_t loadTime(Fio *fio);
@@ -97,10 +94,6 @@ private:
     void initSaveParams();
 
     char *filename;
-    bool loading = false;
-    time_t loadingStartTime = 0;
-    uint64_t loadBytes = 0;
-    uint64_t loadTotalBytes = 0;
     off_t maxProcessingChunk = 0;
     uint64_t cksum = 0;
     uint64_t dirty = 0;

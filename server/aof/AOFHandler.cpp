@@ -145,6 +145,33 @@ int AOFHandler::stop() {
     return 1;
 }
 
+/** 通过创建伪客户端来加载aof文件 */
+int AOFHandler::load() {
+    FILE *fp = NULL;
+    if (NULL == (fp = fopen(this->fileName, "r"))) {
+        coordinator->getLogHandler()->logWarning(
+                "Fatal Error: cann`t open the aof file: %s", strerror(errno));
+        exit(1);
+    }
+
+    struct stat sb;
+    /** 当前aof文件大小是0，表明该db从来没有进行过写操作 */
+    if (-1 != fstat(fileno(fp), &sb) && 0 == sb.st_size) {
+        this->currentSize = 0;
+        fclose(fp);
+        return -1;
+    }
+
+    /** create fake client: fake client`s id is -1 */
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+    AbstractFlyClient *fakeClient = coordinator->getFlyClientFactory()
+            ->getFlyClient(-1, coordinator, flyServer->getFlyDB(0));
+
+    /** 标记正在加载持久化文件 */
+    flyServer->startToLoad();
+
+}
+
 /** 具体的AOF rewrite操作都是放在子进程里的，这里与FDB不同 */
 int AOFHandler::rewriteBackground() {
     /** set stop sending diff flag to false */
@@ -391,6 +418,11 @@ int AOFHandler::rewriteAppendOnlyFile() {
     return this->rewriteAppendOnlyFileDiff(tmpfile, fio);
 }
 
+/**
+ * 保存子进程在进行aof持久化过程中主进程执行的命令列表（主进程发送给该子进程），
+ * 用于减少执行完aof后需要主进程进行保存的工作量，即在backgroundSaveDone函数中进行保存
+ * buffer block list的工作量，减少主进程进行持久化所造成的阻塞
+ * */
 int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     FILE *fp = fio->getFp();
     /**

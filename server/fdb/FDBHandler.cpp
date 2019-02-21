@@ -603,14 +603,14 @@ int FDBHandler::load(FDBSaveInfo *saveInfo) {
     }
 
     // start to load
-    this->startToLoad();
+    coordinator->getFlyServer()->startToLoad();
 
     // do real load
     int res = loadFromFile(fp, saveInfo);
 
     // 读取完毕
     fclose(fp);
-    this->stopLoad();
+    coordinator->getFlyServer()->stopLoad();
 
     return res;
 }
@@ -781,15 +781,6 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
     }
 
     return 1;
-}
-
-void FDBHandler::startToLoad() {
-    this->loading = true;
-    this->loadingStartTime = time(NULL);
-}
-
-void FDBHandler::stopLoad() {
-    this->loading = false;
 }
 
 char FDBHandler::loadChar(Fio *fio) {
@@ -1118,6 +1109,3 @@ void FDBHandler::checkThenExit(int lineNum, char *reason, ...) {
     exit(1);
 }
 
-bool FDBHandler::isLoading() const {
-    return this->loading;
-}

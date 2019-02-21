@@ -61,6 +61,12 @@ public:
 
     virtual uint8_t getFlyDBCount() const = 0;
 
+    virtual void startToLoad() = 0;
+
+    virtual void stopLoad() = 0;
+
+    virtual bool isLoading() const = 0;
+
     /**
      * 当aof或者fdb子进程进行持久化的时候，可以设置canResize = true,
      * 不允许进行resize操作(除非ht.used > ht.size * NEED_FORCE_REHASH_RATIO)，
