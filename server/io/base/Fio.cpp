@@ -24,7 +24,7 @@ size_t Fio::write(const void *buf, size_t len) {
     while (len > 0) {
         // 如果设置了读写byte上线，则单次读写不应超过其上线
         size_t writeBytes =
-                (haveProcessedBytes() && getMaxProcessingChunk() < len)
+                (haveMaxProcessingChunk() && getMaxProcessingChunk() < len)
                 ? getMaxProcessingChunk() : len;
         totalWrite += writeBytes;
 
@@ -41,7 +41,7 @@ size_t Fio::write(const void *buf, size_t len) {
         this->processedBytes += writeBytes;
     }
 
-    return len;
+    return totalWrite;
 }
 
 size_t Fio::read(void *buf, size_t len) {
@@ -49,7 +49,7 @@ size_t Fio::read(void *buf, size_t len) {
     while (len > 0) {
         // 如果设置了读写byte上线，则单次读写不应超过其上线
         size_t readBytes =
-                (haveProcessedBytes() && getMaxProcessingChunk() < len)
+                (haveMaxProcessingChunk() && getMaxProcessingChunk() < len)
                 ? getMaxProcessingChunk() : len;
         totalRead += readBytes;
 
@@ -129,8 +129,8 @@ size_t Fio::getProcessedBytes() const {
     return this->processedBytes;
 }
 
-bool Fio::haveProcessedBytes() const {
-    return 0 != this->processedBytes;
+bool Fio::haveMaxProcessingChunk() const {
+    return 0 != this->maxProcessingChunk;
 }
 
 void Fio::setProcessedBytes(size_t processedBytes) {

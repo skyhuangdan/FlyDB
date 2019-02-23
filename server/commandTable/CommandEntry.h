@@ -33,9 +33,7 @@ public:
                  uint64_t calls);
 
     const char *getName() const;
-
     void setName(const char *name);
-
     commandProc getProc() const;
     void setProc(commandProc proc);
     int getArity() const;

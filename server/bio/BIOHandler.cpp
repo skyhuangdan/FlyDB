@@ -120,20 +120,24 @@ void *BIOHandler::processBackgroundJobs(void *arg) {
                 strerror(errno));
     }
 
+
     /** mutex lock */
     pthread_mutex_lock(&mutex[type]);
-
     while (1) {
+        /** 获取类型为type的job列表 */
         std::list<BIOJob *> jobList = jobs[type];
 
         /** 如果jobList列表为空，则等待新的job产生 */
         if (0 == jobList.size()) {
+            /** 等唤醒时继续进入while循环 */
             pthread_cond_wait(&newjobCond[type], &mutex[type]);
             continue;
         }
 
         /** 获取第一个job */
         BIOJob * bioJob = jobList.front();
+        jobList.pop_front();
+        pending[type]--;
 
         /** unlock mutex: 不会有其他线程来竞争bioJob */
         pthread_mutex_unlock(&mutex[type]);
@@ -160,8 +164,6 @@ void *BIOHandler::processBackgroundJobs(void *arg) {
 
         /* 访问jobList需要加锁, 直到进入下一次循环 */
         pthread_mutex_lock(&mutex[type]);
-        jobList.pop_front();
-        pending[type]--;
     }
 
 }

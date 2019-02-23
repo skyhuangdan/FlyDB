@@ -33,7 +33,7 @@ public:
     uint64_t getChecksum() const;
     void setChecksum(uint64_t checksum);
     size_t getProcessedBytes() const;
-    bool haveProcessedBytes() const;
+    bool haveMaxProcessingChunk() const;
     void setProcessedBytes(size_t processedBytes);
     void addProcessedBytes(size_t addBytes);
 

@@ -290,11 +290,11 @@ int AOFHandler::rewriteBackground() {
 }
 
 void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
-    if (0 == bySignal && 0 == exitCode) {
+    if (0 != bySignal && 0 == exitCode) {
         this->coordinator->getLogHandler()->logNotice(
                 "Background saving terminated with success");
         this->terminateWithSuccess();
-    } else if (0 == bySignal && 0 != exitCode) {
+    } else if (0 != bySignal && 0 != exitCode) {
         this->coordinator->getLogHandler()->logWarning(
                 "Background AOF rewrite terminated with error");
     } else {
@@ -304,6 +304,8 @@ void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
 
     /** do some clean up operation */
     this->rewriteCleanup();
+
+    return;
 }
 
 void AOFHandler::rewriteCleanup() {
@@ -336,12 +338,14 @@ void AOFHandler::terminateWithSuccess() {
                 "Unable to open the temporary AOF produced by the child: %s",
                 strerror(errno));
         this->rewriteCleanup();
+        return;
     }
 
     /** 将剩余的所有buffer block list中数据写入新文件中 */
     if (-1 == this->rewriteBufferWriteToFile(newfd)) {
         close(newfd);
         this->rewriteCleanup();
+        return;
     }
 
     /**
@@ -374,6 +378,7 @@ void AOFHandler::terminateWithSuccess() {
             close(oldfd);
         }
         this->rewriteCleanup();
+        return;
     }
 
     if (this->IsStateOff()) {
@@ -557,16 +562,9 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
         return -1;
     }
 
-    /** rename file to real file name */
-    if (-1 == rename(tmpfile, this->fileName)) {
-        this->coordinator->getLogHandler()->logWarning(
-                "Error moving temp append only file "
-                "on the final destination: %s", strerror(errno));
-        unlink(tmpfile);
-        return -1;
-    }
     this->coordinator->getLogHandler()->logNotice(
             "SYNC append only file rewrite performed");
+
     return 1;
 }
 

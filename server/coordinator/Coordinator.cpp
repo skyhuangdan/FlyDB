@@ -17,6 +17,7 @@
 #include "../flyObj/FlyObjString/FlyObjStringFactory.h"
 #include "../aof/AOFHandler.h"
 #include "../flyServer/FlyServer.h"
+#include "../bio/BIOHandler.h"
 
 Coordinator::Coordinator() {
     /** 加载config **/
@@ -82,6 +83,9 @@ Coordinator::Coordinator() {
     this->aofDataPipe = new Pipe(this);
     this->aofAckToParentPipe = new Pipe(this);
     this->aofAckToChildPipe = new Pipe(this);
+
+    /** background io*/
+    this->bioHandler = new BIOHandler();
 
     /** log handler */
     this->logHandler = logFactory->getLogger();
