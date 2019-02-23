@@ -12,6 +12,7 @@
 #include "../dataStructure/skiplist/SkipList.cpp"
 #include "../dataStructure/dict/Dict.cpp"
 #include "../bio/BIODef.h"
+#include "../net/NetHandler.h"
 
 bool AOFHandler::stopSendingDiff = false;
 
@@ -162,14 +163,66 @@ int AOFHandler::load() {
         return -1;
     }
 
-    /** create fake client: fake client`s id is -1 */
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
-    AbstractFlyClient *fakeClient = coordinator->getFlyClientFactory()
-            ->getFlyClient(-1, coordinator, flyServer->getFlyDB(0));
-
     /** 标记正在加载持久化文件 */
     flyServer->startToLoad();
 
+    char sig[5];
+    if (5 == fread(sig, 1, sizeof(sig), fp)
+        && 0 == memcmp(sig, "FLYDB", 5)
+        && 0 == fseek(fp, 0, SEEK_SET)) {
+        coordinator->getLogHandler()->logWarning(
+                "Reading FDB from AOF file...");
+
+        if (coordinator->getFdbHandler()->loadFromFile(fp, NULL) <= 0) {
+            coordinator->getLogHandler()->logWarning(
+                    "Error reading FDB preamble of the AOF file!");
+            fclose(fp);
+            flyServer->stopLoad();
+        } else {
+            coordinator->getLogHandler()->logWarning(
+                    "Reading the remaining AOF tail...");
+        }
+    } else {
+        fclose(fp);
+        flyServer->stopLoad();
+    }
+
+    /** load剩余的AOF文件 */
+    this->loadRemaindingAOF(fp);
+
+    /** 标记停止load */
+    flyServer->stopLoad();
+}
+
+int AOFHandler::loadRemaindingAOF(FILE *fp) {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+
+    /** create fake client: fake client`s id is -1 */
+    AbstractFlyClient *fakeClient = coordinator->getFlyClientFactory()
+            ->getFlyClient(-1, coordinator, flyServer->getFlyDB(0));
+
+    /** 从AOF文件中读取命令数据 */
+    while(1) {
+        char buf[128];
+        int readCnt = read(fd, buf, sizeof(buf));
+        /** 读取失败, 如果错误码是EAGAIN说明本次读取没数据, 重新读取 */
+        if (-1 == readCnt) {            // 发生异常
+            delete fakeClient;
+            return -1;
+        } else if (0 == readCnt) {      // 文件已经读取完毕
+            break;
+        }
+        fakeClient->addToQueryBuf(buf);
+
+        /** 解析query buf, 并执行解析出的command */
+        coordinator->getNetHandler()
+                ->processInputBuffer(coordinator, fakeClient);
+
+    }
+
+    delete fakeClient;
+    return 1;
 }
 
 /** 具体的AOF rewrite操作都是放在子进程里的，这里与FDB不同 */

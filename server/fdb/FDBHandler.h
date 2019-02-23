@@ -22,6 +22,7 @@ public:
                uint64_t maxProcessingChunk);
     ~FDBHandler();
     int load(FDBSaveInfo *saveInfo);
+    int loadFromFile(FILE *fp, FDBSaveInfo *saveInfo);
     int save();
     int saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo);
     int backgroundSave();
@@ -75,7 +76,6 @@ private:
     int saveMillisecondTime(Fio *fio, int64_t t);
     int saveType(Fio *fio, unsigned char type);
     int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo);
-    int loadFromFile(FILE *fp, FDBSaveInfo *saveInfo);
     char loadChar(Fio *fio);
     uint8_t loadUint8(Fio *fio);
     time_t loadTime(Fio *fio);

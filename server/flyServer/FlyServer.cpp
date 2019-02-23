@@ -296,6 +296,7 @@ void FlyServer::loadDataFromDisk() {
     // 如果开启了AOF，则优先从AOF中加载持久化数据，否则从FDB中加载
     if (this->coordinator->getAofHandler()->IsStateOn()) {
         // load from append only fiile
+        this->coordinator->getAofHandler()->load();
     } else {
         // load from fdb
         FDBSaveInfo *fdbSaveInfo = new FDBSaveInfo();
@@ -578,8 +579,8 @@ void FlyServer::sigShutDownHandlers(int sig) {
 }
 
 int serverCron(const AbstractCoordinator *coordinator,
-                          uint64_t id,
-                          void *clientData) {
+               uint64_t id,
+               void *clientData) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
     // 设置当前时间

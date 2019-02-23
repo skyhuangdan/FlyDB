@@ -147,6 +147,7 @@ private:
     void terminateWithSuccess();
     void updateCurrentSize();
     void rewriteCleanup();
+    int loadRemaindingAOF(FILE *fp);
 
     /** set函数集合，给Builder使用 */
     void setCoordinator(AbstractCoordinator *coordinator);

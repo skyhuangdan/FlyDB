@@ -16,6 +16,8 @@ public:
 
     virtual int load(FDBSaveInfo *fdbSaveInfo) = 0;
 
+    virtual int loadFromFile(FILE *fp, FDBSaveInfo *saveInfo) = 0;
+
     virtual int save() = 0;
 
     virtual int saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo) = 0;
@@ -23,8 +25,6 @@ public:
     virtual int backgroundSave() = 0;
 
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
-
-    virtual int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) = 0;
 
     virtual int saveKeyValuePair(Fio *fio,
                                  std::string key,
