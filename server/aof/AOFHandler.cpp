@@ -203,14 +203,13 @@ int AOFHandler::loadRemaindingAOF(FILE *fp) {
             ->getFlyClient(-1, coordinator, flyServer->getFlyDB(0));
 
     /** 从AOF文件中读取命令数据 */
-    while(1) {
+    while (1) {
         char buf[128];
-        int readCnt = read(fd, buf, sizeof(buf));
-        /** 读取失败, 如果错误码是EAGAIN说明本次读取没数据, 重新读取 */
-        if (-1 == readCnt) {            // 发生异常
+        int readCnt = read(fileno(fp), buf, sizeof(buf));
+        if (-1 == readCnt) {            /** 读取失败 */
             delete fakeClient;
             return -1;
-        } else if (0 == readCnt) {      // 文件已经读取完毕
+        } else if (0 == readCnt) {      /** 文件已经读取完毕 */
             break;
         }
         fakeClient->addToQueryBuf(buf);
