@@ -586,6 +586,8 @@ int serverCron(const AbstractCoordinator *coordinator,
     // 设置当前时间
     flyServer->setNowt(time(NULL));
 
+    // todo: 过期键删除
+
     // 释放所有异步删除的clients
     flyServer->freeClientsInAsyncFreeList();
 
