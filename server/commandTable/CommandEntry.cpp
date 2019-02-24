@@ -26,7 +26,8 @@ std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("save",        saveCommand,        1, "as",  0, NULL, 0, 0, 0, 0, 0),
        new CommandEntry("bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0),
        new CommandEntry("config",      configCommand,     -2, "lat", 0, NULL, 0, 0, 0, 0, 0),
-       new CommandEntry{"bgrewriteaof",bgrewriteaofCommand,1, "a",   0, NULL, 0, 0, 0, 0, 0}
+       new CommandEntry("bgrewriteaof",bgrewriteaofCommand,1, "a",   0, NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("SELECT",      selectCommand,      2, "lF",  0, NULL, 0, 0, 0, 0, 0)
 };
 
 
@@ -602,6 +603,10 @@ void bgrewriteaofCommand(const AbstractCoordinator *coordinator,
 
 void configSetCommand(const AbstractCoordinator* coordinator,
                       AbstractFlyClient* flyClient) {
+    if (flyClient->getArgc() != 4) {
+        return;
+    }
+
     std::string *argv2 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[2]->getPtr());
     std::string *argv3 = reinterpret_cast<std::string*>(
@@ -632,8 +637,13 @@ void configGetCommand(const AbstractCoordinator* coordinator,
 
 void configCommand(const AbstractCoordinator* coordinator,
                    AbstractFlyClient* flyClient) {
+    if (flyClient->getArgc() < 2) {
+        return;
+    }
+
     std::string *argv1 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
+
     if (coordinator->getFlyServer()->isLoading() && argv1->compare("get")) {
         flyClient->addReply("Only CONFIG GET is allowed during loading");
         return;
@@ -658,3 +668,26 @@ void configCommand(const AbstractCoordinator* coordinator,
     return;
 }
 
+void selectCommand(const AbstractCoordinator* coordinator,
+                   AbstractFlyClient* flyClient) {
+    if (flyClient->getArgc() < 2) {
+        return;
+    }
+
+    std::string *argv1 = reinterpret_cast<std::string*>(
+            flyClient->getArgv()[1]->getPtr());
+    int64_t num = 0;
+    if (-1 == miscTool->string2int64(*argv1, num)) {
+        coordinator->getLogHandler()->logNotice(
+                "Wrong parammeter type: %s", argv1);
+       return;
+    }
+
+    AbstractFlyDB *flyDB = coordinator->getFlyServer()->getFlyDB(num);
+    if (NULL == flyDB) {
+        coordinator->getLogHandler()->logNotice(
+                "Can`t get flyDB for db num: %d", num);
+        return;
+    }
+    flyClient->setFlyDB(flyDB);
+}

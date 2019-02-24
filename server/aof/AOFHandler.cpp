@@ -167,10 +167,13 @@ int AOFHandler::load() {
     /** 标记正在加载持久化文件 */
     flyServer->startToLoad();
 
+    /**
+     * 如果文件前半截是FDB内容，则先使用FDB加载,
+     * 如果不是, 还要回溯文件读取位置到文件开头
+     **/
     char sig[5];
     if (5 == fread(sig, 1, sizeof(sig), fp)
-        && 0 == memcmp(sig, "FLYDB", 5)
-        && 0 == fseek(fp, 0, SEEK_SET)) {
+        && 0 == memcmp(sig, "FLYDB", 5)) {
         coordinator->getLogHandler()->logWarning(
                 "Reading FDB from AOF file...");
 
@@ -179,19 +182,24 @@ int AOFHandler::load() {
                     "Error reading FDB preamble of the AOF file!");
             fclose(fp);
             flyServer->stopLoad();
+            return -1;
         } else {
             coordinator->getLogHandler()->logWarning(
                     "Reading the remaining AOF tail...");
         }
     } else {
-        fclose(fp);
-        flyServer->stopLoad();
+        if (-1 == fseek(fp, 0, SEEK_SET)) {
+            fclose(fp);
+            flyServer->stopLoad();
+            return -1;
+        }
     }
 
     /** load剩余的AOF文件 */
     this->loadRemaindingAOF(fp);
 
     /** 标记停止load */
+    fclose(fp);
     flyServer->stopLoad();
 }
 
@@ -205,13 +213,11 @@ int AOFHandler::loadRemaindingAOF(FILE *fp) {
     /** 从AOF文件中读取命令数据 */
     while (1) {
         char buf[128];
-        int readCnt = read(fileno(fp), buf, sizeof(buf));
-        if (-1 == readCnt) {            /** 读取失败 */
-            delete fakeClient;
-            return -1;
-        } else if (0 == readCnt) {      /** 文件已经读取完毕 */
+        if (NULL == fgets(buf, sizeof(buf), fp)) {
             break;
         }
+
+        /** 将读取的字符串加入query buf */
         fakeClient->addToQueryBuf(buf);
 
         /** 解析query buf, 并执行解析出的command */
@@ -290,11 +296,11 @@ int AOFHandler::rewriteBackground() {
 }
 
 void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
-    if (0 != bySignal && 0 == exitCode) {
+    if (0 == bySignal && 0 == exitCode) {
         this->coordinator->getLogHandler()->logNotice(
                 "Background saving terminated with success");
         this->terminateWithSuccess();
-    } else if (0 != bySignal && 0 != exitCode) {
+    } else if (0 == bySignal && 0 != exitCode) {
         this->coordinator->getLogHandler()->logWarning(
                 "Background AOF rewrite terminated with error");
     } else {
@@ -304,8 +310,6 @@ void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
 
     /** do some clean up operation */
     this->rewriteCleanup();
-
-    return;
 }
 
 void AOFHandler::rewriteCleanup() {
@@ -465,7 +469,7 @@ int AOFHandler::rewriteAppendOnlyFile() {
     /** 刷新至磁盘中 */
     if (EOF == fflush(fp) || -1 == fsync(fileno(fp))) {
         coordinator->getLogHandler()->logWarning(
-                "Write error saving DB on disk: %s", strerror(errno));
+                "Write error fflush/fsync DB on disk: %s", strerror(errno));
         fclose(fp);
         unlink(tmpfile);
         return -1;
@@ -526,7 +530,7 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     /** 读取parent发送来的ack */
     char byte;
     if (coordinator->getNetHandler()->syncRead(
-            ackToChildReadFd, &byte, 1, 5000) >= 0 || byte != '!') {
+            ackToChildReadFd, &byte, 1, 5000) < 0 || byte != '!') {
         coordinator->getLogHandler()->logWarning(
                 "Cann`t get \"!\" from parent : %s", strerror(errno));
         fclose(fp);
@@ -542,12 +546,16 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
      **/
     this->readDiffFromParent();
 
+    /** 如果收取到的child diff长度为0，无需保存 */
+    if (0 == this->childDiff.length()) {
+        coordinator->getLogHandler()->logNotice("Child diff length is 0!");
+        return 1;
+    }
+
     /** 将childDiff中的数据写入文件 */
-    coordinator->getLogHandler()->logNotice(
-            "Concatenating %.2f MB of AOF diff received from parent.");
     if (0 == fio->write(this->childDiff.c_str(), this->childDiff.length())) {
         coordinator->getLogHandler()->logWarning(
-                "Write error saving DB on disk: %s", strerror(errno));
+                "Write error saving child diff on disk: %s", strerror(errno));
         fclose(fp);
         unlink(tmpfile);
         return -1;
@@ -556,7 +564,7 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     /** 刷新至磁盘中 */
     if (EOF == fflush(fp) || -1 == fsync(fileno(fp)) || -1 == fclose(fp)) {
         coordinator->getLogHandler()->logWarning(
-                "Write error saving DB on disk: %s", strerror(errno));
+                "Write error fflush/fsync/fclose child diff on disk: %s", strerror(errno));
         fclose(fp);
         unlink(tmpfile);
         return -1;
@@ -643,7 +651,7 @@ int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
     int dbCount = flyServer->getFlyDBCount();
     for (int i = 0; i < dbCount; i++) {
-        std::string selectcmd = "2\r\n$6\r\nSELECT\r\n";
+        std::string selectcmd = "*2\r\n$6\r\nSELECT\r\n";
         AbstractFlyDB *flyDB = flyServer->getFlyDB(i);
         /** 写入select i */
         if (0 == fio->write(selectcmd.c_str(), selectcmd.size())) {

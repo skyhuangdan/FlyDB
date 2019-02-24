@@ -86,11 +86,11 @@ int FDBHandler::backgroundSave() {
 
 void FDBHandler::backgroundSaveDone(int exitCode, int bySignal) {
     int status = 1;
-    if (0 != bySignal && 0 == exitCode) {
+    if (0 == bySignal && 0 == exitCode) {
         this->coordinator->getLogHandler()->logNotice(
                 "Background saving terminated with success");
         status = 1;
-    } else if (0 != bySignal && 0 != exitCode) {
+    } else if (0 == bySignal && 0 != exitCode) {
         this->coordinator->getLogHandler()->logWarning(
                 "Background saving error");
         status = -1;

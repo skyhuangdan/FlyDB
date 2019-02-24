@@ -825,7 +825,7 @@ int NetHandler::analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos) {
     int res = miscTool->string2int64(subStr, multiBulkLen);
 
     // 如果获取multi bulk length失败，或者其太长，协议error
-    if (0 == res || multiBulkLen > PROTO_REQ_MULTIBULK_MAX_LEN) {
+    if (-1 == res || multiBulkLen > PROTO_REQ_MULTIBULK_MAX_LEN) {
         addReplyError(flyClient, "Protocol error: invalid multibulk length");
         setProtocolError("invalid mbulk count", flyClient, pos);
         return -1;
@@ -897,7 +897,7 @@ int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
     int64_t bulkLen = 0;
     std::string subStr = flyClient->getQueryBuf().substr(begin, pos - begin);
     int res = miscTool->string2int64(subStr, bulkLen);
-    if (0 == res || bulkLen < 0 || bulkLen > PROTO_REQ_BULK_MAX_LEN) {
+    if (-1 == res || bulkLen < 0 || bulkLen > PROTO_REQ_BULK_MAX_LEN) {
         addReplyError(flyClient, "Protocol error: invalid bulk length");
         setProtocolError("invalid bulk length", flyClient, pos);
     }

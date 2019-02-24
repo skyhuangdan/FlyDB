@@ -92,7 +92,7 @@ public:
                 if (0 == i && ('-' == str[i] || '+' == str[i])) {
                     continue;
                 }
-                return 0;
+                return -1;
             }
         }
 
