@@ -10,7 +10,7 @@ std::array<pthread_t, BIO_NUM_OPS> BIOHandler::threads;
 std::array<pthread_mutex_t, BIO_NUM_OPS> BIOHandler::mutex;
 std::array<pthread_cond_t, BIO_NUM_OPS> BIOHandler::newjobCond;
 std::array<pthread_cond_t, BIO_NUM_OPS> BIOHandler::stepCond;
-std::array<std::list<BIOJob *>, BIO_NUM_OPS> BIOHandler::jobs;
+std::array<std::list<BIOJob*>, BIO_NUM_OPS> BIOHandler::jobs;
 std::array<uint64_t, BIO_NUM_OPS> BIOHandler::pending;
 
 bool BIOHandler::__init = BIOHandler::init();
@@ -125,7 +125,7 @@ void *BIOHandler::processBackgroundJobs(void *arg) {
     pthread_mutex_lock(&mutex[type]);
     while (1) {
         /** 获取类型为type的job列表 */
-        std::list<BIOJob *> jobList = jobs[type];
+        std::list<BIOJob*> &jobList = jobs[type];
 
         /** 如果jobList列表为空，则等待新的job产生 */
         if (0 == jobList.size()) {
@@ -135,7 +135,7 @@ void *BIOHandler::processBackgroundJobs(void *arg) {
         }
 
         /** 获取第一个job */
-        BIOJob * bioJob = jobList.front();
+        BIOJob* bioJob = jobList.front();
         jobList.pop_front();
         pending[type]--;
 
@@ -144,10 +144,10 @@ void *BIOHandler::processBackgroundJobs(void *arg) {
 
         switch (type) {
             case BIO_CLOSE_FILE:
-                close(reinterpret_cast<long>(bioJob->arg1));
+                close(reinterpret_cast<long>(bioJob->getArg1()));
                 break;
             case BIO_AOF_FSYNC:
-                aof_fsync(reinterpret_cast<long>(bioJob->arg1));
+                aof_fsync(reinterpret_cast<long>(bioJob->getArg1()));
                 break;
             case BIO_LAZY_FREE:
                 break;
@@ -159,10 +159,10 @@ void *BIOHandler::processBackgroundJobs(void *arg) {
         /** unblock threads blocked on waitStepOfType() */
         pthread_cond_broadcast(&stepCond[type]);
 
-        /** 释放boiJob */
+        /** 删除bioJob */
         delete bioJob;
 
-        /* 访问jobList需要加锁, 直到进入下一次循环 */
+        /** 访问jobList需要加锁, 直到进入下一次循环 */
         pthread_mutex_lock(&mutex[type]);
     }
 
@@ -173,7 +173,7 @@ void BIOHandler::createBackgroundJob(int type,
                                      void *arg2,
                                      void *arg3) {
     /** 创建job */
-    BIOJob *job = new BIOJob(time(NULL), arg1, arg2, arg3);
+    BIOJob* job = new BIOJob(time(NULL), arg1, arg2, arg3);
 
     /** 将job加入队列中，并发送条件信号 */
     pthread_mutex_lock(&mutex[type]);

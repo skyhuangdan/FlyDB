@@ -432,7 +432,7 @@ int AOFHandler::rewriteAppendOnlyFile() {
     char tmpfile[256];
 
     /** 获取临时aof文件 */
-    snprintf(tmpfile, sizeof(tmpfile), "temp-rewriteaof-%d.aof", getpid());
+    snprintf(tmpfile, sizeof(tmpfile), "temp-rewriteaof-bg-%d.aof", getpid());
     FILE *fp = fopen(tmpfile, "w");
     if (NULL == fp) {
         this->coordinator->getLogHandler()->logWarning(
@@ -525,8 +525,8 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
 
     /** 读取parent发送来的ack */
     char byte;
-    if (1 != coordinator->getNetHandler()->syncRead(
-            ackToChildReadFd, &byte, 1, 5000) || byte != '!') {
+    if (coordinator->getNetHandler()->syncRead(
+            ackToChildReadFd, &byte, 1, 5000) >= 0 || byte != '!') {
         coordinator->getLogHandler()->logWarning(
                 "Cann`t get \"!\" from parent : %s", strerror(errno));
         fclose(fp);

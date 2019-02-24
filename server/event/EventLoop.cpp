@@ -281,9 +281,12 @@ void EventLoop::createTimeEvent(uint64_t milliseconds, timeEventProc *proc,
 void beforeSleep(const AbstractCoordinator *coordinator) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
-    /** 真正的flush操作放在beforeSleep中 */
+    /** 真正的flush操作放在beforeSleep中:
+     *     保证flush操作在回复client之前,
+     *     即客户在收到相应的时候一定是已经flush持久化完毕了
+     **/
     coordinator->getAofHandler()->flush(false);
 
-    // 处理命令回复
+    /* 处理命令回复 */
     flyServer->handleClientsWithPendingWrites();
 }

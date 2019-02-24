@@ -7,23 +7,6 @@
 
 #include <ctime>
 
-/** A background job */
-struct BIOJob {
-    BIOJob(time_t time, void *arg1, void *arg2, void *arg3) {
-        this->time = time;
-        this->arg1 = arg1;
-        this->arg2 = arg2;
-        this->arg3 = arg3;
-    };
-
-    time_t time;
-    /**
-     * job参数，如果3个参数不够，则可以把其中一个参数设置成struct,
-     * 将参数存入该struct
-     **/
-    void *arg1, *arg2, *arg3;
-};
-
 /** Background job opcodes */
 enum BIOJobOpCode {
     BIO_CLOSE_FILE = 0,     /** Deferred close(2) syscall. */
@@ -32,7 +15,10 @@ enum BIOJobOpCode {
     BIO_NUM_OPS = 3
 };
 
-/* Define aof_fsync to fdatasync() in Linux and fsyncStragy() for all the rest */
+/**
+ * Define aof_fsync to fdatasync() in Linux
+ * and fsync() for all the rest
+ **/
 #ifdef __linux__
 #define aof_fsync fdatasync
 #else

@@ -676,6 +676,10 @@ ssize_t NetHandler::syncRead(int fd,
                              ssize_t size,
                              uint64_t timeout) {
     ssize_t readCount = 0;
+    if (0 == size) {
+        return 0;
+    }
+
     uint64_t start = miscTool->mstime(), span = 0;
     while ((span = miscTool->mstime() - start) < timeout) {
         /** read once */
@@ -685,8 +689,9 @@ ssize_t NetHandler::syncRead(int fd,
                 continue;
             }
 
+            /** 读取到文件末尾或者管道读取 */
             if (0 == readRes) {
-                return size - readCount;
+                return readCount;
             }
 
             return -1;

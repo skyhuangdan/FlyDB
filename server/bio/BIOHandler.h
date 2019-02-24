@@ -11,6 +11,7 @@
 #include "BIODef.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 #include "interface/AbstractBIOHandler.h"
+#include "BIOJob.h"
 
 /**
  * background I/O
@@ -33,7 +34,7 @@ private:
     static std::array<pthread_cond_t, BIO_NUM_OPS> newjobCond;
     static std::array<pthread_cond_t, BIO_NUM_OPS> stepCond;
     /** 表示某种job code下的jobs列表 */
-    static std::array<std::list<BIOJob *>, BIO_NUM_OPS> jobs;
+    static std::array<std::list<BIOJob*>, BIO_NUM_OPS> jobs;
     /** 表示某类型下悬挂了多少个job */
     static std::array<uint64_t, BIO_NUM_OPS> pending;
 
