@@ -107,6 +107,12 @@ void CommandTable::feedAppendOnlyFile(
     AbstractAOFHandler *aofHandler = coordinator->getAofHandler();
     std::string buf;
 
+    /**
+     * 这里在client修改了dbid后起作用
+     * Q: 但是为什么不将select命令设置成write属性，而将这里的select命令写入去掉？
+     * A: 这是因为我们要随着不同的client而去切换该client目前选择的db，
+     *    而不单单是在执行了select命令的时候
+     **/
     if (aofHandler->getSelectedDB() != dbid) {
         char seldb[10];
         char selstr[100];
