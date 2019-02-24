@@ -503,10 +503,10 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     }
 
     /** 向parent发送ack，用以通知parent停止发送aof diff数据 */
-    if (1 != write(
-            coordinator->getAofAckToParentPipe()->getWritePipe(), "!", 1)) {
+    if (1 != write(coordinator->getAofAckToParentPipe()->getWritePipe(),
+                   "!", 1)) {
         coordinator->getLogHandler()->logWarning(
-                "Write error saving DB on disk: %s", strerror(errno));
+                "Sending ack to parent error: %s", strerror(errno));
         fclose(fp);
         unlink(tmpfile);
         return -1;
@@ -517,7 +517,7 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     if (-1 == coordinator->getNetHandler()->setBlock(
             NULL, ackToChildReadFd, 0)) {
         coordinator->getLogHandler()->logWarning(
-                "Write error saving DB on disk: %s", strerror(errno));
+                "Can`t set nonblock: %s", strerror(errno));
         fclose(fp);
         unlink(tmpfile);
         return -1;
@@ -528,7 +528,7 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
     if (1 != coordinator->getNetHandler()->syncRead(
             ackToChildReadFd, &byte, 1, 5000) || byte != '!') {
         coordinator->getLogHandler()->logWarning(
-                "Write error saving DB on disk: %s", strerror(errno));
+                "Cann`t get \"!\" from parent : %s", strerror(errno));
         fclose(fp);
         unlink(tmpfile);
         return -1;

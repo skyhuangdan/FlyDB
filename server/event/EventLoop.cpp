@@ -87,7 +87,12 @@ int EventLoop::deleteFileEvent(int fd, int mask) {
         return -1;
     }
 
+    /** delete file proc */
     fileEvent.delFileProc(mask);
+
+    /** 删除监听fd */
+    PollState* eventState = reinterpret_cast<PollState*>(this->apiData);
+    eventState->del(fd, mask);
 
     if (fd == this->maxfd && fileEvent.noneMask()) {
         for (int i = this->maxfd - 1; i >= 0; i--) {

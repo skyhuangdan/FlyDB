@@ -15,19 +15,19 @@ PollState::PollState(const AbstractCoordinator *coordinator) {
 
 void PollState::add(int fd, int mask) {
     if (mask & ES_READABLE) {
-        FD_SET(fd, &this->rfds);
+        FD_SET(fd, &(this->rfds));
     }
     if (mask & ES_WRITABLE) {
-        FD_SET(fd, &this->wfds);
+        FD_SET(fd, &(this->wfds));
     }
 }
 
 void PollState::del(int fd, int mask) {
     if (mask & ES_READABLE) {
-        FD_CLR(fd, &this->rfds);
+        FD_CLR(fd, &(this->rfds));
     }
     if (mask & ES_WRITABLE) {
-        FD_CLR(fd, &this->wfds);
+        FD_CLR(fd, &(this->wfds));
     }
 }
 

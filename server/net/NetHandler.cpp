@@ -679,15 +679,20 @@ ssize_t NetHandler::syncRead(int fd,
     uint64_t start = miscTool->mstime(), span = 0;
     while ((span = miscTool->mstime() - start) < timeout) {
         /** read once */
-        int readRes;
-        if ((readRes = read(fd, ptr + readCount, size - readCount) <= 0)) {
+        int readRes = 0;
+        if ((readRes = read(fd, ptr + readCount, size - readCount)) <= 0) {
             if (-1 == readRes && EAGAIN == errno) {
                 continue;
             }
+
+            if (0 == readRes) {
+                return size - readCount;
+            }
+
             return -1;
         }
 
-        /** weather read all? */
+        /** weather read all or not */
         readCount += readRes;
         if (readCount == size) {
             break;
