@@ -100,6 +100,10 @@ void CommandTable::feedAppendOnlyFile(
         int dbid,
         std::shared_ptr<FlyObj> *argv,
         int argc) {
+    if (!entry->getVal().IsWrite()) {
+        return;
+    }
+
     AbstractAOFHandler *aofHandler = coordinator->getAofHandler();
     std::string buf;
 
@@ -133,11 +137,9 @@ void CommandTable::feedAppendOnlyFile(
          * 都要执行完然后返回给客户端响应，但是这里是存入aof文件中作用于持久化的，
          * 所以对于非写入命令无需假如appen block list
          **/
-        if (entry->getVal().IsWrite()) {
-            /** 如果正在进行background aof，将该buf写入append buf list中 */
-            if (aofHandler->haveChildPid()) {
-                aofHandler->rewriteBufferAppend(buf);
-            }
+        /** 如果正在进行background aof，将该buf写入append buf list中 */
+        if (aofHandler->haveChildPid()) {
+            aofHandler->rewriteBufferAppend(buf);
         }
     }
 }
