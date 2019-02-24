@@ -88,7 +88,7 @@ int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
 
     /** 添加命令序列到相应的缓冲中 */
     this->feedAppendOnlyFile(dictEntry,
-                             0,
+                             flyClient->getDbid(),
                              flyClient->getArgv(),
                              flyClient->getArgc());
 

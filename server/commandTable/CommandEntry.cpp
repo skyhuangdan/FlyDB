@@ -188,6 +188,7 @@ void getCommand(const AbstractCoordinator* coordinator,
     uint64_t expireTime = flyDB->getExpire(*key);
     if (expireTime != -1 && expireTime < time(NULL)) {
         flyDB->delKey(*key);
+        // todo: add delete command to feedAppendOnlyFile
     }
 
     // 返回结果
@@ -694,4 +695,5 @@ void selectCommand(const AbstractCoordinator* coordinator,
         return;
     }
     flyClient->setFlyDB(flyDB);
+    flyClient->setDbid(num);
 }

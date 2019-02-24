@@ -74,6 +74,8 @@ public:
     void addSendLen(size_t sentLen);
     AbstractFlyDB *getFlyDB() const;
     void setFlyDB(AbstractFlyDB *flyDB);
+    uint8_t getDbid() const;
+    void setDbid(uint8_t dbid);
 
 private:
     int addReplyToBuffer(const char *s, size_t len);
@@ -102,6 +104,7 @@ private:
     int32_t multiBulkLen;               // 剩余可读的multi bulk参数数量
     int64_t bulkLen;
     size_t sendLen;                     // 记录发送长度，用于处理一次没有发送完的情况
+    uint8_t dbid = 0;
 
     AbstractFlyDB *flyDB;
 
