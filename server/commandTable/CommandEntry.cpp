@@ -28,7 +28,7 @@ std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0),
        new CommandEntry("config",      configCommand,     -2, "lat", 0, NULL, 0, 0, 0, 0, 0),
        new CommandEntry("bgrewriteaof",bgrewriteaofCommand,1, "a",   0, NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("select",      selectCommand,      2, "wlF",  0, NULL, 0, 0, 0, 0, 0)
+       new CommandEntry("select",      selectCommand,      2, "wlF", 0, NULL, 0, 0, 0, 0, 0)
 };
 
 
