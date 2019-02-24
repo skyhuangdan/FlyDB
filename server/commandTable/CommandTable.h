@@ -8,6 +8,7 @@
 #include <string>
 #include "../flyClient/FlyClient.h"
 #include "../log/FileLogHandler.h"
+#include "../dataStructure/dict/DictEntry.h"
 
 template<class KEY, class VAL>
 class Dict;
@@ -20,6 +21,13 @@ public:
     int dealWithCommand(AbstractFlyClient *flyClient);
 
 private:
+    void feedAppendOnlyFile(DictEntry<std::string, CommandEntry>* entry,
+                            int dbid,
+                            std::shared_ptr<FlyObj> *argv,
+                            int argc);
+    std::string catAppendOnlyGenericCommand(std::shared_ptr<FlyObj> *argv,
+                                            int argc);
+
     const AbstractCoordinator* coordinator;
     Dict<std::string, CommandEntry>* commands;
     AbstractLogHandler *logHandler;

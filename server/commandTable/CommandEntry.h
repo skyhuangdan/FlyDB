@@ -43,6 +43,7 @@ public:
     int getFlag() const;
     void setFlag(int flag);
     void addFlag(int flag);
+    bool IsWrite() const;
     void setKeysProc(getKeysProc proc);
     int getFirstKey() const;
     void setFirstKey(int firstKey);

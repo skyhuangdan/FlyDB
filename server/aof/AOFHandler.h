@@ -24,8 +24,9 @@ public:
     int stop();
     void flush(bool force);
     int load();
+    void addToBuf(std::string addBuf);
+    void rewriteBufferAppend(std::string buf);
     int rewriteBackground();
-    void rewriteBufferAppend(unsigned char *s, uint64_t len);
     void backgroundSaveDone(int exitCode, int bySignal);
 
     int getFd() const;
@@ -48,6 +49,8 @@ public:
     void removeTempFile();
     RewriteBufBlock* getFrontRewriteBufBlock() const;
     void popFrontRewriteBufBlock();
+    int getSelectedDB() const;
+    void setSelectedDB(int selectedDB);
 
     class Builder {
     public:
@@ -207,6 +210,9 @@ private:
      * 则设置该标记位，便于servercron中再次执行同步
      **/
     int lastWriteStatus;
+
+    /** currently selected DB in AOF */
+    int selectedDB = -1;
 
     /** 在进行aof rewrite过程中所保存的修改操作 */
     std::list<RewriteBufBlock *> rewriteBufBlocks;

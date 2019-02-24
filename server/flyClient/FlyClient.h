@@ -84,10 +84,10 @@ private:
     const AbstractCoordinator *coordinator;
     uint64_t id;
     int fd;                             // 套接字
-    std::shared_ptr<FlyObj> name;                       // client名字
+    std::shared_ptr<FlyObj> name;       // client名字
     int flags;                          // 标志
     std::string queryBuf;               // 输入缓冲区
-    std::shared_ptr<FlyObj> *argv;                      // 命令参数
+    std::shared_ptr<FlyObj> *argv;      // 命令参数
     int argc;
     CommandEntry* cmd;                  // 命令实现函数
     char buf[FLY_REPLY_CHUNK_BYTES];    // 固定大小输出缓冲区

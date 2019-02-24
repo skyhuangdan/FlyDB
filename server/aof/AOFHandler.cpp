@@ -121,6 +121,7 @@ int AOFHandler::stop() {
     close(this->fd);
 
     this->fd = -1;
+    this->selectedDB = -1;
     this->state = AOF_OFF;
     if (-1 != this->childPid) {
         int statloc;
@@ -287,6 +288,7 @@ int AOFHandler::rewriteBackground() {
 
         this->childPid = childPid;
         this->scheduled = false;
+        this->selectedDB = -1;
         this->rewriteTimeStart = flyServer->getNowt();
         this->state = AOF_WAIT_REWRITE;
         flyServer->updateDictResizePolicy();
@@ -404,6 +406,7 @@ void AOFHandler::terminateWithSuccess() {
         this->updateCurrentSize();
         this->rewriteBaseSize = this->currentSize;
         this->buf.clear();
+        this->selectedDB = -1;
         /** rewrite完毕，设置该AOF state为打开 */
         if (AOF_WAIT_REWRITE == this->state) {
             this->state = AOF_ON;
@@ -651,7 +654,7 @@ int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
     int dbCount = flyServer->getFlyDBCount();
     for (int i = 0; i < dbCount; i++) {
-        std::string selectcmd = "*2\r\n$6\r\nSELECT\r\n";
+        std::string selectcmd = "*2\r\n$6\r\nselect\r\n";
         AbstractFlyDB *flyDB = flyServer->getFlyDB(i);
         /** 写入select i */
         if (0 == fio->write(selectcmd.c_str(), selectcmd.size())) {
@@ -803,13 +806,14 @@ int AOFHandler::rewriteIntSet(Fio *fio,
     return 1;
 }
 
-void AOFHandler::rewriteBufferAppend(unsigned char *s, uint64_t len) {
+void AOFHandler::rewriteBufferAppend(std::string buf) {
     RewriteBufBlock *block = this->rewriteBufBlocks.back();
+    uint64_t len = buf.length();
     while (len > 0) {
         /** 如果block不为空，则先向该block中填入*/
         if (NULL != block) {
             int writeBytes = block->free < len ? block->free : len;
-            memcpy(block->buf + block->used, s, writeBytes);
+            memcpy(block->buf + block->used, buf.c_str(), writeBytes);
             block->free -= writeBytes;
             block->used += writeBytes;
             len -= writeBytes;
@@ -1156,6 +1160,10 @@ void AOFHandler::clearFileEvent() {
             ES_READABLE);
 }
 
+void AOFHandler::addToBuf(std::string addBuf) {
+    this->buf += addBuf;
+}
+
 /**
  * 将rewrite buf block中的所有数据都写入aof file中，
  **/
@@ -1194,4 +1202,12 @@ ssize_t AOFHandler::rewriteBufferWriteToFile(int fd) {
     }
 
     return count;
+}
+
+int AOFHandler::getSelectedDB() const {
+    return this->selectedDB;
+}
+
+void AOFHandler::setSelectedDB(int selectedDB) {
+    this->selectedDB = selectedDB;
 }

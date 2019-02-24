@@ -7,6 +7,7 @@
 #include "../flyServer/interface/AbstractFlyServer.h"
 #include "../dataStructure/skiplist/SkipList.cpp"
 #include "../dataStructure/dict/Dict.cpp"
+#include "CommandTableDef.h"
 
 std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("version",     versionCommand,     1, "rF",  0, NULL, 1, 1, 1, 0, 0),
@@ -27,7 +28,7 @@ std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("bgsave",      bgsaveCommand,     -1, "a",   0, NULL, 0, 0, 0, 0, 0),
        new CommandEntry("config",      configCommand,     -2, "lat", 0, NULL, 0, 0, 0, 0, 0),
        new CommandEntry("bgrewriteaof",bgrewriteaofCommand,1, "a",   0, NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("SELECT",      selectCommand,      2, "lF",  0, NULL, 0, 0, 0, 0, 0)
+       new CommandEntry("select",      selectCommand,      2, "lF",  0, NULL, 0, 0, 0, 0, 0)
 };
 
 
@@ -106,7 +107,10 @@ void CommandEntry::setFlag(int flag) {
 
 void CommandEntry::addFlag(int flag) {
     this->flag |= flag;
+}
 
+bool CommandEntry::IsWrite() const {
+    return this->flag & CMD_WRITE;
 }
 
 void CommandEntry::setKeysProc(getKeysProc proc) {

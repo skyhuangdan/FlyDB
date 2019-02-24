@@ -24,7 +24,9 @@ public:
 
     virtual int load() = 0;
 
-    virtual void rewriteBufferAppend(unsigned char *s, uint64_t len) = 0;
+    virtual void addToBuf(std::string addBuf) = 0;
+
+    virtual void rewriteBufferAppend(std::string buf) = 0;
 
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
 
@@ -66,6 +68,10 @@ public:
     virtual RewriteBufBlock* getFrontRewriteBufBlock() const = 0;
 
     virtual void popFrontRewriteBufBlock() = 0;
+
+    virtual int getSelectedDB() const = 0;
+
+    virtual void setSelectedDB(int selectedDB) = 0;
 };
 
 #endif //FLYDB_ABSTRACTAOFHANDLER_H
