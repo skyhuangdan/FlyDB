@@ -968,8 +968,9 @@ void AOFHandler::doRealWrite() {
 
         /**
          * 如果是AOF_FSYNC_ALWAYS, 回复信息都已经传递给了client的output buffer，
-         * 当通知了client，则代表已经做完了fsync，不能裁剪了。
-         * todo: 后续研究
+         * 因为对于AOF_FSYNC_ALWAYS是要求一直fsync的，这时候当通知了client的时候，
+         * 则代表已经做完了fsync；不同于AOF_FSYNC_EVERYSEC和AOF_FSYNC_NO，在这两种模式下，
+         * 即使客户端收到了回复，也不保证一定执行了fsync操作
          **/
         if (AOF_FSYNC_ALWAYS == this->fsyncStragy) {
             coordinator->getLogHandler()->logWarning(
