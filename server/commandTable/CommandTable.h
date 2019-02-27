@@ -21,12 +21,16 @@ public:
     int dealWithCommand(AbstractFlyClient *flyClient);
 
 private:
-    void feedAppendOnlyFile(DictEntry<std::string, CommandEntry>* entry,
-                            int dbid,
+    bool expireIfNeeded(AbstractFlyClient *flyClient,
+                        DictEntry<std::string, CommandEntry>* dictEntry);
+    void feedAppendOnlyFile(int dbid,
                             std::shared_ptr<FlyObj> *argv,
                             int argc);
-    std::string catAppendOnlyGenericCommand(std::shared_ptr<FlyObj> *argv,
-                                            int argc);
+    std::string catAppendOnlyGenericCommand(
+            std::shared_ptr<FlyObj> *argv,
+            int argc);
+    std::shared_ptr<FlyObj>* getDeleteCommandArgvs(
+            AbstractFlyClient *flyClient);
 
     const AbstractCoordinator* coordinator;
     Dict<std::string, CommandEntry>* commands;

@@ -66,6 +66,9 @@ void CommandTable::populateCommand() {
                 case 'F':
                     entry->addFlag(CMD_FAST);
                     break;
+                case 'A':
+                    entry->addFlag(CMD_ACCESS_KEY);
+                    break;
                 default:
                     exit(1);
             }
@@ -76,34 +79,73 @@ void CommandTable::populateCommand() {
 }
 
 int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
-    std::string *command = reinterpret_cast<std::string*>
-            (flyClient->getArgv()[0]->getPtr());
+    std::string *command = reinterpret_cast<std::string*>(
+            flyClient->getArgv()[0]->getPtr());
     DictEntry<std::string, CommandEntry>* dictEntry =
             this->commands->findEntry(*command);
     if (NULL == dictEntry) {
         this->logHandler->logDebug("wrong command type: %s", command);
         return -1;
     }
+
+    /** 命令是否访问key, 如果是，则先判断该key是否已经过期，过期则应该释放该key */
+    if (dictEntry->getVal().IsAccessKey()) {
+        if (expireIfNeeded(flyClient, dictEntry)) {
+            std::string *key = reinterpret_cast<std::string*>(
+                    flyClient->getArgv()[1]->getPtr());
+            flyClient->addReply("The key %s is expired!", key->c_str());
+            return 0;
+        }
+    }
+
+    /** 处理命令 */
     dictEntry->getVal().getProc()(this->coordinator, flyClient);
 
     /** 添加命令序列到相应的缓冲中 */
-    this->feedAppendOnlyFile(dictEntry,
-                             flyClient->getDbid(),
-                             flyClient->getArgv(),
-                             flyClient->getArgc());
+    if (dictEntry->getVal().IsWrite()) {
+        this->feedAppendOnlyFile(flyClient->getDbid(),
+                                 flyClient->getArgv(),
+                                 flyClient->getArgc());
+    }
 
     return 1;
 }
 
+bool CommandTable::expireIfNeeded(
+        AbstractFlyClient *flyClient,
+        DictEntry<std::string, CommandEntry>* dictEntry) {
+    AbstractFlyDB *flyDB = flyClient->getFlyDB();
+    std::string key = dictEntry->getKey();
+
+    int64_t expireTime = flyDB->getExpire(key);
+    if (expireTime != -1 && expireTime < time(NULL)) {
+        flyDB->delKey(key);
+        /**
+         * get delete command and
+         * then feed to aof file(and rewrite block list)
+         **/
+        std::shared_ptr<FlyObj> *argvs = this->getDeleteCommandArgvs(flyClient);
+        this->feedAppendOnlyFile(flyClient->getDbid(), argvs, 2);
+        return true;
+     }
+
+     return false;
+}
+
+std::shared_ptr<FlyObj>* CommandTable::getDeleteCommandArgvs(
+        AbstractFlyClient *flyClient) {
+    std::shared_ptr<FlyObj> *argvs = new std::shared_ptr<FlyObj> [2];
+    argvs[0] = coordinator->getFlyObjStringFactory()
+            ->getObject(new std::string("del"));
+    argvs[1] = flyClient->getArgv()[1];
+
+    return argvs;
+}
+
 void CommandTable::feedAppendOnlyFile(
-        DictEntry<std::string, CommandEntry>* entry,
         int dbid,
         std::shared_ptr<FlyObj> *argv,
         int argc) {
-    if (!entry->getVal().IsWrite()) {
-        return;
-    }
-
     AbstractAOFHandler *aofHandler = coordinator->getAofHandler();
     std::string buf;
 
