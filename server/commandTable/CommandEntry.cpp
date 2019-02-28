@@ -16,19 +16,19 @@
  **/
 std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("version",     versionCommand,     1, "rF",  0,  NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("get",         getCommand,         2, "rFA",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("set",         setCommand,        -3, "wmA",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("expire",      expireCommand,      3, "wFA",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("expireat",    expireatCommand,    3, "wFA",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("mget",        mgetCommand,       -2, "rFA",  0, NULL, 1,-1, 1, 0, 0),
-       new CommandEntry("rpush",       rpushCommand,      -3, "wmFA", 0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("lpush",       lpushCommand,      -3, "wmFA", 0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("sortpush",    pushSortCommand,   -3, "wmFA", 0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("rpop",        rpopCommand,        2, "wFA",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("lpop",        lpopCommand,        2, "wFA",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("sortPop",     popSortCommand,     2, "wFA",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("hset",        hsetCommand,       -4, "wmFA", 0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("hget",        hgetCommand,        3, "rFA",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("get",         getCommand,         2, "rF",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("set",         setCommand,        -3, "wm",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("expire",      expireCommand,      3, "wF",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("expireat",    expireatCommand,    3, "wF",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("mget",        mgetCommand,       -2, "rF",  0, NULL, 1,-1, 1, 0, 0),
+       new CommandEntry("rpush",       rpushCommand,      -3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("lpush",       lpushCommand,      -3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("sortpush",    pushSortCommand,   -3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("rpop",        rpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("lpop",        lpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("sortPop",     popSortCommand,     2, "wF",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("hset",        hsetCommand,       -4, "wmF", 0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("hget",        hgetCommand,        3, "rF",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("save",        saveCommand,        1, "as",  0,  NULL, 0, 0, 0, 0, 0),
        new CommandEntry("bgsave",      bgsaveCommand,     -1, "a",   0,  NULL, 0, 0, 0, 0, 0),
        new CommandEntry("config",      configCommand,     -2, "lat", 0,  NULL, 0, 0, 0, 0, 0),
@@ -116,10 +116,6 @@ void CommandEntry::addFlag(int flag) {
 
 bool CommandEntry::IsWrite() const {
     return this->flag & CMD_WRITE;
-}
-
-bool CommandEntry::IsAccessKey() const {
-    return this->flag & CMD_ACCESS_KEY;
 }
 
 void CommandEntry::setKeysProc(getKeysProc proc) {

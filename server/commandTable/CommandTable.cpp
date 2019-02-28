@@ -66,10 +66,8 @@ void CommandTable::populateCommand() {
                 case 'F':
                     entry->addFlag(CMD_FAST);
                     break;
-                case 'A':
-                    entry->addFlag(CMD_ACCESS_KEY);
-                    break;
                 default:
+                    logHandler->logWarning("Unrecognized flag type! %c", *f);
                     exit(1);
             }
             f++;

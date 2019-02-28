@@ -44,7 +44,6 @@ public:
     void setFlag(int flag);
     void addFlag(int flag);
     bool IsWrite() const;
-    bool IsAccessKey() const;
     void setKeysProc(getKeysProc proc);
     int getFirstKey() const;
     void setFirstKey(int firstKey);

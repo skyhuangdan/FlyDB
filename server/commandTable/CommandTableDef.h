@@ -21,8 +21,7 @@ enum CommandFlag {
     CMD_ASKING = 1 << 12,               /** "k" flag */
     CMD_FAST = 1 << 13,                 /** "F" flag */
     CMD_MODULE_GETKEYS = 1 << 14,       /** Use the modules getkeys interface. */
-    CMD_MODULE_NO_CLUSTER = 1 << 15,    /** Deny on Cluster. */
-    CMD_ACCESS_KEY                      /** this command access key */
+    CMD_MODULE_NO_CLUSTER = 1 << 15     /** Deny on Cluster. */
 };
 
 #endif //FLYDB_COMMANDTABLEDEF_H

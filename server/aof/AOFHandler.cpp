@@ -199,6 +199,9 @@ int AOFHandler::load() {
     /** load剩余的AOF文件 */
     this->loadRemaindingAOF(fp);
 
+	/** 修改aof文件当前大小 */
+	this->currentSize = sb.st_size;
+
     /** 标记停止load */
     fclose(fp);
     flyServer->stopLoad();
@@ -1162,6 +1165,15 @@ bool AOFHandler::sizeMeetRewriteCondition() {
         return false;
     }
 
+	/** 
+	 * 每次rewrite/load完毕，都令rewriteBaseSize=currentSize(重写后的大小，而非重写前), 
+	 * 也就是随着后续currentSize增大，其大于rewriteBaseSize * rewritePerc的比例下，
+	 * 则进行重写，重写同事再更新rewriteBaseSize，是一个动态逐渐变化的过程，而非静态的,
+	 * 由于每次rewriteBaseSize更新的都是重写后的大小，并不是重写前的，假如说rewritePerc=100%，
+	 * 则并不是每次currentSize = 前一次重写前currentSize * (1+100%)时才重写，即指数级增长时才重写，
+	 * 其原因是由于每次重写后aof文件大小都会缩小，即current=前一次重写后currentSize(即rewriteBaseSize)*(1+100%)
+	 * 重写后currentSize < 重写前currentSize 
+	 **/
     uint64_t base = this->rewriteBaseSize ? rewriteBaseSize : 1;
     uint64_t growth = (this->currentSize * 100 / base) - 100;
     if (this->rewritePerc != 0 && growth >= this->rewritePerc) {
