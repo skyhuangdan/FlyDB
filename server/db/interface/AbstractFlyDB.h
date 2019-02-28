@@ -62,6 +62,9 @@ public:
     virtual std::shared_ptr<FlyObj> lookupKey(const std::string &key) = 0;
 
     virtual void delKey(const std::string &key) = 0;
+
+    virtual int8_t getId() const = 0;
+
 };
 
 #endif //FLYDB_ABSTRACTFLYDB_H

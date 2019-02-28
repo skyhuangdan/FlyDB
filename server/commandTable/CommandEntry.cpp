@@ -192,15 +192,8 @@ void getCommand(const AbstractCoordinator* coordinator,
     std::string *key = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
 
-    // 查看key是否已经过期
-    AbstractFlyDB *flyDB = flyClient->getFlyDB();
-    uint64_t expireTime = flyDB->getExpire(*key);
-    if (expireTime != -1 && expireTime < time(NULL)) {
-        flyDB->delKey(*key);
-        // todo: add delete command to feedAppendOnlyFile
-    }
-
     // 返回结果
+    AbstractFlyDB *flyDB = flyClient->getFlyDB();
     std::string* val = reinterpret_cast<std::string*>(
             flyDB->lookupKey(*key)->getPtr());
     flyClient->addReply(val->c_str(), val->length());
@@ -217,6 +210,7 @@ void setGenericCommand(const AbstractCoordinator *coordinator,
         return;
     }
 
+    // todo: addDirty
     coordinator->getFdbHandler()->addDirty(1);
     flyClient->addReply("set OK!");
 }
@@ -704,5 +698,4 @@ void selectCommand(const AbstractCoordinator* coordinator,
         return;
     }
     flyClient->setFlyDB(flyDB);
-    flyClient->setDbid(num);
 }

@@ -123,10 +123,6 @@ public:
     virtual AbstractFlyDB *getFlyDB() const = 0;
 
     virtual void setFlyDB(AbstractFlyDB *flyDB) = 0;
-
-    virtual uint8_t getDbid() const = 0;
-
-    virtual void setDbid(uint8_t dbid) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYCLIENT_H

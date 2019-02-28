@@ -72,6 +72,8 @@ public:
     virtual int getSelectedDB() const = 0;
 
     virtual void setSelectedDB(int selectedDB) = 0;
+
+    virtual void feedAppendOnlyFile(int dbid, std::shared_ptr<FlyObj> *argv, int argc) = 0;
 };
 
 #endif //FLYDB_ABSTRACTAOFHANDLER_H

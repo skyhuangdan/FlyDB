@@ -37,8 +37,8 @@ FlyServer::FlyServer(const AbstractCoordinator *coordinator) {
     this->flyDBFactory = new FlyDBFactory(this->coordinator);
 
     // init db array
-    for (int i = 0; i < DB_NUM; i++) {
-        this->dbArray[i] = this->flyDBFactory->getFlyDB();
+    for (uint8_t i = 0; i < DB_NUM; i++) {
+        this->dbArray[i] = this->flyDBFactory->getFlyDB(i);
         if (NULL == this->dbArray.at(i)) {
             std::cout << "error to create FlyDB[" << i << "]" << std::endl;
             exit(1);

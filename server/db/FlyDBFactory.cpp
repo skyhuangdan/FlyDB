@@ -9,6 +9,6 @@ FlyDBFactory::FlyDBFactory(const AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
 }
 
-AbstractFlyDB* FlyDBFactory::getFlyDB() {
-    return new FlyDB(this->coordinator);
+AbstractFlyDB* FlyDBFactory::getFlyDB(uint8_t id) {
+    return new FlyDB(this->coordinator, id);
 }

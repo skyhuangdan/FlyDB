@@ -88,121 +88,16 @@ int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
         return -1;
     }
 
-    /** 命令是否访问key, 如果是，则先判断该key是否已经过期，过期则应该释放该key */
-    if (dictEntry->getVal().IsAccessKey()) {
-        if (expireIfNeeded(flyClient, dictEntry)) {
-            std::string *key = reinterpret_cast<std::string*>(
-                    flyClient->getArgv()[1]->getPtr());
-            flyClient->addReply("The key %s is expired!", key->c_str());
-            return 0;
-        }
-    }
-
     /** 处理命令 */
     dictEntry->getVal().getProc()(this->coordinator, flyClient);
 
     /** 添加命令序列到相应的缓冲中 */
     if (dictEntry->getVal().IsWrite()) {
-        this->feedAppendOnlyFile(flyClient->getDbid(),
-                                 flyClient->getArgv(),
-                                 flyClient->getArgc());
+        coordinator->getAofHandler()->feedAppendOnlyFile(
+                flyClient->getFlyDB()->getId(),
+                flyClient->getArgv(),
+                flyClient->getArgc());
     }
 
     return 1;
-}
-
-bool CommandTable::expireIfNeeded(
-        AbstractFlyClient *flyClient,
-        DictEntry<std::string, CommandEntry>* dictEntry) {
-    AbstractFlyDB *flyDB = flyClient->getFlyDB();
-    std::string key = dictEntry->getKey();
-
-    int64_t expireTime = flyDB->getExpire(key);
-    if (expireTime != -1 && expireTime < time(NULL)) {
-        flyDB->delKey(key);
-        /**
-         * get delete command and
-         * then feed to aof file(and rewrite block list)
-         **/
-        std::shared_ptr<FlyObj> *argvs = this->getDeleteCommandArgvs(flyClient);
-        this->feedAppendOnlyFile(flyClient->getDbid(), argvs, 2);
-        return true;
-     }
-
-     return false;
-}
-
-std::shared_ptr<FlyObj>* CommandTable::getDeleteCommandArgvs(
-        AbstractFlyClient *flyClient) {
-    std::shared_ptr<FlyObj> *argvs = new std::shared_ptr<FlyObj> [2];
-    argvs[0] = coordinator->getFlyObjStringFactory()
-            ->getObject(new std::string("del"));
-    argvs[1] = flyClient->getArgv()[1];
-
-    return argvs;
-}
-
-void CommandTable::feedAppendOnlyFile(
-        int dbid,
-        std::shared_ptr<FlyObj> *argv,
-        int argc) {
-    AbstractAOFHandler *aofHandler = coordinator->getAofHandler();
-    std::string buf;
-
-    /**
-     * 这里在client修改了dbid后起作用
-     * Q: 但是为什么不将select命令设置成write属性，而将这里的select命令写入去掉？
-     * A: 这是因为我们要随着不同的client而去切换该client目前选择的db，
-     *    而不单单是在执行了select命令的时候
-     **/
-    if (aofHandler->getSelectedDB() != dbid) {
-        char seldb[10];
-        char selstr[100];
-        snprintf(seldb, sizeof(seldb), "%d", dbid);
-        snprintf(selstr, sizeof(seldb),
-                 "*2\r\n$6\r\nselect\r\n$%d\r\n%s\r\n",
-                 strlen(seldb), seldb);
-        buf += selstr;
-        aofHandler->setSelectedDB(dbid);
-    }
-
-    /** 获取遵循RESP协议的命令串 */
-    buf += this->catAppendOnlyGenericCommand(argv, argc);
-
-    /** 如果buf长度不为0，则假如相应的buf中 */
-    if (buf.length() > 0) {
-        /**
-         * 如果当前aof处于开启状态，加入到this->buf里面，
-         * 后续再根据fsyc策略（EVERYSECOND/always)调用flush写入aof文件
-         **/
-        if (aofHandler->IsStateOn()) {
-            aofHandler->addToBuf(buf);
-        }
-
-        /** 如果正在进行background aof，将该buf写入append buf list中 */
-        if (aofHandler->haveChildPid()) {
-            aofHandler->rewriteBufferAppend(buf);
-        }
-    }
-}
-
-std::string CommandTable::catAppendOnlyGenericCommand(
-        std::shared_ptr<FlyObj> *argv,
-        int argc) {
-    char buf[32];
-    char argcstr[10];
-    snprintf(argcstr, sizeof(argcstr), "%d", argc);
-    snprintf(buf, sizeof(buf), "*$d\r\n", argcstr);
-    std::string res = buf;
-
-    /** 写入各个参数 */
-    for (int i = 0; i < argc; i++) {
-        std::string *tempArgv =
-                reinterpret_cast<std::string*>(argv[i]->getPtr());
-        snprintf(buf, sizeof(buf), "$%d\r\n%s\r\n",
-                 tempArgv->length(), tempArgv->c_str());
-        res += buf;
-    }
-
-    return res;
 }

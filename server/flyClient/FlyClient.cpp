@@ -341,12 +341,3 @@ AbstractFlyDB *FlyClient::getFlyDB() const {
 void FlyClient::setFlyDB(AbstractFlyDB *flyDB) {
     this->flyDB = flyDB;
 }
-
-uint8_t FlyClient::getDbid() const {
-    return this->dbid;
-}
-
-void FlyClient::setDbid(uint8_t dbid) {
-    this->dbid = dbid;
-}
-

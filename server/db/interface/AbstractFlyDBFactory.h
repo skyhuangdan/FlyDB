@@ -10,7 +10,7 @@
 class AbstractFlyDBFactory {
 public:
     ~AbstractFlyDBFactory() {}
-    virtual AbstractFlyDB* getFlyDB() = 0;
+    virtual AbstractFlyDB* getFlyDB(uint8_t id) = 0;
 
 };
 

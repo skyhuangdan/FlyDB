@@ -28,6 +28,7 @@ public:
     void rewriteBufferAppend(std::string buf);
     int rewriteBackground();
     void backgroundSaveDone(int exitCode, int bySignal);
+    void feedAppendOnlyFile(int dbid, std::shared_ptr<FlyObj> *argv, int argc);
 
     int getFd() const;
     pid_t getChildPid() const;
@@ -151,6 +152,8 @@ private:
     void updateCurrentSize();
     void rewriteCleanup();
     int loadRemaindingAOF(FILE *fp);
+    std::string catAppendOnlyGenericCommand(std::shared_ptr<FlyObj> *argv,
+                                            int argc);
 
     /** set函数集合，给Builder使用 */
     void setCoordinator(AbstractCoordinator *coordinator);

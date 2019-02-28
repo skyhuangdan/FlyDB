@@ -11,7 +11,7 @@
 class FlyDBFactory : public AbstractFlyDBFactory {
 public:
     FlyDBFactory(const AbstractCoordinator *coordinator);
-    AbstractFlyDB* getFlyDB();
+    AbstractFlyDB* getFlyDB(uint8_t id);
 private:
     const AbstractCoordinator *coordinator;
 };

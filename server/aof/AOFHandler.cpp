@@ -231,6 +231,27 @@ int AOFHandler::loadRemaindingAOF(FILE *fp) {
     return 1;
 }
 
+std::string AOFHandler::catAppendOnlyGenericCommand(
+        std::shared_ptr<FlyObj> *argv,
+        int argc) {
+    char buf[32];
+    char argcstr[10];
+    snprintf(argcstr, sizeof(argcstr), "%d", argc);
+    snprintf(buf, sizeof(buf), "*$d\r\n", argcstr);
+    std::string res = buf;
+
+    /** 写入各个参数 */
+    for (int i = 0; i < argc; i++) {
+        std::string *tempArgv =
+                reinterpret_cast<std::string*>(argv[i]->getPtr());
+        snprintf(buf, sizeof(buf), "$%d\r\n%s\r\n",
+                 tempArgv->length(), tempArgv->c_str());
+        res += buf;
+    }
+
+    return res;
+}
+
 /** 具体的AOF rewrite操作都是放在子进程里的，这里与FDB不同 */
 int AOFHandler::rewriteBackground() {
     /** set stop sending diff flag to false */
@@ -312,6 +333,49 @@ void AOFHandler::backgroundSaveDone(int exitCode, int bySignal) {
 
     /** do some clean up operation */
     this->rewriteCleanup();
+}
+
+void AOFHandler::feedAppendOnlyFile(
+        int dbid,
+        std::shared_ptr<FlyObj> *argv,
+        int argc) {
+    std::string buf;
+
+    /**
+     * 这里在client修改了dbid后起作用
+     * Q: 但是为什么不将select命令设置成write属性，而将这里的select命令写入去掉？
+     * A: 这是因为我们要随着不同的client而去切换该client目前选择的db，
+     *    而不单单是在执行了select命令的时候
+     **/
+    if (this->getSelectedDB() != dbid) {
+        char seldb[10];
+        char selstr[100];
+        snprintf(seldb, sizeof(seldb), "%d", dbid);
+        snprintf(selstr, sizeof(seldb),
+                 "*2\r\n$6\r\nselect\r\n$%d\r\n%s\r\n",
+                 strlen(seldb), seldb);
+        buf += selstr;
+        this->setSelectedDB(dbid);
+    }
+
+    /** 获取遵循RESP协议的命令串 */
+    buf += this->catAppendOnlyGenericCommand(argv, argc);
+
+    /** 如果buf长度不为0，则假如相应的buf中 */
+    if (buf.length() > 0) {
+        /**
+         * 如果当前aof处于开启状态，加入到this->buf里面，
+         * 后续再根据fsyc策略（EVERYSECOND/always)调用flush写入aof文件
+         **/
+        if (this->IsStateOn()) {
+            this->addToBuf(buf);
+        }
+
+        /** 如果正在进行background aof，将该buf写入append buf list中 */
+        if (this->haveChildPid()) {
+            this->rewriteBufferAppend(buf);
+        }
+    }
 }
 
 void AOFHandler::rewriteCleanup() {

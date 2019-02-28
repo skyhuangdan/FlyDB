@@ -15,7 +15,7 @@ class Dict;
 
 class FlyDB : public AbstractFlyDB {
 public:
-    FlyDB(const AbstractCoordinator *coordinator);
+    FlyDB(const AbstractCoordinator *coordinator, uint8_t id);
     ~FlyDB();
     int expandDict(uint64_t size);
     int expandExpire(uint64_t size);
@@ -30,10 +30,15 @@ public:
     uint32_t expireSize() const;
     std::shared_ptr<FlyObj> lookupKey(const std::string &key);
     void delKey(const std::string &key);
+    int8_t getId() const;
 
 private:
+    std::shared_ptr<FlyObj>* getDeleteCommandArgvs(const std::string &key);
+
+    uint8_t id = 0;
     Dict<std::string, std::shared_ptr<FlyObj>>* dict;
     Dict<std::string, int64_t>* expires;
+
     const AbstractCoordinator *coordinator;
 };
 

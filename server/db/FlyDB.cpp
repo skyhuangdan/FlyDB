@@ -5,10 +5,11 @@
 #include "FlyDB.h"
 #include "../dataStructure/dict/Dict.cpp"
 
-FlyDB::FlyDB(const AbstractCoordinator *coordinator) {
+FlyDB::FlyDB(const AbstractCoordinator *coordinator, uint8_t id) {
     this->dict = new Dict<std::string, std::shared_ptr<FlyObj>>();
     this->expires = new Dict<std::string, int64_t>();
     this->coordinator = coordinator;
+    this->id = id;
 }
 
 FlyDB::~FlyDB() {
@@ -85,13 +86,40 @@ std::shared_ptr<FlyObj> FlyDB::lookupKey(const std::string &key) {
         return NULL;
     }
 
+    int64_t expireTime = this->getExpire(key);
+    if (expireTime != -1 && expireTime < time(NULL)) {
+        this->delKey(key);
+        /**
+         * get delete command and
+         * then feed to aof file(and rewrite block list)
+         **/
+        std::shared_ptr<FlyObj> *argvs = this->getDeleteCommandArgvs(key);
+        coordinator->getAofHandler()->feedAppendOnlyFile(this->id, argvs, 2);
+        return NULL;
+    }
+
     std::shared_ptr<FlyObj> val = entry->getVal();
     val->setLru(miscTool->mstime());
 
     return val;
 }
 
+std::shared_ptr<FlyObj>* FlyDB::getDeleteCommandArgvs(
+        const std::string &key) {
+    std::shared_ptr<FlyObj> *argvs = new std::shared_ptr<FlyObj> [2];
+    argvs[0] = coordinator->getFlyObjStringFactory()
+            ->getObject(new std::string("del"));
+    argvs[1] = coordinator->getFlyObjStringFactory()
+            ->getObject(new std::string(key));
+
+    return argvs;
+}
+
 void FlyDB::delKey(const std::string &key) {
     this->expires->deleteEntry(key);
     this->dict->deleteEntry(key);
+}
+
+int8_t FlyDB::getId() const {
+    return this->id;
 }
