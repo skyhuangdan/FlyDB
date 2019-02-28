@@ -31,6 +31,7 @@ public:
     std::shared_ptr<FlyObj> lookupKey(const std::string &key);
     void delKey(const std::string &key);
     int8_t getId() const;
+    void activeExpireCycle(int type);
 
 private:
     std::shared_ptr<FlyObj>* getDeleteCommandArgvs(const std::string &key);

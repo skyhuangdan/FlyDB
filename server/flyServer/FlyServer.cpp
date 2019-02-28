@@ -20,6 +20,7 @@
 #include "../db/FlyDBFactory.h"
 #include "../dataStructure/dict/Dict.cpp"
 #include "../bio/BIODef.h"
+#include "../db/FlyDBDef.h"
 
 #define runWithPeriod(flyServer, period) if(meetPeriod(flyServer, period))
 
@@ -578,6 +579,20 @@ void FlyServer::sigShutDownHandlers(int sig) {
     coordinator->getFlyServer()->setShutdownASAP(true);
 }
 
+void databaseCron(const AbstractCoordinator *coordinator) {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+
+    /** 删除flydb中的过期键 */
+    uint8_t dbCount = flyServer->getFlyDBCount();
+    for (uint8_t i = 0; i < dbCount; i++) {
+        AbstractFlyDB *flyDB = flyServer->getFlyDB(i);
+        flyDB->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
+    }
+
+    //todo
+
+}
+
 int serverCron(const AbstractCoordinator *coordinator,
                uint64_t id,
                void *clientData) {
@@ -586,7 +601,8 @@ int serverCron(const AbstractCoordinator *coordinator,
     // 设置当前时间
     flyServer->setNowt(time(NULL));
 
-    // todo: 过期键删除
+    /** 做database周期性处理 */
+    databaseCron(coordinator);
 
     // 释放所有异步删除的clients
     flyServer->freeClientsInAsyncFreeList();

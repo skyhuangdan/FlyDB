@@ -65,6 +65,7 @@ public:
 
     virtual int8_t getId() const = 0;
 
+    virtual void activeExpireCycle(int type) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYDB_H

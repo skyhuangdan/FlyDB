@@ -123,3 +123,7 @@ void FlyDB::delKey(const std::string &key) {
 int8_t FlyDB::getId() const {
     return this->id;
 }
+
+void FlyDB::activeExpireCycle(int type) {
+
+}
