@@ -631,23 +631,16 @@ void FlyServer::sigShutDownHandlers(int sig) {
     coordinator->getFlyServer()->setShutdownASAP(true);
 }
 
-void databaseCron(const AbstractCoordinator *coordinator) {
-    AbstractFlyServer *flyServer = coordinator->getFlyServer();
-
-    /** 删除flydb中的过期键 */
-    flyServer->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
-}
-
 int serverCron(const AbstractCoordinator *coordinator,
                uint64_t id,
                void *clientData) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
-    // 设置当前时间
+    /** 设置当前时间 */
     flyServer->setNowt(time(NULL));
 
-    /** 做database周期性处理 */
-    databaseCron(coordinator);
+    /** 删除flydb中的过期键 */
+    flyServer->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
 
     // 释放所有异步删除的clients
     flyServer->freeClientsInAsyncFreeList();

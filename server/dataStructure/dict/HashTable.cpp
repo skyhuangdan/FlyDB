@@ -135,8 +135,9 @@ bool HashTable<KEY, VAL>::needExpand(bool canResize) const {
 }
 
 template<class KEY, class VAL>
-bool HashTable<KEY, VAL>::needShrink() const {
-    return this->used < this->size;
+bool HashTable<KEY, VAL>::needShrink(bool canResize) const {
+    return canResize && (this->size > HASH_TABLE_INITIAL_SIZE)
+           && (this->used*100/this->size < HASHTABLE_MIN_FILL);
 }
 
 template<class KEY, class VAL>

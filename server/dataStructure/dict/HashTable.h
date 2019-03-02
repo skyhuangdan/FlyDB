@@ -18,7 +18,7 @@ class HashTable {
     DictEntry<KEY, VAL>* findEntry(const KEY key);
     int deleteEntry(const KEY key);
     bool needExpand(bool canResize) const;
-    bool needShrink() const;
+    bool needShrink(bool canResize) const;
     bool hasKey(const KEY key);
     uint32_t getIndexWithKey(const KEY key) const;
     uint32_t getIndex(uint32_t cursor) const;

@@ -149,7 +149,7 @@ int Dict<KEY, VAL>::deleteEntry(const KEY key) {
     // 先从ht[0]中尝试删除, 如果删除成功
     if ((this->ht[0]->deleteEntry(key)) > 0) {
         // 没有处于rehash过程中 && 需要缩容，则进行缩容
-        if (!isRehashing() && this->ht[0]->needShrink()) {
+        if (!isRehashing() && this->ht[0]->needShrink(canResize)) {
             this->ht[1] = new HashTable<KEY, VAL>(this->ht[0]->getSize() / 2);
             this->rehashIndex = 0;
             rehashSteps(1);

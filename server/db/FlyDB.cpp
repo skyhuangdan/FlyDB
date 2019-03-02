@@ -121,7 +121,7 @@ std::shared_ptr<FlyObj>* FlyDB::getDeleteCommandArgvs(
 void FlyDB::deleteKey(const std::string &key) {
     this->expires->deleteEntry(key);
     this->dict->deleteEntry(key);
-    
+
     /**
      * get delete command and
      * then feed to aof file(and rewrite block list)
@@ -160,6 +160,7 @@ bool FlyDB::activeExpireCycle(int type, uint64_t start, uint64_t timelimit) {
             uint64_t ttl = expireEntry->getVal() - start;
             if (ttl <= 0) {
                 this->deleteKey(expireEntry->getKey());
+                expired++;
             }
         }
 
@@ -167,6 +168,11 @@ bool FlyDB::activeExpireCycle(int type, uint64_t start, uint64_t timelimit) {
         if (miscTool->ustime() - start > timelimit) {
             return true;
         }
+
+        /**
+         * 如果该次循环删除的key数量
+         * 小于ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP的1/4，则扫描下一个db
+         **/
     } while (expired > ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP / 4);
 
     return false;
