@@ -123,6 +123,8 @@ private:
 void versionCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void getCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void setCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void setExCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void psetExCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void expireCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void expireatCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void mgetCommand(const AbstractCoordinator*, AbstractFlyClient*);

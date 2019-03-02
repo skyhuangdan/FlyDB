@@ -66,6 +66,9 @@ public:
     void stopLoad();
     bool isLoading() const;
     void activeExpireCycle(int type);
+    void tryResizeDB();
+    uint64_t addDirty(uint64_t count);
+    uint64_t getDirty() const;
 
     /**
      *  client相关
@@ -107,9 +110,11 @@ private:
     time_t loadingStartTime = 0;
     uint64_t loadBytes = 0;
     uint64_t loadTotalBytes = 0;
-    uint8_t currentDB = 0;
+    uint8_t currentExpireDB = 0;
+    uint8_t currentShrinkDB = 0;
     bool timelimitExit = false;
     uint64_t lastFastCycle = 0;
+    uint64_t dirty = 0;
 
     /**
      *  网络相关

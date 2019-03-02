@@ -31,6 +31,8 @@ public:
                      void *priv);
     int expand(uint32_t size);              // 扩容/缩容
     int shrinkToMinSize();                  // 缩容至最小容量
+    int shrinkToNextPower();                // 缩容至大于used的下一个2的指数值
+    int tryShrink();
     uint32_t slotNum() const;
     uint32_t size() const;
 

@@ -26,5 +26,4 @@ int main(int argc, char **argv) {
     coordinator->getEventLoop()->eventMain();
 
     delete coordinator;
-
 }

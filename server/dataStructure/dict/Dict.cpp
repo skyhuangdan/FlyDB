@@ -313,6 +313,34 @@ int Dict<KEY, VAL>::shrinkToMinSize() {
 }
 
 template<class KEY, class VAL>
+int Dict<KEY, VAL>::shrinkToNextPower() {
+    /** 如果正处于rehash过程中，或者ht[0]不允许resize, 返回-1 */
+    if (this->isRehashing() || !canResize) {
+        return -1;
+    }
+
+    int minimal = this->ht[0]->getUsed();
+    if (minimal < HASH_TABLE_INITIAL_SIZE) {
+        minimal = HASH_TABLE_INITIAL_SIZE;
+    } else {
+        /** 获取minimal的next power */
+        minimal = nextPower(minimal);
+    }
+
+    this->expand(minimal);
+}
+
+template<class KEY, class VAL>
+int Dict<KEY, VAL>::tryShrink() {
+    /** 如果正处于rehash过程中，或者ht[0]不允许缩容, 返回-1 */
+    if (this->isRehashing() || !this->ht[0]->needShrink(canResize)) {
+        return -1;
+    }
+
+    this->shrinkToNextPower();
+}
+
+template<class KEY, class VAL>
 int Dict<KEY, VAL>::expand(uint32_t size) {
     uint32_t expandSize = nextPower(size);
     // 如果正在rehash, 或者扩容大小 < 目前已使用空间

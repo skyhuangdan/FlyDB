@@ -525,15 +525,6 @@ const saveParam* FDBHandler::getSaveParam(int pos) const  {
     return &(this->saveParams[pos]);
 }
 
-uint64_t FDBHandler::getDirty() const {
-    return this->dirty;
-}
-
-uint64_t FDBHandler::addDirty(uint64_t count) {
-    this->dirty += count;
-    return this->dirty;
-}
-
 time_t FDBHandler::getLastSaveTime() const {
     return this->lastSaveTime;
 }

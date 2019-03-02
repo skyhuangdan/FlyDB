@@ -61,6 +61,10 @@ public:
 
     virtual uint8_t getFlyDBCount() const = 0;
 
+    virtual uint64_t addDirty(uint64_t count) = 0;
+
+    virtual uint64_t getDirty() const = 0;
+
     virtual void startToLoad() = 0;
 
     virtual void stopLoad() = 0;
@@ -87,6 +91,8 @@ public:
     virtual uint64_t getCronLoops() const = 0;
 
     virtual void activeExpireCycle(int type) = 0;
+
+    virtual void tryResizeDB() = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

@@ -391,12 +391,30 @@ void FlyServer::activeExpireCycle(int type) {
 
     /** 遍历db */
     for (uint8_t i = 0; i < dbsPerCall; i++) {
-        AbstractFlyDB *flyDB = this->getFlyDB(this->currentDB);
-        this->currentDB = (this->currentDB + 1) % this->getFlyDBCount();
-        if (flyDB->activeExpireCycle(type, start, timelimit)) {
+        AbstractFlyDB *flyDB = this->getFlyDB(this->currentExpireDB);
+        if (NULL == flyDB) {
+            continue;
+        }
+
+        this->currentExpireDB =
+                (this->currentExpireDB + 1) % this->getFlyDBCount();
+        if (flyDB->activeExpireCycle(start, timelimit)) {
             this->timelimitExit = true;
             return;
         }
+    }
+}
+
+void FlyServer::tryResizeDB() {
+    uint8_t dbsPerCall = CRON_DBS_PER_CALL > this->getFlyDBCount()
+            ? getFlyDBCount() : CRON_DBS_PER_CALL;
+    for (uint8_t i = 0; i < dbsPerCall; i++) {
+        AbstractFlyDB *flyDB = getFlyDB(this->currentShrinkDB);
+        this->currentShrinkDB++;
+        if (NULL == flyDB) {
+            continue;
+        }
+        flyDB->tryResizeDB();
     }
 }
 
@@ -464,6 +482,11 @@ int FlyServer::deleteClient(int fd) {
 
 void FlyServer::addToClientsPendingToWrite(AbstractFlyClient *flyClient) {
     this->clientsPendingWrite.push_back(flyClient);
+}
+
+uint64_t FlyServer::addDirty(uint64_t count) {
+    this->dirty += count;
+    return this->dirty;
 }
 
 int FlyServer::handleClientsWithPendingWrites() {
@@ -631,13 +654,36 @@ void FlyServer::sigShutDownHandlers(int sig) {
     coordinator->getFlyServer()->setShutdownASAP(true);
 }
 
+uint64_t FlyServer::getDirty() const {
+    return this->dirty;
+}
+
+void databaseCron(const AbstractCoordinator *coordinator) {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+
+    /** 删除flydb中的过期键 */
+    flyServer->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
+
+    /**
+     * 如果不存在持久化后台子进程，则执行判断各db是否需要缩容（缩小db占用空间）:
+     *     1.虽然deleteEntry时会做判断是否需要缩容（被动式缩容），
+     *       但是假如一直没有删除操作，db一直占用内存过高而得不到清除，
+     *       所以还是需要主动缩容。
+     *     2.缩容操作不和持久化进程一起执行的目的，是为了防止io压力过大
+     **/
+    if (!coordinator->getFdbHandler()->haveChildPid()
+        && !coordinator->getAofHandler()->haveChildPid()) {
+        flyServer->tryResizeDB();
+    }
+}
+
 int serverCron(const AbstractCoordinator *coordinator,
                uint64_t id,
                void *clientData) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
-    /** 设置当前时间 */
-    flyServer->setNowt(time(NULL));
+    /** 数据库循环操作 */
+    databaseCron(coordinator);
 
     /** 删除flydb中的过期键 */
     flyServer->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
@@ -705,7 +751,7 @@ int serverCron(const AbstractCoordinator *coordinator,
         for (int i = 0; i < count; i++) {
             const saveParam* saveParam =
                     coordinator->getFdbHandler()->getSaveParam(i);
-            if (coordinator->getFdbHandler()->getDirty() > saveParam->changes
+            if (coordinator->getFlyServer()->getDirty() > saveParam->changes
                 && coordinator->getFdbHandler()->
                     lastSaveTimeGapGreaterThan(saveParam->seconds)
                 && coordinator->getFdbHandler()->canBgsaveNow()

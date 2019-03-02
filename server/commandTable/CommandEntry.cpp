@@ -17,21 +17,23 @@
 std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("version",     versionCommand,     1, "rF",  0,  NULL, 1, 1, 1, 0, 0),
        new CommandEntry("get",         getCommand,         2, "rF",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("set",         setCommand,        -3, "wm",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("set",         setCommand,         3, "wm",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("setex",       setExCommand,       4, "wm",  0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("psetex",      psetExCommand,      4, "wm",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("expire",      expireCommand,      3, "wF",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("expireat",    expireatCommand,    3, "wF",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("mget",        mgetCommand,       -2, "rF",  0, NULL, 1,-1, 1, 0, 0),
-       new CommandEntry("rpush",       rpushCommand,      -3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("lpush",       lpushCommand,      -3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("sortpush",    pushSortCommand,   -3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("mget",        mgetCommand,        2, "rF",  0, NULL, 1,-1, 1, 0, 0),
+       new CommandEntry("rpush",       rpushCommand,       3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("lpush",       lpushCommand,       3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("sortpush",    pushSortCommand,    3, "wmF", 0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("rpop",        rpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("lpop",        lpopCommand,        2, "wF",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("sortPop",     popSortCommand,     2, "wF",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("hset",        hsetCommand,       -4, "wmF", 0, NULL, 1, 1, 1, 0, 0),
+       new CommandEntry("hset",        hsetCommand,        4, "wmF", 0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("hget",        hgetCommand,        3, "rF",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("save",        saveCommand,        1, "as",  0,  NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("bgsave",      bgsaveCommand,     -1, "a",   0,  NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("config",      configCommand,     -2, "lat", 0,  NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("bgsave",      bgsaveCommand,      1, "a",   0,  NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("config",      configCommand,      2, "lat", 0,  NULL, 0, 0, 0, 0, 0),
        new CommandEntry("bgrewriteaof",bgrewriteaofCommand,1, "a",   0,  NULL, 0, 0, 0, 0, 0),
        new CommandEntry("select",      selectCommand,      2, "lF", 0,   NULL, 0, 0, 0, 0, 0)
 };
@@ -178,12 +180,6 @@ void getCommand(const AbstractCoordinator* coordinator,
         return;
     }
 
-    // 如果参数数量<2，直接返回
-    if (flyClient->getArgc() < 2) {
-        flyClient->addReply("missing parameters!");
-        return;
-    }
-
     // 获取到key
     std::string *key = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
@@ -199,27 +195,20 @@ void setGenericCommand(const AbstractCoordinator *coordinator,
                        AbstractFlyClient *flyClient,
                        std::string *key,
                        std::shared_ptr<FlyObj> val,
-                       int64_t expireMilli) {
+                       int64_t expireus) {
     // 将key和val添加到flydb中
-    if (-1 == flyClient->getFlyDB()->addExpire(*key, val, expireMilli)) {
+    if (-1 == flyClient->getFlyDB()->addExpire(*key, val, expireus)) {
         flyClient->addReply("set error!");
         return;
     }
 
-    // todo: addDirty
-    coordinator->getFdbHandler()->addDirty(1);
+    coordinator->getFlyServer()->addDirty(1);
     flyClient->addReply("set OK!");
 }
 
 void setCommand(const AbstractCoordinator* coordinator,
                 AbstractFlyClient* flyClient) {
     if (NULL == flyClient) {
-        return;
-    }
-
-    // 如果参数数量 < 2，直接返回
-    if (flyClient->getArgc() < 3) {
-        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -237,23 +226,19 @@ void setExCommand(const AbstractCoordinator* coordinator,
         return;
     }
 
-    // 如果参数数量 < 3，直接返回
-    if (flyClient->getArgc() < 4) {
-        flyClient->addReply("missing parameters!");
-        return;
-    }
-
     // 获取到key和val
     std::string *key =
             reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
     std::shared_ptr<FlyObj> val = flyClient->getArgv()[2];
 
     // 获取超时时间
-    int64_t expireSeconds =
-            *(reinterpret_cast<int*>(flyClient->getArgv()[3]->getPtr()));
-    int64_t expireMilli = (-1 == expireSeconds ? -1 : expireSeconds * 1000);
+    std::string *expireString =
+            reinterpret_cast<std::string*>(flyClient->getArgv()[3]->getPtr());
+    int64_t expireSeconds = atol(expireString->c_str());
+    int64_t expireus = (-1 == expireSeconds ? -1 : expireSeconds * 1000000);
 
-    setGenericCommand(coordinator, flyClient, key, val, expireMilli);
+    setGenericCommand(coordinator, flyClient, key,
+                      val, miscTool->ustime() + expireus);
 }
 
 void psetExCommand(const AbstractCoordinator* coordinator,
@@ -262,20 +247,18 @@ void psetExCommand(const AbstractCoordinator* coordinator,
         return;
     }
 
-    // 如果参数数量 < 3，直接返回
-    if (flyClient->getArgc() < 4) {
-        flyClient->addReply("missing parameters!");
-        return;
-    }
-
     // 获取到key和val
     std::string *key =
             reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
     std::shared_ptr<FlyObj> val = flyClient->getArgv()[2];
-    int64_t expireMilli =
-            *(reinterpret_cast<int*>(flyClient->getArgv()[3]->getPtr()));
 
-    setGenericCommand(coordinator, flyClient, key, val, expireMilli);
+    /** 获取超时时间 */
+    std::string *expireString =
+            reinterpret_cast<std::string*>(flyClient->getArgv()[3]->getPtr());
+    int64_t expireus  = atol(expireString->c_str());
+
+    setGenericCommand(coordinator, flyClient, key,
+                      val, miscTool->ustime() + expireus);
 }
 
 void expireCommand(const AbstractCoordinator* coordinator,
@@ -332,7 +315,7 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
         }
     }
 
-    coordinator->getFdbHandler()->addDirty(flyClient->getArgc() - 2);
+    coordinator->getFlyServer()->addDirty(flyClient->getArgc() - 2);
     flyClient->addReply("push OK!");
 }
 
@@ -362,8 +345,8 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
     std::string *key =
             reinterpret_cast<std::string*>(flyClient->getArgv()[1]->getPtr());
     AbstractFlyDB *flyDB = flyClient->getFlyDB();
-    SkipList<std::string> *list = reinterpret_cast<SkipList<std::string> *>
-    (flyDB->lookupKey(*key)->getPtr());
+    SkipList<std::string> *list = reinterpret_cast<SkipList<std::string> *>(
+            flyDB->lookupKey(*key)->getPtr());
     if (NULL == list) {
         std::shared_ptr<FlyObj> obj = coordinator->getFlyObjLinkedListFactory()
                 ->getObject(list = new SkipList<std::string>());
@@ -375,7 +358,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
                 flyClient->getArgv()[j]->getPtr())));
     }
 
-    coordinator->getFdbHandler()->addDirty(flyClient->getArgc() - 2);
+    coordinator->getFlyServer()->addDirty(flyClient->getArgc() - 2);
     flyClient->addReply("push OK!");
 }
 
@@ -400,10 +383,10 @@ void popSortCommand(const AbstractCoordinator* coordinator,
 
     SkipList<std::string> *list =
             reinterpret_cast<SkipList<std::string> *>(val->getPtr());
-    list->deleteNode(
-            *(reinterpret_cast<std::string *>(flyClient->getArgv()[3]->getPtr())));
+    list->deleteNode(*(reinterpret_cast<std::string *>(
+            flyClient->getArgv()[3]->getPtr())));
 
-    coordinator->getFdbHandler()->addDirty(1);
+    coordinator->getFlyServer()->addDirty(1);
     flyClient->addReply("status OK!");
 }
 
@@ -435,7 +418,7 @@ void popGenericCommand(const AbstractCoordinator *coordinator,
         list->pop_back();
     }
 
-    coordinator->getFdbHandler()->addDirty(1);
+    coordinator->getFlyServer()->addDirty(1);
     flyClient->addReply("status OK!");
 }
 
@@ -479,19 +462,13 @@ void hsetCommand(const AbstractCoordinator* coordinator,
         dict->addEntry(*key, *val);
     }
 
-    coordinator->getFdbHandler()->addDirty(argc / 2 - 1);
+    coordinator->getFlyServer()->addDirty(argc / 2 - 1);
     flyClient->addReply("status OK!");
 }
 
 void hgetCommand(const AbstractCoordinator* coordinator,
                  AbstractFlyClient* flyClient) {
     if (NULL == flyClient) {
-        return;
-    }
-
-    // 如果参数数量 < 2，直接返回
-    if (flyClient->getArgc() < 3) {
-        flyClient->addReply("missing parameters!");
         return;
     }
 
@@ -607,10 +584,6 @@ void bgrewriteaofCommand(const AbstractCoordinator *coordinator,
 
 void configSetCommand(const AbstractCoordinator* coordinator,
                       AbstractFlyClient* flyClient) {
-    if (flyClient->getArgc() != 4) {
-        return;
-    }
-
     std::string *argv2 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[2]->getPtr());
     std::string *argv3 = reinterpret_cast<std::string*>(
@@ -641,10 +614,6 @@ void configGetCommand(const AbstractCoordinator* coordinator,
 
 void configCommand(const AbstractCoordinator* coordinator,
                    AbstractFlyClient* flyClient) {
-    if (flyClient->getArgc() < 2) {
-        return;
-    }
-
     std::string *argv1 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
 
@@ -674,10 +643,6 @@ void configCommand(const AbstractCoordinator* coordinator,
 
 void selectCommand(const AbstractCoordinator* coordinator,
                    AbstractFlyClient* flyClient) {
-    if (flyClient->getArgc() < 2) {
-        return;
-    }
-
     std::string *argv1 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
     int64_t num = 0;

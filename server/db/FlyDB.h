@@ -36,7 +36,8 @@ public:
     std::shared_ptr<FlyObj> lookupKey(const std::string &key);
     void deleteKey(const std::string &key);
     int8_t getId() const;
-    bool activeExpireCycle(int type, uint64_t start, uint64_t timelimit);
+    bool activeExpireCycle(uint64_t start, uint64_t timelimit);
+    void tryResizeDB();
 
 private:
     std::shared_ptr<FlyObj>* getDeleteCommandArgvs(const std::string &key);

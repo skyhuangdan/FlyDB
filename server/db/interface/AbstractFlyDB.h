@@ -69,9 +69,10 @@ public:
 
     virtual int8_t getId() const = 0;
 
-    virtual bool activeExpireCycle(int type,
-                                   uint64_t start,
+    virtual bool activeExpireCycle(uint64_t start,
                                    uint64_t timelimit) = 0;
+
+    virtual void tryResizeDB() = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYDB_H

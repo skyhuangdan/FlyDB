@@ -82,7 +82,15 @@ int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
     DictEntry<std::string, CommandEntry>* dictEntry =
             this->commands->findEntry(*command);
     if (NULL == dictEntry) {
-        this->logHandler->logDebug("wrong command type: %s", command);
+        flyClient->addReply("wrong command type: %s", command);
+        return -1;
+    }
+
+    /** 如果参数数量少，返回失败 */
+    int arity = dictEntry->getVal().getArity();
+    if (flyClient->getArgc() < arity) {
+        flyClient->addReply("too few parameters: %d, need: %d ",
+                            flyClient->getArgc(), arity);
         return -1;
     }
 

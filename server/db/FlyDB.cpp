@@ -134,7 +134,7 @@ int8_t FlyDB::getId() const {
     return this->id;
 }
 
-bool FlyDB::activeExpireCycle(int type, uint64_t start, uint64_t timelimit) {
+bool FlyDB::activeExpireCycle(uint64_t start, uint64_t timelimit) {
     int expired = 0;
     do {
         uint32_t num = 0;
@@ -157,8 +157,8 @@ bool FlyDB::activeExpireCycle(int type, uint64_t start, uint64_t timelimit) {
         while (num--) {
             DictEntry<std::string, uint64_t>* expireEntry =
                     this->expires->getRandomEntry();
-            uint64_t ttl = expireEntry->getVal() - start;
-            if (ttl <= 0) {
+            uint64_t expiretime = expireEntry->getVal();
+            if (expireEntry->getVal() <= start) {
                 this->deleteKey(expireEntry->getKey());
                 expired++;
             }
@@ -176,4 +176,9 @@ bool FlyDB::activeExpireCycle(int type, uint64_t start, uint64_t timelimit) {
     } while (expired > ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP / 4);
 
     return false;
+}
+
+void FlyDB::tryResizeDB() {
+    this->dict->tryShrink();
+    this->expires->tryShrink();
 }

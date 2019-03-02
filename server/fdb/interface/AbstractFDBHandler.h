@@ -72,10 +72,6 @@ public:
     virtual int getSaveParamsCount() const = 0;
 
     virtual const saveParam* getSaveParam(int pos) const = 0;
-
-    virtual uint64_t getDirty() const = 0;
-
-    virtual uint64_t addDirty(uint64_t count) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFDBHANDLER_H
