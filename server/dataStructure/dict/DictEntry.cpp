@@ -26,3 +26,8 @@ template<class KEY, class VAL>
 void DictEntry<KEY, VAL>::setVal(const VAL val) {
     this->val = val;
 }
+
+template<class KEY, class VAL>
+DictEntry<KEY, VAL>* DictEntry<KEY, VAL>::getNext() {
+    return this->next;
+};

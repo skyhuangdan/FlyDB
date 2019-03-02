@@ -80,6 +80,49 @@ DictEntry<KEY, VAL>* Dict<KEY, VAL>::findEntry(const KEY key) {
 }
 
 template<class KEY, class VAL>
+DictEntry<KEY, VAL>* Dict<KEY, VAL>::getRandomEntry() {
+    if (0 == this->size()) {
+        return NULL;
+    }
+
+    /** 随机获取某个DictEntry列表(每个index对应一个DictEntry列表) */
+    DictEntry<KEY, VAL>* dictEntry = NULL;
+    uint32_t index = 0;
+    if (this->isRehashing()) {
+        // 先进行一步rehash
+        rehashSteps(1);
+        do {
+            index = this->rehashIndex + (random() % (this->ht[0]->getSize()
+                    + this->ht[1]->getSize() - this->rehashIndex));
+            dictEntry = (index > this->ht[0]->getSize())
+                    ? this->ht[1]->getEntryBy(index - this->ht[0]->getSize())
+                    : this->ht[0]->getEntryBy(index);
+        } while (NULL == dictEntry);
+    } else {
+        do {
+            index = this->ht[0]->getIndex(random());
+            dictEntry = this->ht[0]->getEntryBy(index);
+        } while (NULL == dictEntry);
+    }
+
+    int length = 0;
+    DictEntry<KEY, VAL> *realEntry = dictEntry;
+    while (dictEntry != NULL) {
+        length++;
+        dictEntry = dictEntry->getNext();
+    }
+
+    /** 随机获取该链表中的某个entry */
+    dictEntry = realEntry;
+    int num = random() % length;
+    while (num-- > 0) {
+        dictEntry = dictEntry->getNext();
+    }
+
+    return dictEntry;
+}
+
+template<class KEY, class VAL>
 int Dict<KEY, VAL>::fetchValue(const KEY key, VAL *val) {
     // 先进行一步rehash
     if (isRehashing()) {
@@ -291,10 +334,20 @@ int Dict<KEY, VAL>::expand(uint32_t size) {
 }
 
 template<class KEY, class VAL>
-uint32_t Dict<KEY, VAL>::size() const {
+uint32_t Dict<KEY, VAL>::slotNum() const {
     uint32_t size = this->ht[0]->getSize();
     if (NULL != this->ht[1]) {
         size += this->ht[1]->getSize();
+    }
+
+    return size;
+}
+
+template<class KEY, class VAL>
+uint32_t Dict<KEY, VAL>::size() const {
+    uint32_t size = this->ht[0]->getUsed();
+    if (NULL != this->ht[1]) {
+        size += this->ht[1]->getUsed();
     }
 
     return size;

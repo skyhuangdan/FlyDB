@@ -8,6 +8,7 @@
 #include "Select.h"
 #include "EventDef.h"
 #include "../flyServer/FlyServer.h"
+#include "../db/FlyDBDef.h"
 
 EventLoop::EventLoop(const AbstractCoordinator *coordinator, int setSize) {
     this->setSize = setSize;
@@ -280,6 +281,9 @@ void EventLoop::createTimeEvent(uint64_t milliseconds, timeEventProc *proc,
 
 void beforeSleep(const AbstractCoordinator *coordinator) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
+
+    /** 删除flydb中的过期键 */
+    flyServer->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_FAST);
 
     /** 真正的flush操作放在beforeSleep中:
      *     保证flush操作在回复client之前,

@@ -20,6 +20,7 @@ public:
     int addEntry(const KEY key, const VAL val);
     int replace(const KEY key, const VAL val);
     DictEntry<KEY, VAL>* findEntry(const KEY key);
+    DictEntry<KEY, VAL>* getRandomEntry();
     int fetchValue(const KEY key, VAL *val);
     int deleteEntry(const KEY key);
     bool isRehashing() const;
@@ -30,6 +31,7 @@ public:
                      void *priv);
     int expand(uint32_t size);              // 扩容/缩容
     int shrinkToMinSize();                  // 缩容至最小容量
+    uint32_t slotNum() const;
     uint32_t size() const;
 
 private:

@@ -15,11 +15,11 @@ struct DictEntry {
     const KEY getKey() const;
     const VAL getVal() const;
     void setVal(const VAL val);
+    DictEntry<KEY, VAL>* getNext();
 
     KEY key;
     VAL val;
-    DictEntry* next;
-
+    DictEntry<KEY, VAL>* next;
 };
 
 

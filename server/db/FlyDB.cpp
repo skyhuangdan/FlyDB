@@ -4,10 +4,11 @@
 
 #include "FlyDB.h"
 #include "../dataStructure/dict/Dict.cpp"
+#include "FlyDBDef.h"
 
 FlyDB::FlyDB(const AbstractCoordinator *coordinator, uint8_t id) {
     this->dict = new Dict<std::string, std::shared_ptr<FlyObj>>();
-    this->expires = new Dict<std::string, int64_t>();
+    this->expires = new Dict<std::string, uint64_t>();
     this->coordinator = coordinator;
     this->id = id;
 }
@@ -31,7 +32,7 @@ int FlyDB::add(const std::string &key, std::shared_ptr<FlyObj> val) {
 
 int FlyDB::addExpire(const std::string &key,
                      std::shared_ptr<FlyObj> val,
-                     int64_t expire) {
+                     uint64_t expire) {
     if (-1 == this->add(key, val)) {
         return -1;
     }
@@ -58,8 +59,8 @@ int FlyDB::dictScan(Fio *fio, scan scanProc) {
     } while (nextCur != 0);
 }
 
-int64_t FlyDB::getExpire(const std::string &key) {
-    int64_t ex;
+uint64_t FlyDB::getExpire(const std::string &key) {
+    uint64_t ex;
     int res = this->expires->fetchValue(key, &ex);
     if (-1 == res) {
         return -1;
@@ -69,6 +70,14 @@ int64_t FlyDB::getExpire(const std::string &key) {
 
 const AbstractCoordinator* FlyDB::getCoordinator() const {
     return this->coordinator;
+}
+
+uint32_t FlyDB::dictSlotNum() const {
+    return dict->slotNum();
+}
+
+uint32_t FlyDB::expireSlotNum() const {
+    return expires->slotNum();
 }
 
 uint32_t FlyDB::dictSize() const {
@@ -86,15 +95,9 @@ std::shared_ptr<FlyObj> FlyDB::lookupKey(const std::string &key) {
         return NULL;
     }
 
-    int64_t expireTime = this->getExpire(key);
+    uint64_t expireTime = this->getExpire(key);
     if (expireTime != -1 && expireTime < time(NULL)) {
-        this->delKey(key);
-        /**
-         * get delete command and
-         * then feed to aof file(and rewrite block list)
-         **/
-        std::shared_ptr<FlyObj> *argvs = this->getDeleteCommandArgvs(key);
-        coordinator->getAofHandler()->feedAppendOnlyFile(this->id, argvs, 2);
+        this->deleteKey(key);
         return NULL;
     }
 
@@ -115,15 +118,56 @@ std::shared_ptr<FlyObj>* FlyDB::getDeleteCommandArgvs(
     return argvs;
 }
 
-void FlyDB::delKey(const std::string &key) {
+void FlyDB::deleteKey(const std::string &key) {
     this->expires->deleteEntry(key);
     this->dict->deleteEntry(key);
+    
+    /**
+     * get delete command and
+     * then feed to aof file(and rewrite block list)
+     **/
+    std::shared_ptr<FlyObj> *argvs = this->getDeleteCommandArgvs(key);
+    coordinator->getAofHandler()->feedAppendOnlyFile(this->id, argvs, 2);
 }
 
 int8_t FlyDB::getId() const {
     return this->id;
 }
 
-void FlyDB::activeExpireCycle(int type) {
+bool FlyDB::activeExpireCycle(int type, uint64_t start, uint64_t timelimit) {
+    int expired = 0;
+    do {
+        uint32_t num = 0;
+        /** 如果当前db为空，则开始执行下一个 */
+        if (0 == (num = this->dictSize())) {
+            continue;
+        }
 
+        /** 如果当前db占用比例小于1%，则不处理 */
+        uint32_t slots = this->dictSlotNum();
+        if (num * 100 / slots < 1) {
+            break;
+        }
+
+        /** 每次loop最多只处理ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP个过期键 */
+        if (num > ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP) {
+            num = ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP;
+        }
+
+        while (num--) {
+            DictEntry<std::string, uint64_t>* expireEntry =
+                    this->expires->getRandomEntry();
+            uint64_t ttl = expireEntry->getVal() - start;
+            if (ttl <= 0) {
+                this->deleteKey(expireEntry->getKey());
+            }
+        }
+
+        /** 如果超过时间限制，则返回 */
+        if (miscTool->ustime() - start > timelimit) {
+            return true;
+        }
+    } while (expired > ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP / 4);
+
+    return false;
 }

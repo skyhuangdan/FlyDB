@@ -47,13 +47,17 @@ public:
 
     virtual int addExpire(const std::string &key,
                           std::shared_ptr<FlyObj> val,
-                          int64_t expire) = 0;
+                          uint64_t expire) = 0;
 
     virtual int dictScan(Fio *fio, scan scanProc) = 0;
 
-    virtual int64_t getExpire(const std::string &key) = 0;
+    virtual uint64_t getExpire(const std::string &key) = 0;
 
     virtual const AbstractCoordinator* getCoordinator() const = 0;
+
+    virtual uint32_t dictSlotNum() const = 0;
+
+    virtual uint32_t expireSlotNum() const = 0;
 
     virtual uint32_t dictSize() const = 0;
 
@@ -61,11 +65,13 @@ public:
 
     virtual std::shared_ptr<FlyObj> lookupKey(const std::string &key) = 0;
 
-    virtual void delKey(const std::string &key) = 0;
+    virtual void deleteKey(const std::string &key) = 0;
 
     virtual int8_t getId() const = 0;
 
-    virtual void activeExpireCycle(int type) = 0;
+    virtual bool activeExpireCycle(int type,
+                                   uint64_t start,
+                                   uint64_t timelimit) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYDB_H

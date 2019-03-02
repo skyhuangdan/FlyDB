@@ -18,7 +18,11 @@ AbstractCoordinator *coordinator = NULL;
 int main(int argc, char **argv) {
     std::cout << "Hello, flyDB. Wish you be better!" << std::endl;
 
+    /** 初始化随机种子 */
+    srand((unsigned)time(NULL) ^ getpid());
+
     coordinator = new Coordinator();
+    coordinator->getFdbHandler()->save();
     coordinator->getEventLoop()->eventMain();
 
     delete coordinator;

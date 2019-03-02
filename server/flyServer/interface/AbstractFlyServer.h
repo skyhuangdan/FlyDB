@@ -86,6 +86,7 @@ public:
 
     virtual uint64_t getCronLoops() const = 0;
 
+    virtual void activeExpireCycle(int type) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

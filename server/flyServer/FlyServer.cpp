@@ -348,6 +348,58 @@ bool FlyServer::isLoading() const {
     return this->loading;
 }
 
+/**
+ * type:
+ *  ACTIVE_EXPIRE_CYCLE_FAST：每次运行时间不超过EXPIRE_FAST_CYCLE_DURATION，并且下次开始
+ *                            距离上次运行完时间间隔必须大于EXPIRE_FAST_CYCLE_DURATION
+ *  ACTIVE_EXPIRE_CYCLE_SLOW: 运行时间是servercron运行hz的百分比时间，
+ *                            百分比由ACTIVE_EXPIRE_CYCLE_SLOW_TIME_PERC指定
+ **/
+void FlyServer::activeExpireCycle(int type) {
+    uint64_t start = miscTool->ustime();
+    uint64_t timelimit = 0;
+    uint8_t dbsPerCall = CRON_DBS_PER_CALL;
+
+    if (ACTIVE_EXPIRE_CYCLE_FAST == type) {
+        /** 如果不是上次超时，则不运行ACTIVE_EXPIRE_CYCLE_FAST，直接返回 */
+        if (!this->timelimitExit) {
+            return;
+        }
+
+        /**
+         * 如果当前时间 < 上次运行时间+2*EXPIRE_FAST_CYCLE_DURATION
+         * 2*EXPIRE_FAST_CYCLE_DURATION = 1*运行时间+1*运行间隔
+         **/
+        if (start < this->lastFastCycle + 2*ACTIVE_EXPIRE_CYCLE_FAST_DURATION) {
+            return;
+        }
+        this->lastFastCycle = start;
+        timelimit = ACTIVE_EXPIRE_CYCLE_FAST_DURATION;
+    } else {
+        timelimit = (uint64_t)(
+                (1000000/this->hz) * (ACTIVE_EXPIRE_CYCLE_SLOW_TIME_PERC/100));
+        if (timelimit <= 0) {
+            timelimit = 1;
+        }
+    }
+
+    /** 最大遍历的db数量不超过当前db的总数量 */
+    uint8_t dbCount = this->getFlyDBCount();
+    if (dbsPerCall > dbCount) {
+        dbsPerCall = dbCount;
+    }
+
+    /** 遍历db */
+    for (uint8_t i = 0; i < dbsPerCall; i++) {
+        AbstractFlyDB *flyDB = this->getFlyDB(this->currentDB);
+        this->currentDB = (this->currentDB + 1) % this->getFlyDBCount();
+        if (flyDB->activeExpireCycle(type, start, timelimit)) {
+            this->timelimitExit = true;
+            return;
+        }
+    }
+}
+
 AbstractFlyClient* FlyServer::createClient(int fd) {
     if (fd <= 0) {
         return NULL;
@@ -583,14 +635,7 @@ void databaseCron(const AbstractCoordinator *coordinator) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
     /** 删除flydb中的过期键 */
-    uint8_t dbCount = flyServer->getFlyDBCount();
-    for (uint8_t i = 0; i < dbCount; i++) {
-        AbstractFlyDB *flyDB = flyServer->getFlyDB(i);
-        flyDB->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
-    }
-
-    //todo
-
+    flyServer->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
 }
 
 int serverCron(const AbstractCoordinator *coordinator,

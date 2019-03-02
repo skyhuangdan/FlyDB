@@ -65,6 +65,7 @@ public:
     void startToLoad();
     void stopLoad();
     bool isLoading() const;
+    void activeExpireCycle(int type);
 
     /**
      *  client相关
@@ -106,6 +107,9 @@ private:
     time_t loadingStartTime = 0;
     uint64_t loadBytes = 0;
     uint64_t loadTotalBytes = 0;
+    uint8_t currentDB = 0;
+    bool timelimitExit = false;
+    uint64_t lastFastCycle = 0;
 
     /**
      *  网络相关
