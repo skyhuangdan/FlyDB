@@ -597,8 +597,7 @@ int FlyServer::prepareForShutdown(int flags) {
         }
 
         /**
-         * 多加了个fsync操作，防止flush中的fsync放入bio中,
-         * 而shutdown后没来得及执行
+         * 多加了个flush操作，防止有没有写入磁盘的aof缓存
          * */
         aofHandler->flush(true);
         aof_fsync(aofHandler->getFd());

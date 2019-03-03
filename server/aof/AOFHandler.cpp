@@ -63,8 +63,8 @@ int AOFHandler::start() {
  *  1.由于要求写入aof在给客户回复之前，客户端的回复在serverCron中,
  *    所以将调用flushd的操作放在beforeSleep中
  *  2.对于everysec模式，采用background fsync（bio中执行fsync）
- *    如果bio中已经有background fsync操作，则不执行write操作，
- *    因为fsync操作会阻塞write(除非设置了force)
+ *    如果bio中已经有background fsync操作，则不执行write操作(除非设置了force)，
+ *    因为fsync操作会阻塞write
  **/
 void AOFHandler::flush(bool force) {
     if (0 == this->buf.length()) {
@@ -83,11 +83,12 @@ void AOFHandler::flush(bool force) {
      **/
     if (AOF_FSYNC_EVERYSEC == this->fsyncStragy && !force) {
         /**
-         * 如果当前有fsync操作，则推迟当前操作，最大推迟2s
+         * 如果当前有background fsync操作，则不执行write操作(除非设置了force)，
+         * 因为fsync操作会阻塞write操作，推迟当前操作，最大推迟2s
          */
         if (syncInProgress) {
-            /** 刚开始进入推迟，记录最初推迟时间，便于计算总统的推迟2s时间 */
-            if (0 != this->flushPostponedStart) {
+            /** 刚开始进入推迟，记录最初推迟时间，便于计算总共的推迟2s时间 */
+            if (0 == this->flushPostponedStart) {
                 this->flushPostponedStart = flyServer->getNowt();
                 return;
             } else if (flyServer->getNowt() - this->flushPostponedStart < 2) {
@@ -934,7 +935,7 @@ void AOFHandler::childWriteDiffData(const AbstractCoordinator *coorinator,
 
         /** 向该管道中写入:
          *      此处与redis相比，减少了memmove的可能性，进行了优化
-         * */
+         **/
         int written = write(coorinator->getAofDataPipe()->getWritePipe(),
                             block->buf, block->used);
         if (written <= 0) { /** 写入出错 */
@@ -987,11 +988,13 @@ void AOFHandler::doRealWrite() {
     ssize_t written = -1;
     written = write(this->fd, this->buf.c_str(), this->buf.length());
 
-    // todo: latency add sample
-
     bool canlog = false;
     /** 数据没有完全写入*/
     if (written != this->buf.length()) {
+        /**
+         * 标记是否可以进行error log写入，控制error log写入频次，
+         * 防止过多的error log
+         **/
         static time_t lastWriteErrorLogTime = 0;
         if (flyServer->getNowt() - lastWriteErrorLogTime
             > AOF_WRITE_LOG_ERROR_RATE) {
@@ -1028,7 +1031,10 @@ void AOFHandler::doRealWrite() {
                 /** ENOSPC: 空间不足 */
                 this->lastWriteError = ENOSPC;
             } else {
-                /** 裁剪成功了，说明一丢丢都没有写入 */
+                /**
+                 * 裁剪成功了，说明一丢丢都没有写入，
+                 * 这里令written=-1用于下文的written>0判断
+                 **/
                 written = -1;
             }
         }
@@ -1056,18 +1062,19 @@ void AOFHandler::doRealWrite() {
             this->currentSize += written;
             this->buf = this->buf.substr(written);
         }
-    } else { /** 完全写入了 */
+
+        return;
+    } else { /** 完全写入 */
         if (-1 == this->lastWriteStatus) {
             coordinator->getLogHandler()->logWarning(
                     "AOF write error looks solved, can write again.");
             this->lastWriteStatus = 0;
         }
+        this->currentSize += written;
+
+        /** 清空aof buf */
+        this->buf.clear();
     }
-
-    this->currentSize += written;
-
-    /** 清空aof buf */
-    this->buf.clear();
 }
 
 void AOFHandler::doRealFsync(bool syncInProgress) {
