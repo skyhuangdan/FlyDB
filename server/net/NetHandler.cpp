@@ -741,6 +741,61 @@ ssize_t NetHandler::syncWrite(int fd,
     return totalWrite;
 }
 
+int NetHandler::peerToString(int fd, char *ip, size_t iplen, int *port) {
+    struct sockaddr_storage sa;
+    socklen_t salen = sizeof(sa);
+
+    if (NULL == ip || NULL == port) {
+        this->logHandler->logWarning("ip and port can`t be NULL!");
+        return -1;
+    }
+
+    /** 获取socket的对方地址 */
+    if (0 == iplen || -1 == getpeername(fd, (struct sockaddr*)&sa, &salen)) {
+        if (iplen >= 2) {
+            ip[0] = '?';
+            ip[1] = '\0';
+        } else if (1 == iplen) {
+            ip[0] = '\0';
+        }
+
+        *port = 0;
+        return -1;
+    }
+
+    /** 根据不同的协议族解析ip和port */
+    if (AF_INET == sa.ss_family) {
+        struct sockaddr_in *s = (struct sockaddr_in *)&sa;
+        inet_ntop(AF_INET,
+                  reinterpret_cast<void*>(&(s->sin_addr)),
+                  ip,
+                  iplen);
+        *port = ntohs(s->sin_port);
+    } else if (AF_INET6 == sa.ss_family) {
+        struct sockaddr_in6 *s6 = (struct sockaddr_in6 *)&sa;
+        inet_ntop(AF_INET6,
+                  reinterpret_cast<void*>(&(s6->sin6_addr)),
+                  ip,
+                  iplen);
+        *port = ntohs(s6->sin6_port);
+    } else if (AF_UNIX == sa.ss_family) {
+        strncpy(ip, "/unixsocket", iplen);
+        *port = 0;
+    } else {
+        if (iplen >= 2) {
+            ip[0] = '?';
+            ip[1] = '\0';
+        } else if (1 == iplen) {
+            ip[0] = '\0';
+        }
+
+        *port = 0;
+        return -1;
+    }
+
+    return 1;
+}
+
 int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
     size_t pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到

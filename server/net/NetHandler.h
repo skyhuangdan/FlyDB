@@ -32,7 +32,7 @@ public:
     static NetHandler* getInstance();
     int setV6Only(char *err, int fd);
     int setSendTimeout(char *err, int fd, long long ms);
-    // val: 1-enbale no delay, 0-disable
+    /** val: 1-enbale no delay, 0-disable */
     int setTcpNoDelay(char *err, int fd, int val);
     int setSendBuffer(char *err, int fd, int buffsize);
     int setTcpKeepAlive(char *err, int fd);
@@ -69,6 +69,7 @@ public:
     int wait(int fd, int mask, int millseconds);
     ssize_t syncRead(int fd, char *ptr, ssize_t size, uint64_t timeout);
     ssize_t syncWrite(int fd, char *ptr, ssize_t size, uint64_t timeout);
+    int peerToString(int fd, char *ip, size_t iplen, int *port);
 
 private:
     NetHandler();

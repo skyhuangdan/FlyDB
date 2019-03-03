@@ -103,6 +103,8 @@ public:
                               char *ptr,
                               ssize_t size,
                               uint64_t timeout) = 0;
+
+    virtual int peerToString(int fd, char *ip, size_t iplen, int *port) = 0;
 };
 
 #endif //FLYDB_ABSTRACTNETHANDLER_H
