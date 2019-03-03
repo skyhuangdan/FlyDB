@@ -302,11 +302,13 @@ int NetHandler::tcpGenericConnect(char *err,
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
+    /** 获取连接(目标)地址的所有地址信息 */
     if ((rv = getaddrinfo(addr, portstr, &hints, &servinfo)) != 0) {
         setError(err, "%s", gai_strerror(rv));
         return -1;
     }
 
+    /** 逐步尝试所有目标地址信息，直到有一个可以连接上 */
     for (p = servinfo; p != NULL; p = p->ai_next) {
         /**
          * 创建并connect socket, 如果这个servinfo失败了，则尝试下一个
@@ -325,14 +327,12 @@ int NetHandler::tcpGenericConnect(char *err,
             goto error;
         }
 
+        /** 如果设置了源地址，则绑定源地址；否则，使用系统默认绑定 */
         if (NULL != source_addr) {
             int bound = 0;
-            // 获得source地址
-            if ((rv = getaddrinfo(
-                    source_addr,
-                    NULL,
-                    &hints,
-                    &bservinfo)) != 0) {
+            // 获得source地址信息
+            if ((rv = getaddrinfo(source_addr,
+                    NULL, &hints, &bservinfo)) != 0) {
                 setError(err, "%s", gai_strerror(rv));
                 goto error;
             }
@@ -350,12 +350,15 @@ int NetHandler::tcpGenericConnect(char *err,
                 goto error;
             }
         }
+
+        /** connect连接服务器 */
         if (connect(s, p->ai_addr, p->ai_addrlen) == -1) {
             /* If the socket is non-blocking, it is ok for connect() to
              * return an EINPROGRESS error here. */
             if (errno == EINPROGRESS && flags & NET_CONNECT_NONBLOCK) {
                 goto end;
             }
+            // 连接失败，则继续使用下一个地址尝试连接
             close(s);
             s = -1;
             continue;
@@ -368,13 +371,13 @@ int NetHandler::tcpGenericConnect(char *err,
         setError(err, "creating socket: %s", strerror(errno));
     }
 
-    error:
+error:
     if (s != -1) {
         close(s);
         s = -1;
     }
 
-    end:
+end:
     freeaddrinfo(servinfo);
 
     /**
