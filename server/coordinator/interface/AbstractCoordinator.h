@@ -15,6 +15,7 @@
 #include "../../flyObj/interface/AbstractFlyObjFactory.h"
 #include "../../pipe/interface/AbstractPipe.h"
 #include "../../bio/interface/AbstractBIOHandler.h"
+#include "../../replication/interface/AbstractReplicationHandler.h"
 
 class AbstractFlyServer;
 class AbstractNetHandler;
@@ -47,6 +48,9 @@ public:
 
     /** bio */
     virtual AbstractBIOHandler *getBioHandler() const = 0;
+
+    /** replication */
+    virtual AbstractReplicationHandler *getReplicationHandler() const = 0;
 
     /** ChildInfo Pipe: child-->parent */
     virtual AbstractPipe *getChildInfoPipe() const = 0;

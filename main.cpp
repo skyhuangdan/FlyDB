@@ -22,7 +22,6 @@ int main(int argc, char **argv) {
     srand((unsigned)time(NULL) ^ getpid());
 
     coordinator = new Coordinator();
-    coordinator->getFdbHandler()->save();
     coordinator->getEventLoop()->eventMain();
 
     delete coordinator;

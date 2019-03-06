@@ -34,6 +34,9 @@ public:
 
     /** bio */
     AbstractBIOHandler *getBioHandler() const;
+    
+    /** replication */
+    AbstractReplicationHandler *getReplicationHandler() const;
 
     /** AOF Pipe */
     AbstractPipe *getAofDataPipe() const;
@@ -66,20 +69,25 @@ private:
     /**
      * AOF Pipe
      **/
-     AbstractPipe *aofDataPipe = NULL;          // parent-->child: aof diff info
-     AbstractPipe *aofAckToParentPipe = NULL;   // child-->parent: ack info
-     AbstractPipe *aofAckToChildPipe = NULL;    // parent-->child: ack info
+    AbstractPipe *aofDataPipe = NULL;          // parent-->child: aof diff info
+    AbstractPipe *aofAckToParentPipe = NULL;   // child-->parent: ack info
+    AbstractPipe *aofAckToChildPipe = NULL;    // parent-->child: ack info
     
     /**
      * logHandler
      */
-     AbstractLogHandler *logHandler = NULL;
+    AbstractLogHandler *logHandler = NULL;
 
-     /**
-      * bio
-      **/
-      AbstractBIOHandler *bioHandler = NULL;
-
+    /**
+     * bio
+     **/
+    AbstractBIOHandler *bioHandler = NULL;
+      
+    /**
+     * replication
+     **/
+    AbstractReplicationHandler *replicationHandler; 
+     
 };
 
 

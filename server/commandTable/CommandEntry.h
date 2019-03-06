@@ -141,6 +141,7 @@ void bgsaveCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void bgrewriteaofCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void configCommand(const AbstractCoordinator*, AbstractFlyClient*);
 void selectCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void slaveOfCommand(const AbstractCoordinator*, AbstractFlyClient*);
 
 extern std::vector<CommandEntry*> flyDBCommandTable;
 

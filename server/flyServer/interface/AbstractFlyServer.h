@@ -93,6 +93,7 @@ public:
     virtual void activeExpireCycle(int type) = 0;
 
     virtual void tryResizeDB() = 0;
+
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

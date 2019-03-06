@@ -31,11 +31,12 @@ std::vector<CommandEntry* > flyDBCommandTable = {
        new CommandEntry("sortPop",     popSortCommand,     2, "wF",  0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("hset",        hsetCommand,        4, "wmF", 0, NULL, 1, 1, 1, 0, 0),
        new CommandEntry("hget",        hgetCommand,        3, "rF",  0, NULL, 1, 1, 1, 0, 0),
-       new CommandEntry("save",        saveCommand,        1, "as",  0,  NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("bgsave",      bgsaveCommand,      1, "a",   0,  NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("config",      configCommand,      2, "lat", 0,  NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("bgrewriteaof",bgrewriteaofCommand,1, "a",   0,  NULL, 0, 0, 0, 0, 0),
-       new CommandEntry("select",      selectCommand,      2, "lF", 0,   NULL, 0, 0, 0, 0, 0)
+       new CommandEntry("save",        saveCommand,        1, "as",  0, NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("bgsave",      bgsaveCommand,      1, "a",   0, NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("config",      configCommand,      2, "lat", 0, NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("bgrewriteaof",bgrewriteaofCommand,1, "a",   0, NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("select",      selectCommand,      2, "lF",  0, NULL, 0, 0, 0, 0, 0),
+       new CommandEntry("slaveof",     slaveOfCommand,     3, "ast", 0, NULL, 0, 0, 0, 0, 0)
 };
 
 
@@ -659,4 +660,26 @@ void selectCommand(const AbstractCoordinator* coordinator,
         return;
     }
     flyClient->setFlyDB(flyDB);
+}
+
+void slaveOfCommand(const AbstractCoordinator* coordinator,
+                   AbstractFlyClient* flyClient) {
+    std::string *argv1 = reinterpret_cast<std::string*>(
+            flyClient->getArgv()[1]->getPtr());
+    std::string *argv2 = reinterpret_cast<std::string*>(
+            flyClient->getArgv()[2]->getPtr());
+
+    AbstractReplicationHandler *replicationHandler =
+            coordinator->getReplicationHandler();
+    /** slave no one */
+    if (!strcasecmp(argv1->c_str(), "no")
+        && !strcasecmp(argv2->c_str(), "one")) {
+        if (replicationHandler->haveMasterhost()) {
+            replicationHandler->unsetMaster();
+        }
+    } else {
+        int port = atoi(argv2->c_str());
+
+    }
+
 }

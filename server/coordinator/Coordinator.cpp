@@ -18,6 +18,7 @@
 #include "../aof/AOFHandler.h"
 #include "../flyServer/FlyServer.h"
 #include "../bio/BIOHandler.h"
+#include "../replication/ReplicationHandler.h"
 
 Coordinator::Coordinator() {
     /** 加载config **/
@@ -86,6 +87,9 @@ Coordinator::Coordinator() {
 
     /** background io*/
     this->bioHandler = new BIOHandler();
+
+    /** replication */
+    this->replicationHandler = new ReplicationHandler(this);
 
     /** log handler */
     this->logHandler = logFactory->getLogger();
@@ -184,4 +188,8 @@ int Coordinator::openAllPipe() {
     }
     
     return 1;
+}
+
+AbstractReplicationHandler *Coordinator::getReplicationHandler() const {
+    return this->replicationHandler;
 }
