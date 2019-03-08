@@ -14,6 +14,8 @@ public:
     virtual AbstractFlyClient* getFlyClient(int fd,
                                             const AbstractCoordinator *coordinator,
                                             AbstractFlyDB *flyDB) = 0;
+
+    virtual void deleteFlyClient(AbstractFlyClient **flyClient) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYCLIENTFACTORY_H

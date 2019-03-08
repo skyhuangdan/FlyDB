@@ -19,11 +19,8 @@ void ReplicationHandler::unsetMaster() {
     /** shift replication id */
     this->shiftReplicationId();
 
-    /** 删除master, todo: 使用ClientFactory的freeClient */
-    if (NULL != this->master) {
-        delete this->master;
-        this->master = NULL;
-    }
+    /** 删除master */
+    coordinator->getFlyClientFactory()->deleteFlyClient(&this->master);
 
     this->discardCachedMaster();
     this->cancelHandShake();
@@ -59,7 +56,9 @@ void ReplicationHandler::disconnectSlaves() {
 }
 
 void ReplicationHandler::discardCachedMaster() {
-
+    coordinator->getLogHandler()->logWarning(
+            "Discarding previously cached master state");
+    coordinator->getFlyClientFactory()->deleteFlyClient(&cachedMaster);
 }
 
 /**

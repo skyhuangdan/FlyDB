@@ -46,6 +46,8 @@ private:
 
     AbstractCoordinator *coordinator;
 
+    /** cached master对于本服务器来说也是个client */
+    AbstractFlyClient *cachedMaster;
 };
 
 

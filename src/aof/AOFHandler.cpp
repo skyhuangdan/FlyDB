@@ -231,7 +231,7 @@ int AOFHandler::loadRemaindingAOF(FILE *fp) {
 
     }
 
-    delete fakeClient;
+    coordinator->getFlyClientFactory()->deleteFlyClient(&fakeClient);
     return 1;
 }
 

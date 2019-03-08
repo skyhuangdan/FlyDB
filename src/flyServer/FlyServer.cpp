@@ -446,7 +446,7 @@ AbstractFlyClient* FlyServer::createClient(int fd) {
     }
     if (-1 == this->coordinator->getEventLoop()->createFileEvent(
             fd, ES_READABLE, readQueryFromClient, flyClient)) {
-        delete flyClient;
+        coordinator->getFlyClientFactory()->deleteFlyClient(&flyClient);
         return NULL;
     }
 
@@ -469,7 +469,7 @@ int FlyServer::deleteClient(int fd) {
             this->deleteFromPending(fd);
 
             // 删除FlyClient
-            delete (*iter);
+            coordinator->getFlyClientFactory()->deleteFlyClient(&(*iter));
             this->clients.erase(iter);
 
             return 1;

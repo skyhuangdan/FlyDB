@@ -5,8 +5,18 @@
 #include "FlyClientFactory.h"
 #include "FlyClient.h"
 
-AbstractFlyClient* FlyClientFactory::getFlyClient(int fd, 
-                                                  const AbstractCoordinator *coordinator, 
-                                                  AbstractFlyDB *flyDB) {
+AbstractFlyClient* FlyClientFactory::getFlyClient(
+        int fd,
+        const AbstractCoordinator *coordinator,
+        AbstractFlyDB *flyDB) {
     return new FlyClient(fd, coordinator, flyDB);
+}
+
+void FlyClientFactory::deleteFlyClient(AbstractFlyClient **flyClient) {
+    if (NULL == flyClient) {
+        return;
+    }
+
+    delete *flyClient;
+    *flyClient = NULL;
 }
