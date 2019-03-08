@@ -8,7 +8,7 @@
 #include <string>
 #include "interface/AbstractConfigReader.h"
 #include "../utils/MiscTool.h"
-#include "../../def.h"
+#include "../def.h"
 #include "ConfigCache.h"
 
 struct configMap {

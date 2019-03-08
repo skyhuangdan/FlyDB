@@ -191,19 +191,20 @@ public:
         return val * mul;
     }
 
+    /** 主要用于产生redis runid和cluster instance id */
     void getRandomHexChars(char *p, unsigned int len) {
         char *charset = "0123456789abcdef";
 
-        /* Global state. */
         static int seed_initialized = 0;
-        static unsigned char seed[20]; /* The SHA1 seed, from /dev/urandom. */
-        static uint64_t counter = 0; /* The counter we hash with the seed. */
+        /** SHA1种子，从/dev/urandom读取 */
+        static unsigned char seed[20];
+        static uint64_t counter = 0;
 
         if (!seed_initialized) {
-            /* Initialize a seed and use SHA1 in counter mode, where we hash
-             * the same seed with a progressive counter. For the goals of this
-             * function we just need non-colliding strings, there are no
-             * cryptographic security needs. */
+            /**
+             * 通过读取/dev/urandom获取的随机数来设置seed, 并且以计数器模式使用SHA1.
+             * 这样做我们是为了获取非线性彭专的字符串，并不是基于加密安全考虑
+             **/
             FILE *fp = fopen("/dev/urandom", "r");
             if (NULL != fp && fread(seed, sizeof(seed), 1, fp) == 1) {
                 seed_initialized = 1;
@@ -215,7 +216,7 @@ public:
         }
 
         if (seed_initialized) {
-            while(len > 0) {
+            while (len > 0) {
                 unsigned char digest[20];
                 uint8_t copylen = len > 20 ? 20 : len;
                 /**
@@ -229,7 +230,7 @@ public:
                  */
 
                 memcpy(p, digest, copylen);
-                /* Convert to hex digits. */
+                /** 转化成16进制数据 */
                 for (int j = 0; j < copylen; j++) {
                     p[j] = charset[p[j] & 0x0F];
                 }
@@ -237,15 +238,13 @@ public:
                 p += copylen;
             }
         } else {
-            /* If we can't read from /dev/urandom, do some reasonable effort
-             * in order to create some entropy, since this function is used to
-             * generate run_id and cluster instance IDs */
+            /** 如果不能够读取/dev/urandom，则创造一些熵 */
             char *x = p;
             unsigned int l = len;
             struct timeval tv;
             pid_t pid = getpid();
 
-            /* Use time and PID to fill the initial array. */
+            /** 先利用当前时间和进程pid */
             gettimeofday(&tv, NULL);
             if (l >= sizeof(tv.tv_usec)) {
                 memcpy(x, &tv.tv_usec, sizeof(tv.tv_usec));
@@ -259,11 +258,9 @@ public:
             }
             if (l >= sizeof(pid)) {
                 memcpy(x, &pid, sizeof(pid));
-                l -= sizeof(pid);
-                x += sizeof(pid);
             }
-            /* Finally xor it with rand() output, that was already seeded with
-             * time() at startup, and convert to hex digits. */
+
+             /** 然后产生一些随机数，和上述值做异或，并将所有获取到的值转化成16进制 */
             for (int j = 0; j < len; j++) {
                 p[j] ^= rand();
                 p[j] = charset[p[j] & 0x0F];

@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "TextConfigReader.h"
-#include "../../def.h"
+#include "../def.h"
 #include "ConfigCache.h"
 
 configMap loglevelMap[] = {

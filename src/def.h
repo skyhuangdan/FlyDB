@@ -7,11 +7,11 @@
 
 #include <string>
 #include <syslog.h>
-#include "server/log/LogDef.h"
-#include "server/log/interface/AbstractLogFactory.h"
-#include "server/log/FileLogFactory.h"
-#include "server/utils/MiscTool.h"
-#include "server/aof/AOFDef.h"
+#include "log/LogDef.h"
+#include "log/interface/AbstractLogFactory.h"
+#include "log/FileLogFactory.h"
+#include "utils/MiscTool.h"
+#include "aof/AOFDef.h"
 
 #ifndef BYTE_ORDER
 #if (BSD >= 199103)

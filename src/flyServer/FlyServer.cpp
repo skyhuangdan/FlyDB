@@ -7,7 +7,7 @@
 #include <signal.h>
 #include "FlyServer.h"
 #include "../commandTable/CommandTable.h"
-#include "../../def.h"
+#include "../def.h"
 #include "../atomic/AtomicHandler.h"
 #include "../net/NetDef.h"
 #include "../utils/MiscTool.h"

@@ -11,7 +11,7 @@
 #include <list>
 #include <vector>
 #include "../event/EventLoop.h"
-#include "../../def.h"
+#include "../def.h"
 #include "../log/FileLogHandler.h"
 #include "../aof/AOFHandler.h"
 #include "../flyClient/interface/AbstractFlyClient.h"

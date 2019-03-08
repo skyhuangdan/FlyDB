@@ -6,7 +6,7 @@
 #define FLYDB_FDBDEF_H
 
 #include <string>
-#include "../../def.h"
+#include "../def.h"
 
 struct FDBSaveInfo {
     // load和save时都有使用

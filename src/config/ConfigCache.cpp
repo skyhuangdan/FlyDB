@@ -5,7 +5,7 @@
 #include <vector>
 #include "ConfigCache.h"
 #include "../aof/AOFDef.h"
-#include "../../def.h"
+#include "../def.h"
 
 ConfigCache::ConfigCache() {
     this->port = CONFIG_DEFAULT_SERVER_PORT;

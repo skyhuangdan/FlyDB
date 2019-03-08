@@ -6,7 +6,7 @@
 #include "HashTable.h"
 #include "../../log/FileLogHandler.h"
 #include "../../log/FileLogFactory.h"
-#include "../../../def.h"
+#include "../../def.h"
 
 template<class KEY, class VAL>
 HashTable<KEY, VAL>::HashTable(uint32_t size) : size(size) {
