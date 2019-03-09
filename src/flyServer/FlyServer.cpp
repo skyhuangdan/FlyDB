@@ -684,10 +684,7 @@ int serverCron(const AbstractCoordinator *coordinator,
     /** 数据库循环操作 */
     databaseCron(coordinator);
 
-    /** 删除flydb中的过期键 */
-    flyServer->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
-
-    // 释放所有异步删除的clients
+    /** 释放所有异步删除的clients */
     flyServer->freeClientsInAsyncFreeList();
 
     /** 如果收到kill命令(SIGTERM信号)，执行fdb save操作 */
