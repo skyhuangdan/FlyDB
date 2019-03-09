@@ -6,6 +6,7 @@
 #define FLYDB_REPLICATIONHANDLER_H
 
 
+#include <list>
 #include "interface/AbstractReplicationHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 #include "ReplicationDef.h"
@@ -20,11 +21,14 @@ public:
     bool haveMasterhost() const;
 
 private:
-    void cancelHandShake();
+    int cancelHandShake();
     void discardCachedMaster();
-    void disconnectSlaves();
+    void disconnectWithMaster();
+    void disconnectWithSlaves();
     void shiftReplicationId();
     void randomReplicationId();
+    bool inHandshakeState();
+    bool abortSyncTransfer();
 
     /** Hostname of master */
     std::string masterhost;
@@ -43,11 +47,16 @@ private:
     uint64_t masterReplOffset = 0;
     /** Accept offsets up to this for replid2. */
     uint64_t secondReplidOffset = 0;
+    /** cached master对于本服务器来说也是个client */
+    AbstractFlyClient *cachedMaster;
+    /** 所有的从机*/
+    std::list<AbstractFlyClient*> slaves;
+    /** Master SYNC socket */
+    int transferSocket = -1;
+    std::string transferTempFile;
 
     AbstractCoordinator *coordinator;
 
-    /** cached master对于本服务器来说也是个client */
-    AbstractFlyClient *cachedMaster;
 };
 
 

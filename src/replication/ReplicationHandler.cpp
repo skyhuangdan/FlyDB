@@ -2,6 +2,7 @@
 // Created by 赵立伟 on 2019/3/6.
 //
 
+#include <cassert>
 #include "ReplicationHandler.h"
 
 ReplicationHandler::ReplicationHandler(AbstractCoordinator *coordinator) {
@@ -22,9 +23,17 @@ void ReplicationHandler::unsetMaster() {
     /** 删除master */
     coordinator->getFlyClientFactory()->deleteFlyClient(&this->master);
 
+    /** 删除cached master */
     this->discardCachedMaster();
+
+    /** 取消与master的replication握手 */
     this->cancelHandShake();
-    this->disconnectSlaves();
+
+    /**
+     * 用以通知所有的slave, 本机的replication id改变了，
+     * slave会向本机发送psync，这样便可以重新建立连接
+     **/
+    this->disconnectWithSlaves();
 
     /** replication state */
     this->state = REPL_STATE_NONE;
@@ -47,12 +56,48 @@ bool ReplicationHandler::haveMasterhost() const {
     return !this->masterhost.empty();
 }
 
-void ReplicationHandler::cancelHandShake() {
+int ReplicationHandler::cancelHandShake() {
+    if (REPL_STATE_TRANSFER == this->state) {
+        /** 如果处于正在传输fdb文件的阶段 */
+        this->abortSyncTransfer();
+        this->state = REPL_STATE_CONNECT;
+    } else if (REPL_STATE_CONNECTING == this->state
+               || this->inHandshakeState()) {
+        /** 如果正处于连接或者握手阶段 */
+        this->disconnectWithMaster();
+        this->state = REPL_STATE_CONNECT;
+    } else {
+        /** 否则，处于完成或者NONE状态 */
+        return 0;
+    }
 
+    return 1;
 }
 
-void ReplicationHandler::disconnectSlaves() {
+bool ReplicationHandler::abortSyncTransfer() {
+    assert(REPL_STATE_TRANSFER == this->state);
+    this->disconnectWithMaster();
+    close(this->transferSocket);
+    unlink(this->transferTempFile.c_str());
+    this->transferTempFile.clear();
+}
 
+bool ReplicationHandler::inHandshakeState() {
+    return this->state >= REPL_STATE_RECEIVE_PONG &&
+           this->state <= REPL_STATE_RECEIVE_PSYNC;
+}
+
+void ReplicationHandler::disconnectWithMaster() {
+    int fd = this->transferSocket;
+    coordinator->getEventLoop()->deleteFileEvent(fd, ES_READABLE | ES_WRITABLE);
+    close(fd);
+    this->transferSocket = -1;
+}
+
+void ReplicationHandler::disconnectWithSlaves() {
+    for (auto item : this->slaves) {
+        coordinator->getFlyClientFactory()->deleteFlyClient(&item);
+    }
 }
 
 void ReplicationHandler::discardCachedMaster() {

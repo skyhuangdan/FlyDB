@@ -13,7 +13,7 @@ AbstractFlyClient* FlyClientFactory::getFlyClient(
 }
 
 void FlyClientFactory::deleteFlyClient(AbstractFlyClient **flyClient) {
-    if (NULL == flyClient) {
+    if (NULL == flyClient || NULL == *flyClient) {
         return;
     }
 
