@@ -14,20 +14,15 @@ void ReplicationHandler::unsetMaster() {
         return;
     }
 
-    /** 清理masterhost */
-    this->masterhost.clear();
-
     /** shift replication id */
     this->shiftReplicationId();
 
-    /** 删除master */
+    /** 删除master并取消与master的replication握手 */
     coordinator->getFlyClientFactory()->deleteFlyClient(&this->master);
+    this->cancelHandShake();
 
     /** 删除cached master */
     this->discardCachedMaster();
-
-    /** 取消与master的replication握手 */
-    this->cancelHandShake();
 
     /**
      * 用以通知所有的slave, 本机的replication id改变了，
@@ -42,6 +37,32 @@ void ReplicationHandler::unsetMaster() {
      * 这里将slaveSelDB设置为1，为了在下次full resync时强加一个SELECT命令
      **/
     this->slaveSelDB = -1;
+}
+
+void ReplicationHandler::setMaster(std::string ip, int port) {
+    /** 如果this->master是空，则代表本机曾经是主 */
+    int wasMaster = this->masterhost.empty();
+    this->masterhost = ip;
+    this->masterport = port;
+
+    /** 删除原先的master */
+    if (NULL != this->master) {
+        coordinator->getFlyClientFactory()->deleteFlyClient(&this->master);
+    }
+
+    /** 令所有slave重新连接 */
+    this->disconnectWithSlaves();
+
+    /** 取消与master的握手 */
+    this->cancelHandShake();
+
+    /** 缓存master */
+    if (wasMaster) {
+        this->cacheMasterUsingMyself();
+    }
+
+    this->state = REPL_STATE_CONNECT;
+    this->masterDownSince = 0;
 }
 
 const std::string &ReplicationHandler::getMasterhost() const {
@@ -72,6 +93,11 @@ int ReplicationHandler::cancelHandShake() {
     }
 
     return 1;
+}
+
+/** 当一个服务器由master切换成slave时调用 */
+void ReplicationHandler::cacheMasterUsingMyself() {
+
 }
 
 bool ReplicationHandler::abortSyncTransfer() {

@@ -16,6 +16,7 @@ public:
     ReplicationHandler(AbstractCoordinator *coordinator);
 
     void unsetMaster();
+    void setMaster(std::string ip, int port);
     const std::string &getMasterhost() const;
     int getMasterport() const;
     bool haveMasterhost() const;
@@ -29,6 +30,7 @@ private:
     void randomReplicationId();
     bool inHandshakeState();
     bool abortSyncTransfer();
+    void cacheMasterUsingMyself();
 
     /** Hostname of master */
     std::string masterhost;
@@ -53,7 +55,10 @@ private:
     std::list<AbstractFlyClient*> slaves;
     /** Master SYNC socket */
     int transferSocket = -1;
+    /** 接收PSYNC传输数据的临时文件 */
     std::string transferTempFile;
+    /** 与master断开连接的时间 */
+    time_t masterDownSince;
 
     AbstractCoordinator *coordinator;
 
