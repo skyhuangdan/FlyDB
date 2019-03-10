@@ -68,6 +68,8 @@ public:
     bool hasNoPending();
     void addReply(const char *s, size_t len);
     void addReply(const char *fmt, ...);
+    void addReplyErrorFormat(const char *fmt, ...);
+    int addReplyError(const char *err);
     int getReqType() const;
     void setReqType(int reqType);
     size_t getSendLen() const;

@@ -803,8 +803,8 @@ int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
     size_t pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-            addReplyError(flyClient,
-                          "Protocol error: too big mbulk count string");
+            flyClient->addReplyError(
+                    "Protocol error: too big mbulk count string");
             setProtocolError("too big mbulk count string", flyClient, 0);
         }
         return -1;
@@ -871,8 +871,8 @@ int NetHandler::analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos) {
     pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-            addReplyError(flyClient,
-                          "Protocol error: too big mbulk count string");
+            flyClient->addReplyError(
+                    "Protocol error: too big mbulk count string");
             setProtocolError("too big mbulk count string", flyClient, 0);
         }
         return -1;
@@ -884,7 +884,7 @@ int NetHandler::analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos) {
 
     // 如果获取multi bulk length失败，或者其太长，协议error
     if (-1 == res || multiBulkLen > PROTO_REQ_MULTIBULK_MAX_LEN) {
-        addReplyError(flyClient, "Protocol error: invalid multibulk length");
+        flyClient->addReplyError("Protocol error: invalid multibulk length");
         setProtocolError("invalid mbulk count", flyClient, pos);
         return -1;
     }
@@ -933,7 +933,7 @@ int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
 
     size_t pos = 0;
     if ('$' != flyClient->getQueryBuf().at(pos)) {
-        addReplyErrorFormat(flyClient, "Protocol error: expected '$', got '%c'",
+        flyClient->addReplyErrorFormat("Protocol error: expected '$', got '%c'",
                             flyClient->getQueryBuf().at(pos));
         setProtocolError("expected $ but got something else", flyClient, pos);
         return -1;
@@ -944,8 +944,8 @@ int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
     pos = flyClient->getQueryBuf().find("\r\n", begin);
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
-            addReplyError(flyClient,
-                          "Protocol error: too big bulk count string");
+            flyClient->addReplyError(
+                    "Protocol error: too big bulk count string");
             setProtocolError("too big bulk count string", flyClient, 0);
         }
         return -1;
@@ -956,7 +956,7 @@ int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
     std::string subStr = flyClient->getQueryBuf().substr(begin, pos - begin);
     int res = miscTool->string2int64(subStr, bulkLen);
     if (-1 == res || bulkLen < 0 || bulkLen > PROTO_REQ_BULK_MAX_LEN) {
-        addReplyError(flyClient, "Protocol error: invalid bulk length");
+        flyClient->addReplyError("Protocol error: invalid bulk length");
         setProtocolError("invalid bulk length", flyClient, pos);
     }
     begin = pos + 2;
@@ -969,7 +969,7 @@ int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
 
     // 如果读取全了，并且长度不对，说明是协议问题
     if (pos - begin != bulkLen) {
-        addReplyError(flyClient, "Protocol error: not enough bulk space");
+        flyClient->addReplyError("Protocol error: not enough bulk space");
         setProtocolError("not enough bulk space", flyClient, pos);
         return -1;
     }
@@ -1000,31 +1000,6 @@ int NetHandler::setProtocolError(
     flyClient->addFlag(CLIENT_CLOSE_AFTER_REPLY);
     // 截断query buf
     flyClient->trimQueryBuf(pos + 2, -1);
-}
-
-void NetHandler::addReplyErrorFormat(AbstractFlyClient *flyClient,
-                                     const char *fmt, ...) {
-    va_list ap;
-    char msg[1024];
-    va_start(ap, fmt);
-    vsnprintf(msg, sizeof(msg), fmt, ap);
-    va_end(ap);
-
-    int len = strlen(msg);
-    // 保证msg中没有换行符, 使msg在一行内
-    for (int i = 0; i < len; i++) {
-        if ('\r' == msg[i] || '\n' == msg[i]) {
-            msg[i] = ' ';
-        }
-    }
-
-    addReplyError(flyClient, msg);
-}
-
-int NetHandler::addReplyError(AbstractFlyClient *flyClient, const char *err) {
-    flyClient->addReply("-ERR ", 5);
-    flyClient->addReply(err, strlen(err));
-    flyClient->addReply("\r\n", 2);
 }
 
 void acceptTcpHandler(const AbstractCoordinator *coordinator,
@@ -1068,12 +1043,12 @@ void readQueryFromClient(const AbstractCoordinator *coordinator,
         if (EAGAIN == errno) {
             return;
         } else {                                // 连接异常
-            flyServer->deleteClient(flyClient);
+            flyServer->freeClient(flyClient);
             close(fd);
             return;
         }
     } else if (0 == readCnt) {                  // 关闭连接
-        flyServer->deleteClient(flyClient);
+        flyServer->freeClient(flyClient);
         close(fd);
         return;
     }
@@ -1083,7 +1058,7 @@ void readQueryFromClient(const AbstractCoordinator *coordinator,
     // 统计flyServer接收到的byte数量
     flyServer->addToStatNetInputBytes(strlen(buf));
     if (flyClient->getQueryBufSize() > flyServer->getClientMaxQuerybufLen()) {
-        flyServer->deleteClient(flyClient);
+        flyServer->freeClient(flyClient);
         close(fd);
         std::cout << "Closing client that reached max query buffer length"
                      << std::endl;

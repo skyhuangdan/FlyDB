@@ -69,12 +69,13 @@ public:
     void tryResizeDB();
     uint64_t addDirty(uint64_t count);
     uint64_t getDirty() const;
+    void databaseCron();
 
     /**
      *  client相关
      */
     AbstractFlyClient* createClient(int fd);
-    int deleteClient(AbstractFlyClient *flyClient);
+    int freeClient(AbstractFlyClient *flyClient);
     void addToClientsPendingToWrite(AbstractFlyClient *flyClient);
     int handleClientsWithPendingWrites();
     void freeClientAsync(AbstractFlyClient *flyClient);

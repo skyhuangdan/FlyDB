@@ -26,4 +26,6 @@ enum ReplicationState {
     REPL_STATE_CONNECTED = 15       /** Connected to master */
 };
 
+const int CONFIG_DEFAULT_REPL_TIMEOUT = 60;
+
 #endif //FLYDB_REPLICATIONDEF_H

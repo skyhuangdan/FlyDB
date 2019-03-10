@@ -227,8 +227,20 @@ int FlyClient::prepareClientToWrite() {
         return -1;
     }
 
-    // 如果之前没有写入，说明write handler不存在，
-    // 需要先将其标记并放入flyserver的pending client list中
+    /**
+     * 如果当前client是主服务器，则该主服务器不接收通知。
+     * 除非设置了CLIENT_MASTER_FORCE_REPLY
+     **/
+    if (this->flags & CLIENT_MASTER
+        && !(this->flags & CLIENT_MASTER_FORCE_REPLY)) {
+        return -1;
+    }
+
+    /**
+     * 如果之前没有写入，说明write handler不存在，
+     * flyserver也不存在pending client list中,
+     * 需要先将其标记并放入flyserver的pending client list中
+     */
     if (hasNoPending() && !(this->flags & CLIENT_PENDING_WRITE)) {
         this->addFlag(CLIENT_PENDING_WRITE);
         this->coordinator->getFlyServer()->addToClientsPendingToWrite(this);
@@ -273,6 +285,30 @@ void FlyClient::addReply(const char *fmt, ...) {
     va_end(ap);
 
     this->addReplyRaw(msg);
+}
+
+void FlyClient::addReplyErrorFormat(const char *fmt, ...) {
+    va_list ap;
+    char msg[1024];
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+
+    int len = strlen(msg);
+    // 保证msg中没有换行符, 使msg在一行内
+    for (int i = 0; i < len; i++) {
+        if ('\r' == msg[i] || '\n' == msg[i]) {
+            msg[i] = ' ';
+        }
+    }
+
+    addReplyError(msg);
+}
+
+int FlyClient::addReplyError(const char *err) {
+    this->addReply("-ERR ", 5);
+    this->addReply(err, strlen(err));
+    this->addReply("\r\n", 2);
 }
 
 int FlyClient::addReplyToBuffer(const char *s, size_t len) {

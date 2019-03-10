@@ -102,9 +102,6 @@ private:
     int analyseBulk(const AbstractCoordinator* coordinator,
                     AbstractFlyClient *flyClient);
     int setProtocolError(char *err, AbstractFlyClient *flyClient, size_t pos);
-    void addReplyErrorFormat(AbstractFlyClient *flyClient,
-                             const char *fmt, ...);
-    int addReplyError(AbstractFlyClient *flyClient, const char *err);
 
     AbstractLogHandler *logHandler;
 };

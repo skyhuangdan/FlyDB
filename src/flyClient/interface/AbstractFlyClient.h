@@ -110,6 +110,10 @@ public:
 
     virtual void addReply(const char *fmt, ...) = 0;
 
+    virtual void addReplyErrorFormat(const char *fmt, ...) = 0;
+
+    virtual int addReplyError(const char *err) = 0;
+
     virtual void clearBuf() = 0;
 
     virtual int getReqType() const = 0;

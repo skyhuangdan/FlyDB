@@ -35,7 +35,7 @@ public:
 
     virtual AbstractFlyClient *createClient(int fd) = 0;
 
-    virtual int deleteClient(AbstractFlyClient *flyClient) = 0;
+    virtual int freeClient(AbstractFlyClient *flyClient) = 0;
 
     virtual time_t getNowt() const = 0;
 
@@ -64,6 +64,8 @@ public:
     virtual uint64_t addDirty(uint64_t count) = 0;
 
     virtual uint64_t getDirty() const = 0;
+
+    virtual void databaseCron() = 0;
 
     virtual void startToLoad() = 0;
 

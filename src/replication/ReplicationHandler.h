@@ -20,6 +20,7 @@ public:
     const std::string &getMasterhost() const;
     int getMasterport() const;
     bool haveMasterhost() const;
+    void cron();
 
 private:
     int cancelHandShake();
@@ -31,6 +32,8 @@ private:
     bool inHandshakeState();
     bool abortSyncTransfer();
     void cacheMasterUsingMyself();
+    int connectWithMaster();
+    void sendAck();
 
     /** Hostname of master */
     std::string masterhost;
@@ -58,10 +61,15 @@ private:
     /** 接收PSYNC传输数据的临时文件 */
     std::string transferTempFile;
     /** 与master断开连接的时间 */
-    time_t masterDownSince;
+    time_t masterDownSince = 0;
+    /** 上次io时间 */
+    time_t transferLastIO = 0;
+    /** 上次交互时间 */
+    time_t lastInteraction = 0;
+    /** 超时时间(秒) */
+    int timeout = CONFIG_DEFAULT_REPL_TIMEOUT;
 
     AbstractCoordinator *coordinator;
-
 };
 
 

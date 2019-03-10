@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include "ReplicationHandler.h"
+#include "../flyClient/ClientDef.h"
 
 ReplicationHandler::ReplicationHandler(AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
@@ -77,6 +78,58 @@ bool ReplicationHandler::haveMasterhost() const {
     return !this->masterhost.empty();
 }
 
+void ReplicationHandler::cron() {
+    time_t nowt = coordinator->getFlyServer()->getNowt();
+
+    /** 握手或者连接中，且超时 */
+    if (this->haveMasterhost() &&
+        (REPL_STATE_CONNECTING == this->state || this->inHandshakeState())
+        && nowt - this->transferLastIO > this->timeout) {
+        this->cancelHandShake();
+    }
+
+    /** 正在处于fdb文件传输阶段并超时 */
+    if (this->haveMasterhost()
+        && REPL_STATE_TRANSFER == this->state
+        && nowt - this->transferLastIO > this->timeout) {
+        this->cancelHandShake();
+    }
+
+    /** 已连接阶段，并超时*/
+    if (this->haveMasterhost()
+        && REPL_STATE_CONNECTED == this->state
+        && nowt - this->lastInteraction > this->timeout) {
+        coordinator->getFlyServer()->freeClient(this->master);
+    }
+
+    /** 等待连接状态 */
+    if (REPL_STATE_CONNECT == this->state) {
+        coordinator->getLogHandler()->logNotice(
+                "Connecting to MASTER %s:%d", masterhost.c_str(), masterport);
+        if (1 == this->connectWithMaster()) {
+            coordinator->getLogHandler()->logNotice(
+                    "MASTER <--> SLAVE sync started!");
+        }
+    }
+
+    /** 心跳检测：周期性（每秒一次）回复master */
+    if (!this->masterhost.empty() && NULL != this->master) {
+        sendAck();
+    }
+
+    // todo:
+}
+
+void ReplicationHandler::sendAck() {
+    AbstractFlyClient *flyClient = this->master;
+    if (NULL == flyClient) {
+        return;
+    }
+
+    flyClient->addFlag(CLIENT_MASTER_FORCE_REPLY);
+
+}
+
 int ReplicationHandler::cancelHandShake() {
     if (REPL_STATE_TRANSFER == this->state) {
         /** 如果处于正在传输fdb文件的阶段 */
@@ -105,6 +158,10 @@ void ReplicationHandler::cacheMasterUsingMyself() {
     flyServer->unlinkClient(this->master);
     this->master = NULL;
     this->cachedMaster = this->master;
+}
+
+int ReplicationHandler::connectWithMaster() {
+
 }
 
 bool ReplicationHandler::abortSyncTransfer() {

@@ -309,7 +309,7 @@ void FlyServer::loadDataFromDisk() {
 
 void FlyServer::freeClientsInAsyncFreeList() {
     for (auto client : this->clientsToClose) {
-        deleteClient(client);
+        freeClient(client);
     }
 
     this->clientsToClose.clear();
@@ -456,7 +456,7 @@ AbstractFlyClient* FlyServer::createClient(int fd) {
     return flyClient;
 }
 
-int FlyServer::deleteClient(AbstractFlyClient *flyClient) {
+int FlyServer::freeClient(AbstractFlyClient *flyClient) {
     /** 将其从global list中删除*/
     this->unlinkClient(flyClient);
 
@@ -465,9 +465,6 @@ int FlyServer::deleteClient(AbstractFlyClient *flyClient) {
 
     // 删除FlyClient
     coordinator->getFlyClientFactory()->deleteFlyClient(&flyClient);
-
-    // 没有找到对应的FlyClient
-    return -1;
 }
 
 void FlyServer::addToClientsPendingToWrite(AbstractFlyClient *flyClient) {
@@ -676,11 +673,9 @@ uint64_t FlyServer::getDirty() const {
     return this->dirty;
 }
 
-void databaseCron(const AbstractCoordinator *coordinator) {
-    AbstractFlyServer *flyServer = coordinator->getFlyServer();
-
+void FlyServer::databaseCron() {
     /** 删除flydb中的过期键 */
-    flyServer->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
+    this->activeExpireCycle(ACTIVE_EXPIRE_CYCLE_SLOW);
 
     /**
      * 如果不存在持久化后台子进程，则执行判断各db是否需要缩容（缩小db占用空间）:
@@ -691,7 +686,7 @@ void databaseCron(const AbstractCoordinator *coordinator) {
      **/
     if (!coordinator->getFdbHandler()->haveChildPid()
         && !coordinator->getAofHandler()->haveChildPid()) {
-        flyServer->tryResizeDB();
+        this->tryResizeDB();
     }
 }
 
@@ -700,8 +695,11 @@ int serverCron(const AbstractCoordinator *coordinator,
                void *clientData) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
+    /** 更新缓存时间 */
+    flyServer->setNowt(time(NULL));
+
     /** 数据库循环操作 */
-    databaseCron(coordinator);
+    flyServer->databaseCron();
 
     /** 释放所有异步删除的clients */
     flyServer->freeClientsInAsyncFreeList();
@@ -832,6 +830,10 @@ int serverCron(const AbstractCoordinator *coordinator,
         if (coordinator->getAofHandler()->lastWriteHasError()) {
             coordinator->getAofHandler()->flush(false);
         }
+    }
+
+    runWithPeriod(flyServer, 1000) {
+        coordinator->getReplicationHandler()->cron();
     }
 
     flyServer->addCronLoops();
