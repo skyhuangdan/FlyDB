@@ -95,9 +95,16 @@ int ReplicationHandler::cancelHandShake() {
     return 1;
 }
 
-/** 当一个服务器由master切换成slave时调用 */
+/**
+ * 当一个服务器由master切换成slave时调用
+ *  为了创建一个cached master，将其用于在晋升为master时与slave做PSYNC用
+ * */
 void ReplicationHandler::cacheMasterUsingMyself() {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
+    flyServer->unlinkClient(this->master);
+    this->master = NULL;
+    this->cachedMaster = this->master;
 }
 
 bool ReplicationHandler::abortSyncTransfer() {

@@ -94,6 +94,7 @@ public:
 
     virtual void tryResizeDB() = 0;
 
+    virtual void unlinkClient(AbstractFlyClient *flyClient) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

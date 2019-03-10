@@ -13,6 +13,7 @@ public:
     virtual const std::string &getMasterhost() const = 0;
     virtual int getMasterport() const = 0;
     virtual bool haveMasterhost() const = 0;
+    virtual void setMaster(std::string ip, int port) = 0;
 };
 
 #endif //FLYDB_ABSTRACTREPLICATIONHANDLER_H

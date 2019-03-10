@@ -679,7 +679,15 @@ void slaveOfCommand(const AbstractCoordinator* coordinator,
         }
     } else {
         int port = atoi(argv2->c_str());
+        if (port == replicationHandler->getMasterport() &&
+            0 == replicationHandler->getMasterhost().compare(*argv1)) {
+            flyClient->addReply(
+                    "+OK Already connected to specified master\r\n");
+            return;
+        }
 
+        replicationHandler->setMaster(*argv1, port);
     }
 
+    flyClient->addReply("+OK\r\n");
 }
