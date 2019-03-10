@@ -237,6 +237,10 @@ int FlyClient::prepareClientToWrite() {
     return 1;
 }
 
+bool FlyClient::IsPendingWrite() const {
+    return this->flags & CLIENT_PENDING_WRITE;
+}
+
 int FlyClient::getBufpos() const {
     return bufpos;
 }

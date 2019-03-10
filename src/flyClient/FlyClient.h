@@ -45,6 +45,7 @@ public:
     const char *getBuf() const;
     void clearBuf();
     bool bufSendOver();
+    bool IsPendingWrite() const;
     int getBufpos() const;
     const std::list<std::string*> &getReply() const;
     void replyPopFront();

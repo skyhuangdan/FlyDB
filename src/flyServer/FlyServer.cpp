@@ -309,7 +309,7 @@ void FlyServer::loadDataFromDisk() {
 
 void FlyServer::freeClientsInAsyncFreeList() {
     for (auto client : this->clientsToClose) {
-        deleteClient(client->getFd());
+        deleteClient(client);
     }
 
     this->clientsToClose.clear();
@@ -456,25 +456,15 @@ AbstractFlyClient* FlyServer::createClient(int fd) {
     return flyClient;
 }
 
-int FlyServer::deleteClient(int fd) {
-    std::list<AbstractFlyClient *>::iterator iter = this->clients.begin();
-    for (; iter != this->clients.end(); iter++) {
-        if (fd == (*iter)->getFd()) {
-            // 删除file event
-            this->coordinator->getEventLoop()->deleteFileEvent(
-                    fd, ES_READABLE | ES_WRITABLE);
+int FlyServer::deleteClient(AbstractFlyClient *flyClient) {
+    /** 将其从global list中删除*/
+    this->unlinkClient(flyClient);
 
-            // 在相应列表中删除
-            this->deleteFromAsyncClose(fd);
-            this->deleteFromPending(fd);
+    // 在相应列表中删除
+    this->deleteFromAsyncClose(flyClient->getFd());
 
-            // 删除FlyClient
-            coordinator->getFlyClientFactory()->deleteFlyClient(&(*iter));
-            this->clients.erase(iter);
-
-            return 1;
-        }
-    }
+    // 删除FlyClient
+    coordinator->getFlyClientFactory()->deleteFlyClient(&flyClient);
 
     // 没有找到对应的FlyClient
     return -1;
@@ -553,7 +543,36 @@ void FlyServer::deleteFromAsyncClose(int fd) {
 }
 
 int FlyServer::getMaxClients() const {
-    return maxClients;
+    return this->maxClients;
+}
+
+/** 将client从一切global list中删除掉(除async delete列表之外, 否则可能导致无法删除) */
+void FlyServer::unlinkClient(AbstractFlyClient *flyClient) {
+    /** 在clients列表中删除，并删除该client对应的文件事件 */
+    if (-1 != flyClient->getFd()) {
+        std::list<AbstractFlyClient*>::iterator iter = this->clients.begin();
+        for (iter; iter != this->clients.end(); iter++) {
+            if ((*iter)->getFd() != flyClient->getFd()) {
+                this->clients.erase(iter);
+                coordinator->getEventLoop()->deleteFileEvent(
+                        flyClient->getFd(), ES_WRITABLE | ES_READABLE);
+                coordinator->getEventLoop()->deleteFileEvent(
+                        flyClient->getFd(), ES_READABLE);
+                close(flyClient->getFd());
+                flyClient->setFd(-1);
+                break;
+            }
+        }
+    }
+
+    if (flyClient->IsPendingWrite()) {
+        std::list<AbstractFlyClient*>::iterator iter =
+                this->clientsPendingWrite.begin();
+        for (iter; iter != this->clientsPendingWrite.end(); iter++) {
+            this->clientsPendingWrite.erase(iter);
+            break;
+        }
+    }
 }
 
 void FlyServer::setupSignalHandlers() {

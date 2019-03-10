@@ -74,12 +74,13 @@ public:
      *  client相关
      */
     AbstractFlyClient* createClient(int fd);
-    int deleteClient(int fd);
+    int deleteClient(AbstractFlyClient *flyClient);
     void addToClientsPendingToWrite(AbstractFlyClient *flyClient);
     int handleClientsWithPendingWrites();
     void freeClientAsync(AbstractFlyClient *flyClient);
     void freeClientsInAsyncFreeList();
     int getMaxClients() const;
+    void unlinkClient(AbstractFlyClient *flyClient);
 
 private:
     /** 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）*/

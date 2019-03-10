@@ -1068,12 +1068,12 @@ void readQueryFromClient(const AbstractCoordinator *coordinator,
         if (EAGAIN == errno) {
             return;
         } else {                                // 连接异常
-            flyServer->deleteClient(fd);
+            flyServer->deleteClient(flyClient);
             close(fd);
             return;
         }
     } else if (0 == readCnt) {                  // 关闭连接
-        flyServer->deleteClient(fd);
+        flyServer->deleteClient(flyClient);
         close(fd);
         return;
     }
@@ -1083,7 +1083,7 @@ void readQueryFromClient(const AbstractCoordinator *coordinator,
     // 统计flyServer接收到的byte数量
     flyServer->addToStatNetInputBytes(strlen(buf));
     if (flyClient->getQueryBufSize() > flyServer->getClientMaxQuerybufLen()) {
-        flyServer->deleteClient(fd);
+        flyServer->deleteClient(flyClient);
         close(fd);
         std::cout << "Closing client that reached max query buffer length"
                      << std::endl;

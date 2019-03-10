@@ -64,6 +64,8 @@ public:
 
     virtual bool bufSendOver() = 0;
 
+    virtual bool IsPendingWrite() const = 0;
+
     virtual int getBufpos() const = 0;
 
     virtual const std::list<std::string*> &getReply() const = 0;

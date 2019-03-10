@@ -35,7 +35,7 @@ public:
 
     virtual AbstractFlyClient *createClient(int fd) = 0;
 
-    virtual int deleteClient(int fd) = 0;
+    virtual int deleteClient(AbstractFlyClient *flyClient) = 0;
 
     virtual time_t getNowt() const = 0;
 
