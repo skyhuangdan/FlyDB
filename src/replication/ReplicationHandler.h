@@ -68,6 +68,8 @@ private:
     time_t lastInteraction = 0;
     /** 超时时间(秒) */
     int timeout = CONFIG_DEFAULT_REPL_TIMEOUT;
+    /** replication offset */
+    int64_t offset = 0;
 
     AbstractCoordinator *coordinator;
 };

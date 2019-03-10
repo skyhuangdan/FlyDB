@@ -84,7 +84,9 @@ public:
     void addReply(const char *s, size_t len);
     void addReply(const char *fmt, ...);
     void addReplyErrorFormat(const char *fmt, ...);
-    int addReplyError(const char *err);
+    void addReplyError(const char *err);
+    void addReplyBulkCount(int count);
+    void addReplyBulkString(std::string str);
 
     /** db相关 */
     AbstractFlyDB *getFlyDB() const;

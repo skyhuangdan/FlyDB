@@ -5,6 +5,7 @@
 #include <cassert>
 #include "ReplicationHandler.h"
 #include "../flyClient/ClientDef.h"
+#include "../io/StringFio.h"
 
 ReplicationHandler::ReplicationHandler(AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
@@ -126,7 +127,10 @@ void ReplicationHandler::sendAck() {
     }
 
     flyClient->addFlag(CLIENT_MASTER_FORCE_REPLY);
-
+    flyClient->addReplyBulkCount(3);
+    flyClient->addReplyBulkString("REPLCONF");
+    flyClient->addReplyBulkString("ACK");
+    flyClient->addReplyBulkString(std::to_string(this->offset));
 }
 
 int ReplicationHandler::cancelHandShake() {

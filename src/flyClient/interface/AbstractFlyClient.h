@@ -112,7 +112,11 @@ public:
 
     virtual void addReplyErrorFormat(const char *fmt, ...) = 0;
 
-    virtual int addReplyError(const char *err) = 0;
+    virtual void addReplyError(const char *err) = 0;
+
+    virtual void addReplyBulkCount(int count) = 0;
+
+    virtual void addReplyBulkString(std::string str) = 0;
 
     virtual void clearBuf() = 0;
 

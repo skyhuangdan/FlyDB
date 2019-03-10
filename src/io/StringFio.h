@@ -9,14 +9,11 @@
 
 class StringFio : public Fio {
 public:
-    StringFio(const std::string &str);
     int tell();                         // get offset
     int flush();                        // flush data to device
     std::string getStr() const;
 
 private:
-    /** 屏蔽默认构造 */
-    StringFio();
     size_t baseread(void *buf, size_t readLen);
     size_t basewrite(const void *buf, size_t len);
 

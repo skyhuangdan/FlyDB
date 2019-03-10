@@ -5,6 +5,7 @@
 #include "FlyClient.h"
 #include "../net/NetDef.h"
 #include "ClientDef.h"
+#include "../io/StringFio.h"
 
 FlyClient::FlyClient(int fd,
                      const AbstractCoordinator *coordinator,
@@ -236,6 +237,9 @@ int FlyClient::prepareClientToWrite() {
         return -1;
     }
 
+    /** 清空force reply标志位 */
+    this->delFlag(CLIENT_MASTER_FORCE_REPLY);
+
     /**
      * 如果之前没有写入，说明write handler不存在，
      * flyserver也不存在pending client list中,
@@ -306,10 +310,34 @@ void FlyClient::addReplyErrorFormat(const char *fmt, ...) {
     addReplyError(msg);
 }
 
-int FlyClient::addReplyError(const char *err) {
-    this->addReply("-ERR ", 5);
-    this->addReply(err, strlen(err));
-    this->addReply("\r\n", 2);
+void FlyClient::addReplyError(const char *err) {
+    std::shared_ptr<StringFio> fio =
+            std::shared_ptr<StringFio>(new StringFio());
+    fio->writeBulkError(err);
+    this->addReply(fio->getStr().c_str());
+}
+
+void FlyClient::addReplyBulkCount(int count) {
+    if (count < OBJ_SHARED_BULKHDR_LEN) {
+        extern std::shared_ptr<FlyObj> mbulkHeader[OBJ_SHARED_BULKHDR_LEN];
+        std::string *str = reinterpret_cast<std::string *>(
+                mbulkHeader[count]->getPtr());
+        this->addReply(str->c_str());
+    } else {
+        std::shared_ptr<StringFio> fio =
+                std::shared_ptr<StringFio>(new StringFio());
+        fio->writeBulkCount('*', count);
+        this->addReply(fio->getStr().c_str());
+    }
+
+    return;
+}
+
+void FlyClient::addReplyBulkString(std::string str) {
+    StringFio *fio = new StringFio();
+    fio->writeBulkString(str);
+    this->addReply(fio->getStr().c_str());
+    delete fio;
 }
 
 int FlyClient::addReplyToBuffer(const char *s, size_t len) {

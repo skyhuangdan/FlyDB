@@ -4,14 +4,6 @@
 
 #include "StringFio.h"
 
-StringFio::StringFio(const std::string &str) {
-    this->str = str;
-}
-
-StringFio::StringFio() {
-
-}
-
 int StringFio::tell() {
     return 0;
 }
