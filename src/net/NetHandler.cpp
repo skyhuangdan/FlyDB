@@ -1031,6 +1031,10 @@ void readQueryFromClient(const AbstractCoordinator *coordinator,
                          int fd,
                          std::shared_ptr<AbstractFlyClient> flyClient,
                          int mask) {
+    if (NULL == flyClient) {
+        return;
+    }
+
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
     AbstractNetHandler *netHandler = coordinator->getNetHandler();
 
@@ -1071,6 +1075,10 @@ void sendReplyToClient(const AbstractCoordinator *coordinator,
                        int fd,
                        std::shared_ptr<AbstractFlyClient> flyClient,
                        int mask) {
+    if (NULL == flyClient) {
+        return;
+    }
+
     coordinator->getNetHandler()->writeToClient(coordinator, flyClient, 1);
 }
 
