@@ -593,10 +593,10 @@ void FlyServer::setupSignalHandlers() {
 
 void FlyServer::createSharedObjects() {
     for (int i = 0; i < OBJ_SHARED_BULKHDR_LEN; i++) {
-        char buf[32];
+        char buf[10];
         snprintf(buf, sizeof(buf), "*%d\r\n", i);
-        std::string str(buf);
-        mbulkHeader[i] = coordinator->getFlyObjStringFactory()->getObject(&str);
+        mbulkHeader[i] = coordinator->getFlyObjStringFactory()
+                ->getObject(new std::string(buf));
     }
 }
 
