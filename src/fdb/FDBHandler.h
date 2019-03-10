@@ -24,14 +24,16 @@ public:
     int load(FDBSaveInfo *saveInfo);
     int loadFromFile(FILE *fp, FDBSaveInfo *saveInfo);
     int save();
-    int saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo);
+    int saveToFio(std::shared_ptr<Fio> fio,
+                  int flag,
+                  const FDBSaveInfo *saveInfo);
     int backgroundSave();
     void backgroundSaveDone(int exitCode, int bySignal);
-    int saveKeyValuePair(Fio *fio,
+    int saveKeyValuePair(std::shared_ptr<Fio> fio,
                          std::string key,
                          std::shared_ptr<FlyObj> val,
                          int64_t expireTime);
-    ssize_t saveRawString(Fio *fio, const std::string &str);
+    ssize_t saveRawString(std::shared_ptr<Fio> fio, const std::string &str);
     void deleteTempFile(pid_t pid);
     pid_t getChildPid() const;
     void setChildPid(pid_t fdbChildPid);
@@ -57,38 +59,38 @@ private:
     static int dbScan(void *priv, std::string key, std::shared_ptr<FlyObj> val);
     static int dictSaveScan(void *priv, std::string key, std::string val);
     static void skipListSaveProc(void *priv, const std::string &obj);
-    ssize_t saveNum(Fio *fio, uint64_t len);
-    ssize_t saveObject(Fio *fio, std::shared_ptr<FlyObj> obj);
-    int saveInfoAuxFields(Fio *fio,
+    ssize_t saveNum(std::shared_ptr<Fio> fio, uint64_t len);
+    ssize_t saveObject(std::shared_ptr<Fio> fio, std::shared_ptr<FlyObj> obj);
+    int saveInfoAuxFields(std::shared_ptr<Fio> fio,
                           int flags,
                           const FDBSaveInfo *saveInfo);
-    int saveAuxFieldStrStr(Fio *fio,
+    int saveAuxFieldStrStr(std::shared_ptr<Fio> fio,
                            const std::string &key,
                            const std::string &val);
-    int saveAuxFieldStrInt(Fio *fio,
+    int saveAuxFieldStrInt(std::shared_ptr<Fio> fio,
                            const std::string &key,
                            int64_t val);
-    int saveAuxField(Fio *fio,
+    int saveAuxField(std::shared_ptr<Fio> fio,
                      const std::string &key,
                      const std::string &val);
-    int saveMillisecondTime(Fio *fio, int64_t t);
-    int saveType(Fio *fio, unsigned char type);
-    int loadFromFio(Fio *fio, FDBSaveInfo *saveInfo);
-    char loadChar(Fio *fio);
-    uint8_t loadUint8(Fio *fio);
-    time_t loadTime(Fio *fio);
-    uint64_t loadMillisecondTime(Fio *fio);
-    int loadNum(Fio *fio, int *encoded);
-    int loadNumByRef(Fio *fio, int *encoded, uint64_t *lenptr);
-    std::shared_ptr<FlyObj> loadStringObject(Fio *fio);
-    std::string* loadStringPlain(Fio *fio);
-    void* genericLoadString(Fio *fio, size_t *lenptr);
-    std::shared_ptr<FlyObj> genericLoadStringObject(Fio *fio, size_t *lenptr);
-    void* loadIntegerObject(Fio *fio, int encoding, int flag, size_t *lenptr);
-    void* loadLzfStringObject(Fio *fio, int flag, size_t *lenptr);
-    int checkHeader(Fio *fio);
+    int saveMillisecondTime(std::shared_ptr<Fio> fio, int64_t t);
+    int saveType(std::shared_ptr<Fio> fio, unsigned char type);
+    int loadFromFio(std::shared_ptr<Fio> fio, FDBSaveInfo *saveInfo);
+    char loadChar(std::shared_ptr<Fio> fio);
+    uint8_t loadUint8(std::shared_ptr<Fio> fio);
+    time_t loadTime(std::shared_ptr<Fio> fio);
+    uint64_t loadMillisecondTime(std::shared_ptr<Fio> fio);
+    int loadNum(std::shared_ptr<Fio> fio, int *encoded);
+    int loadNumByRef(std::shared_ptr<Fio> fio, int *encoded, uint64_t *lenptr);
+    std::shared_ptr<FlyObj> loadStringObject(std::shared_ptr<Fio> fio);
+    std::string* loadStringPlain(std::shared_ptr<Fio> fio);
+    void* genericLoadString(std::shared_ptr<Fio> fio, size_t *lenptr);
+    std::shared_ptr<FlyObj> genericLoadStringObject(std::shared_ptr<Fio> fio, size_t *lenptr);
+    void* loadIntegerObject(std::shared_ptr<Fio> fio, int encoding, int flag, size_t *lenptr);
+    void* loadLzfStringObject(std::shared_ptr<Fio> fio, int flag, size_t *lenptr);
+    int checkHeader(std::shared_ptr<Fio> fio);
     void checkThenExit(int linenum, char *reason, ...);
-    std::shared_ptr<FlyObj> loadObject(int type, Fio *fio);
+    std::shared_ptr<FlyObj> loadObject(int type, std::shared_ptr<Fio> fio);
     void initSaveParams();
 
     char *filename;

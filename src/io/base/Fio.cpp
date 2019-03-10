@@ -78,6 +78,33 @@ size_t Fio::writeBulkCount(char perfix, int count) {
     return str.size();
 }
 
+int Fio::writeBulkError(const char *err) {
+    std::string str = "-ERR " + std::to_string(strlen(err)) + "\r\n";
+    if (this->write(str.c_str(), str.size()) <= 0) {
+        return 0;
+    }
+
+    return str.size();
+}
+
+void Fio::addReplyErrorFormat(const char *fmt, ...) {
+    va_list ap;
+    char msg[1024];
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+
+    int len = strlen(msg);
+    // 保证msg中没有换行符, 使msg在一行内
+    for (int i = 0; i < len; i++) {
+        if ('\r' == msg[i] || '\n' == msg[i]) {
+            msg[i] = ' ';
+        }
+    }
+
+    this->writeBulkError(msg);
+}
+
 size_t Fio::writeBulkString(std::string str) {
     size_t written = 0;
     /** 头部size段 */

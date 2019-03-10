@@ -5,7 +5,6 @@
 #ifndef FLYDB_FILEFIO_H
 #define FLYDB_FILEFIO_H
 
-#include <cstdio>
 #include "base/Fio.h"
 
 class FileFio : public Fio {
@@ -21,7 +20,7 @@ public:
     class Builder {
     public:
         Builder() {
-            this->fio = new FileFio();
+            this->fio = std::shared_ptr<FileFio>(new FileFio());
         }
 
         Builder& file(FILE *fp) {
@@ -39,12 +38,12 @@ public:
             return *this;
         }
 
-        FileFio* build() {
+        std::shared_ptr<FileFio> build() {
             return this->fio;
         }
 
     private:
-        FileFio *fio = NULL;
+        std::shared_ptr<FileFio> fio = NULL;
     };
 
 private:

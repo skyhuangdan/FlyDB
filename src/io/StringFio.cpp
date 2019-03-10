@@ -8,12 +8,20 @@ StringFio::StringFio(const std::string &str) {
     this->str = str;
 }
 
+StringFio::StringFio() {
+
+}
+
 int StringFio::tell() {
     return 0;
 }
 
 int StringFio::flush() {
     return 0;
+}
+
+std::string StringFio::getStr() const {
+    return this->str;
 }
 
 size_t StringFio::baseread(void *buf, size_t readLen) {

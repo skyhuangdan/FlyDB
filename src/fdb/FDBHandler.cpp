@@ -127,7 +127,7 @@ int FDBHandler::save() {
         return -1;
     }
 
-    Fio *fio = FileFio::Builder()
+    std::shared_ptr<Fio> fio = FileFio::Builder()
             .file(fp)
             .maxProcessingChunk(this->maxProcessingChunk)
             .build();
@@ -168,7 +168,7 @@ int FDBHandler::save() {
     return 1;
 }
 
-int FDBHandler::saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo) {
+int FDBHandler::saveToFio(std::shared_ptr<Fio> fio, int flag, const FDBSaveInfo *saveInfo) {
     char magic[10];
     snprintf(magic, sizeof(magic), "FLYDB%04d", FDB_VERSION);
     if (-1 == fio->write(magic, 9)) {
@@ -233,7 +233,7 @@ void FDBHandler::skipListSaveProc(void *priv, const std::string &obj) {
     fioAndCoord->coord->getFdbHandler()->saveRawString(fioAndCoord->fio, obj);
 }
 
-int FDBHandler::saveKeyValuePair(Fio *fio,
+int FDBHandler::saveKeyValuePair(std::shared_ptr<Fio> fio,
                                  std::string key,
                                  std::shared_ptr<FlyObj> val,
                                  int64_t expireTime) {
@@ -269,7 +269,7 @@ int FDBHandler::saveKeyValuePair(Fio *fio,
     return 1;
 }
 
-ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
+ssize_t FDBHandler::saveObject(std::shared_ptr<Fio> fio, std::shared_ptr<FlyObj> obj) {
     ssize_t written = 0;
     ssize_t n = 0;
 
@@ -340,7 +340,7 @@ ssize_t FDBHandler::saveObject(Fio *fio, std::shared_ptr<FlyObj> obj) {
     return written;
 }
 
-int FDBHandler::saveInfoAuxFields(Fio *fio,
+int FDBHandler::saveInfoAuxFields(std::shared_ptr<Fio> fio,
                                   int flags,
                                   const FDBSaveInfo *saveInfo) {
     int bits = (sizeof(void*) == 8) ? 64 : 32;
@@ -389,20 +389,20 @@ int FDBHandler::saveInfoAuxFields(Fio *fio,
     return 1;
 }
 
-int FDBHandler::saveAuxFieldStrStr(Fio *fio,
+int FDBHandler::saveAuxFieldStrStr(std::shared_ptr<Fio> fio,
                                    const std::string &key,
                                    const std::string &val) {
     return saveAuxField(fio, key, val);
 }
 
-int FDBHandler::saveAuxFieldStrInt(Fio *fio,
+int FDBHandler::saveAuxFieldStrInt(std::shared_ptr<Fio> fio,
                                    const std::string &key,
                                    int64_t val) {
     std::string valStr = std::to_string(val);
     return saveAuxField(fio, key, valStr);
 }
 
-int FDBHandler::saveAuxField(Fio *fio,
+int FDBHandler::saveAuxField(std::shared_ptr<Fio> fio,
                              const std::string &key,
                              const std::string &val) {
     if (-1 == saveType(fio, FDB_OPCODE_AUX)) {
@@ -420,15 +420,15 @@ int FDBHandler::saveAuxField(Fio *fio,
     return 1;
 }
 
-int FDBHandler::saveMillisecondTime(Fio *fio, int64_t t) {
+int FDBHandler::saveMillisecondTime(std::shared_ptr<Fio> fio, int64_t t) {
     return fio->write(&t, 8);
 }
 
-int FDBHandler::saveType(Fio *fio, unsigned char type) {
+int FDBHandler::saveType(std::shared_ptr<Fio> fio, unsigned char type) {
     return fio->write(&type, 1);
 }
 
-ssize_t FDBHandler::saveRawString(Fio *fio, const std::string &str) {
+ssize_t FDBHandler::saveRawString(std::shared_ptr<Fio> fio, const std::string &str) {
     ssize_t written = 0;
     ssize_t n;
     if (-1 == (n = saveNum(fio, str.length()))) {
@@ -539,7 +539,7 @@ void FDBHandler::setLastSaveTime(time_t lastSaveTime) {
 }
 
 
-ssize_t FDBHandler::saveNum(Fio *fio, uint64_t len) {
+ssize_t FDBHandler::saveNum(std::shared_ptr<Fio> fio, uint64_t len) {
     unsigned char buf[2];
     size_t nwritten;
 
@@ -607,17 +607,16 @@ int FDBHandler::load(FDBSaveInfo *saveInfo) {
 }
 
 int FDBHandler::loadFromFile(FILE *fp, FDBSaveInfo *saveInfo) {
-    Fio *fio = FileFio::Builder()
+    std::shared_ptr<Fio> fio = FileFio::Builder()
             .file(fp)
             .maxProcessingChunk(this->maxProcessingChunk)
             .build();
     int res = loadFromFio(fio, saveInfo);
-    delete fio;
 
     return res;
 }
 
-int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
+int FDBHandler::loadFromFio(std::shared_ptr<Fio> fio, FDBSaveInfo *saveInfo) {
     int version = 0;
     // 检查FDB文件头部
     if (-1 == (version = checkHeader(fio))) {
@@ -774,7 +773,7 @@ int FDBHandler::loadFromFio(Fio *fio, FDBSaveInfo *saveInfo) {
     return 1;
 }
 
-char FDBHandler::loadChar(Fio *fio) {
+char FDBHandler::loadChar(std::shared_ptr<Fio> fio) {
     char ch;
     if (-1 == fio->read(&ch, 1)) {
         this->logHandler->logWarning("error to load char from fio!");
@@ -784,7 +783,7 @@ char FDBHandler::loadChar(Fio *fio) {
     return ch;
 }
 
-uint8_t FDBHandler::loadUint8(Fio *fio) {
+uint8_t FDBHandler::loadUint8(std::shared_ptr<Fio> fio) {
     uint8_t num;
     if (-1 == fio->read(&num, 1)) {
         this->logHandler->logWarning("error to load char from fio!");
@@ -795,16 +794,16 @@ uint8_t FDBHandler::loadUint8(Fio *fio) {
 }
 
 // 返回FlyObj类型数据
-std::shared_ptr<FlyObj> FDBHandler::loadStringObject(Fio *fio) {
+std::shared_ptr<FlyObj> FDBHandler::loadStringObject(std::shared_ptr<Fio> fio) {
     return this->genericLoadStringObject(fio, NULL);
 }
 
 // 返回string类型数据
-std::string* FDBHandler::loadStringPlain(Fio *fio) {
+std::string* FDBHandler::loadStringPlain(std::shared_ptr<Fio> fio) {
     return reinterpret_cast<std::string*>(this->genericLoadString(fio, NULL));
 }
 
-void* FDBHandler::genericLoadString(Fio *fio, size_t *lenptr) {
+void* FDBHandler::genericLoadString(std::shared_ptr<Fio> fio, size_t *lenptr) {
     int encoded = 0;
     int len;
     if (-1 == (len = loadNum(fio, &encoded))) {
@@ -833,7 +832,7 @@ void* FDBHandler::genericLoadString(Fio *fio, size_t *lenptr) {
  * On I/O error NULL is returned.
  */
 std::shared_ptr<FlyObj> FDBHandler::genericLoadStringObject(
-        Fio *fio,
+        std::shared_ptr<Fio> fio,
         size_t *lenptr) {
     int encoded = 0;
     int len;
@@ -861,7 +860,7 @@ std::shared_ptr<FlyObj> FDBHandler::genericLoadStringObject(
             ->getObject(str);
 }
 
-void* FDBHandler::loadIntegerObject(Fio *fio,
+void* FDBHandler::loadIntegerObject(std::shared_ptr<Fio> fio,
                                     int encode,
                                     int flag,
                                     size_t *lenptr) {
@@ -904,11 +903,11 @@ void* FDBHandler::loadIntegerObject(Fio *fio,
 /**
  * 暂时先不支持压缩
  */
-void* FDBHandler::loadLzfStringObject(Fio *fio, int flag, size_t *lenptr) {
+void* FDBHandler::loadLzfStringObject(std::shared_ptr<Fio> fio, int flag, size_t *lenptr) {
 
 }
 
-time_t FDBHandler::loadTime(Fio *fio) {
+time_t FDBHandler::loadTime(std::shared_ptr<Fio> fio) {
     uint32_t res;
     if (-1 == fio->read(&res, 4)) {
         this->logHandler->logWarning("error to load time from fio!");
@@ -918,7 +917,7 @@ time_t FDBHandler::loadTime(Fio *fio) {
     return res;
 }
 
-uint64_t FDBHandler::loadMillisecondTime(Fio *fio) {
+uint64_t FDBHandler::loadMillisecondTime(std::shared_ptr<Fio> fio) {
     uint64_t res;
     if (-1 == fio->read(&res, 8)) {
         this->logHandler->logWarning(
@@ -929,7 +928,7 @@ uint64_t FDBHandler::loadMillisecondTime(Fio *fio) {
     return res;
 }
 
-int FDBHandler::loadNum(Fio *fio, int *encoded) {
+int FDBHandler::loadNum(std::shared_ptr<Fio> fio, int *encoded) {
     uint64_t num = 0;
     if (-1 == loadNumByRef(fio, encoded, &num)) {
         return -1;
@@ -938,7 +937,7 @@ int FDBHandler::loadNum(Fio *fio, int *encoded) {
     return num;
 }
 
-int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
+int FDBHandler::loadNumByRef(std::shared_ptr<Fio> fio, int *encoded, uint64_t *numptr) {
     char buf;
     if (-1 == fio->read(&buf, 1)) {
         this->logHandler->logWarning("error to load len from fio!");
@@ -987,7 +986,7 @@ int FDBHandler::loadNumByRef(Fio *fio, int *encoded, uint64_t *numptr) {
     return 1;
 }
 
-std::shared_ptr<FlyObj> FDBHandler::loadObject(int type, Fio *fio) {
+std::shared_ptr<FlyObj> FDBHandler::loadObject(int type, std::shared_ptr<Fio> fio) {
     std::shared_ptr<FlyObj> obj = NULL;
     uint64_t len = 0;
 
@@ -1049,7 +1048,7 @@ std::shared_ptr<FlyObj> FDBHandler::loadObject(int type, Fio *fio) {
     return obj;
 }
 
-int FDBHandler::checkHeader(Fio *fio) {
+int FDBHandler::checkHeader(std::shared_ptr<Fio> fio) {
     // 读取头部字节
     char buf[1024];
     if (0 == fio->read(buf, 9)) {

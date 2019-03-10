@@ -41,7 +41,7 @@ public:
     bool isScheduled() const;
     void setScheduled(bool scheduled);
     bool sizeMeetRewriteCondition();
-    int saveKeyValuePair(Fio *fio,
+    int saveKeyValuePair(std::shared_ptr<Fio> fio,
                          std::string key,
                          std::shared_ptr<FlyObj> val,
                          int64_t expireTime);
@@ -132,19 +132,19 @@ private:
                                    int fd,
                                    void *clientdata,
                                    int mask);
-    int rewriteAppendOnlyFileDiff(char *tmpfile, FileFio* fio);
-    int rewriteAppendOnlyFileFio(Fio *fio);
+    int rewriteAppendOnlyFileDiff(char *tmpfile, std::shared_ptr<FileFio> fio);
+    int rewriteAppendOnlyFileFio(std::shared_ptr<Fio> fio);
     int readDiffFromParent();
-    int rewriteList(Fio *fio,
+    int rewriteList(std::shared_ptr<Fio> fio,
                     std::string key,
                     std::list<std::string> *val);
-    int rewriteSkipList(Fio *fio,
+    int rewriteSkipList(std::shared_ptr<Fio> fio,
                         std::string key,
                         SkipList<std::string> *skipList);
-    int rewriteHashTable(Fio *fio,
+    int rewriteHashTable(std::shared_ptr<Fio> fio,
                          std::string key,
                          Dict<std::string, std::string> *dict);
-    int rewriteIntSet(Fio *fio, std::string key, IntSet *intset);
+    int rewriteIntSet(std::shared_ptr<Fio> fio, std::string key, IntSet *intset);
     void backgroundFsync();
     void doRealWrite();
     void doRealFsync(bool syncInProgress);

@@ -519,7 +519,7 @@ int AOFHandler::rewriteAppendOnlyFile() {
 
     /** 将当前状态下的数据持久化 */
     off_t autosync = this->rewriteIncrementalFsync ? AOF_AUTOSYNC_BYTES : 0;
-    FileFio* fio = FileFio::Builder().file(fp).autosync(autosync).build();
+    std::shared_ptr<FileFio> fio = FileFio::Builder().file(fp).autosync(autosync).build();
     /** 如果使用混合持久化，则调用fdb进行快照持久化 */
     if (this->useFdbPreamble) {
         FDBSaveInfo *fdbSaveInfo = new FDBSaveInfo();
@@ -555,7 +555,7 @@ int AOFHandler::rewriteAppendOnlyFile() {
  * 用于减少执行完aof后需要主进程进行保存的工作量，即在backgroundSaveDone函数中进行保存
  * buffer block list的工作量，减少主进程进行持久化所造成的阻塞
  * */
-int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, FileFio *fio) {
+int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, std::shared_ptr<FileFio> fio) {
     FILE *fp = fio->getFp();
     /**
      * 从parent读取持久化之后的aof数据
@@ -673,7 +673,7 @@ int AOFHandler::dbScan(void *priv,
 
 }
 
-int AOFHandler::saveKeyValuePair(Fio *fio,
+int AOFHandler::saveKeyValuePair(std::shared_ptr<Fio> fio,
                                  std::string key,
                                  std::shared_ptr<FlyObj> val,
                                  int64_t expireTime) {
@@ -718,7 +718,7 @@ int AOFHandler::saveKeyValuePair(Fio *fio,
     return 1;
 }
 
-int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
+int AOFHandler::rewriteAppendOnlyFileFio(std::shared_ptr<Fio> fio) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
     int dbCount = flyServer->getFlyDBCount();
     for (int i = 0; i < dbCount; i++) {
@@ -738,7 +738,7 @@ int AOFHandler::rewriteAppendOnlyFileFio(Fio *fio) {
     return 1;
 }
 
-int AOFHandler::rewriteList(Fio *fio,
+int AOFHandler::rewriteList(std::shared_ptr<Fio> fio,
                            std::string key,
                            std::list<std::string> *val) {
     int valCount = val->size();
@@ -758,7 +758,7 @@ int AOFHandler::rewriteList(Fio *fio,
     return 1;
 }
 
-int AOFHandler::rewriteSkipList(Fio *fio,
+int AOFHandler::rewriteSkipList(std::shared_ptr<Fio> fio,
                                 std::string key,
                                 SkipList<std::string> *skipList) {
     int length = skipList->getLength();
@@ -779,13 +779,13 @@ int AOFHandler::rewriteSkipList(Fio *fio,
 
 void AOFHandler::skipListSaveProc(void *priv, const std::string &obj) {
     FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
-    Fio *fio = fioAndCoord->fio;
+    std::shared_ptr<Fio> fio = fioAndCoord->fio;
 
     /** 存入val */
     fio->writeBulkString(obj);
 }
 
-int AOFHandler::rewriteHashTable(Fio *fio,
+int AOFHandler::rewriteHashTable(std::shared_ptr<Fio> fio,
                                  std::string key,
                                  Dict<std::string, std::string> *dict) {
     int size = dict->size();
@@ -815,7 +815,7 @@ int AOFHandler::dictSaveScan(void *priv,
                               std::string key,
                               std::string val) {
     FioAndCoord *fioAndCoord = reinterpret_cast<FioAndCoord *>(priv);
-    Fio *fio = fioAndCoord->fio;
+    std::shared_ptr<Fio> fio = fioAndCoord->fio;
 
     /** 写入key-value，如果出错，返回-1 */
     if (0 == fio->writeBulkString(key)
@@ -851,7 +851,7 @@ void AOFHandler::childPipeReadable(const AbstractCoordinator *coordinator,
     }
 }
 
-int AOFHandler::rewriteIntSet(Fio *fio,
+int AOFHandler::rewriteIntSet(std::shared_ptr<Fio> fio,
                               std::string key,
                               IntSet *intset) {
     int32_t length = intset->lenth();

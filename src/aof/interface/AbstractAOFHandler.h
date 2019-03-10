@@ -52,7 +52,7 @@ public:
 
     virtual bool sizeMeetRewriteCondition() = 0;
 
-    virtual int saveKeyValuePair(Fio *fio,
+    virtual int saveKeyValuePair(std::shared_ptr<Fio> fio,
                                  std::string key,
                                  std::shared_ptr<FlyObj> val,
                                  int64_t expireTime) = 0;

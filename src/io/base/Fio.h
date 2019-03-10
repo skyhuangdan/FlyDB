@@ -27,6 +27,8 @@ public:
     size_t writeBulkString(std::string str);
     size_t writeBulkInt64(int64_t i);
     size_t writeBulkDouble(double d);
+    int writeBulkError(const char *err);
+    void addReplyErrorFormat(const char *fmt, ...);
 
     void setMaxProcessingChunk(uint64_t maxProcessingChunk);
     uint64_t getMaxProcessingChunk() const;

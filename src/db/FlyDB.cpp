@@ -44,7 +44,7 @@ int FlyDB::addExpire(const std::string &key,
     return 1;
 }
 
-int FlyDB::dictScan(Fio *fio, scan scanProc) {
+int FlyDB::dictScan(std::shared_ptr<Fio> fio, scan scanProc) {
     uint32_t nextCur = 0;
     do {
         nextCur = this->dict->dictScan(

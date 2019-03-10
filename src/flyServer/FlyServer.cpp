@@ -315,6 +315,9 @@ void FlyServer::loadDataFromDisk() {
 
 void FlyServer::freeClientsInAsyncFreeList() {
     for (auto client : this->clientsToClose) {
+        if (NULL == client) {
+            continue;
+        }
         freeClient(client);
     }
 

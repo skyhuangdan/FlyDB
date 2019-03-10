@@ -26,7 +26,7 @@ public:
     int addExpire(const std::string &key,
                   std::shared_ptr<FlyObj> val, 
                   uint64_t expire);
-    int dictScan(Fio *fio, scan scanProc);
+    int dictScan(std::shared_ptr<Fio> fio, scan scanProc);
     uint64_t getExpire(const std::string &key);
     const AbstractCoordinator* getCoordinator() const;
     uint32_t dictSlotNum() const;

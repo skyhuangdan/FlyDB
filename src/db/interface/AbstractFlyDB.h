@@ -14,22 +14,22 @@ class AbstractFlyDB;
 class AbstractCoordinator;
 
 struct FioAndflyDB {
-    FioAndflyDB(Fio *fio, AbstractFlyDB *flyDB) {
+    FioAndflyDB(std::shared_ptr<Fio> fio, AbstractFlyDB *flyDB) {
         this->fio = fio;
         this->flyDB = flyDB;
     }
 
-    Fio *fio;
+    std::shared_ptr<Fio> fio;
     AbstractFlyDB *flyDB;
 };
 
 struct FioAndCoord {
-    FioAndCoord(Fio *fio, const AbstractCoordinator *coord) {
+    FioAndCoord(std::shared_ptr<Fio> fio, const AbstractCoordinator *coord) {
         this->fio = fio;
         this->coord = coord;
     }
 
-    Fio *fio;
+    std::shared_ptr<Fio> fio;
     const AbstractCoordinator *coord;
 };
 
@@ -49,7 +49,7 @@ public:
                           std::shared_ptr<FlyObj> val,
                           uint64_t expire) = 0;
 
-    virtual int dictScan(Fio *fio, scan scanProc) = 0;
+    virtual int dictScan(std::shared_ptr<Fio> fio, scan scanProc) = 0;
 
     virtual uint64_t getExpire(const std::string &key) = 0;
 

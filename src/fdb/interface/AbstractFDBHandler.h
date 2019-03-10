@@ -20,18 +20,21 @@ public:
 
     virtual int save() = 0;
 
-    virtual int saveToFio(Fio *fio, int flag, const FDBSaveInfo *saveInfo) = 0;
+    virtual int saveToFio(std::shared_ptr<Fio> fio,
+                          int flag,
+                          const FDBSaveInfo *saveInfo) = 0;
 
     virtual int backgroundSave() = 0;
 
     virtual void backgroundSaveDone(int exitCode, int bySignal) = 0;
 
-    virtual int saveKeyValuePair(Fio *fio,
+    virtual int saveKeyValuePair(std::shared_ptr<Fio> fio,
                                  std::string key,
                                  std::shared_ptr<FlyObj> val,
                                  int64_t expireTime) = 0;
 
-    virtual ssize_t saveRawString(Fio *fio, const std::string &str) = 0;
+    virtual ssize_t saveRawString(std::shared_ptr<Fio> fio,
+                                  const std::string &str) = 0;
 
     virtual void deleteTempFile(pid_t pid) = 0;
 
