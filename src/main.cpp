@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "src/def.h"
-#include "src/coordinator/Coordinator.h"
-#include "src/fdb/FDBHandler.h"
+#include "def.h"
+#include "coordinator/Coordinator.h"
+#include "fdb/FDBHandler.h"
 
 /**
  * flyDB，取名fly有两层含义：
