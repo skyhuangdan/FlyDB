@@ -9,11 +9,10 @@
 
 class FlyClientFactory : public AbstractFlyClientFactory {
 public:
-    AbstractFlyClient* getFlyClient(int fd, 
-                                    const AbstractCoordinator *coordinator,
-                                    AbstractFlyDB *flyDB);
-
-    void deleteFlyClient(AbstractFlyClient **flyClient);
+    std::shared_ptr<AbstractFlyClient> getFlyClient(
+            int fd, 
+            const AbstractCoordinator *coordinator,
+            AbstractFlyDB *flyDB);
 };
 
 

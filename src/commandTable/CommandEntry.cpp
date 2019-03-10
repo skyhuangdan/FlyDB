@@ -166,7 +166,7 @@ void CommandEntry::setKeyStep(int keyStep) {
 }
 
 void versionCommand(const AbstractCoordinator* coordinator,
-                    AbstractFlyClient *client) {
+                    std::shared_ptr<AbstractFlyClient> client) {
     if (NULL == client) {
         return;
     }
@@ -176,7 +176,7 @@ void versionCommand(const AbstractCoordinator* coordinator,
 }
 
 void getCommand(const AbstractCoordinator* coordinator,
-                AbstractFlyClient* flyClient) {
+                std::shared_ptr<AbstractFlyClient>  flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -193,7 +193,7 @@ void getCommand(const AbstractCoordinator* coordinator,
 }
 
 void setGenericCommand(const AbstractCoordinator *coordinator,
-                       AbstractFlyClient *flyClient,
+                       std::shared_ptr<AbstractFlyClient> flyClient,
                        std::string *key,
                        std::shared_ptr<FlyObj> val,
                        int64_t expireus) {
@@ -208,7 +208,7 @@ void setGenericCommand(const AbstractCoordinator *coordinator,
 }
 
 void setCommand(const AbstractCoordinator* coordinator,
-                AbstractFlyClient* flyClient) {
+                std::shared_ptr<AbstractFlyClient>  flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -222,7 +222,7 @@ void setCommand(const AbstractCoordinator* coordinator,
 }
 
 void setExCommand(const AbstractCoordinator* coordinator,
-                  AbstractFlyClient* flyClient) {
+                  std::shared_ptr<AbstractFlyClient> flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -243,7 +243,7 @@ void setExCommand(const AbstractCoordinator* coordinator,
 }
 
 void psetExCommand(const AbstractCoordinator* coordinator,
-                   AbstractFlyClient* flyClient) {
+                   std::shared_ptr<AbstractFlyClient> flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -263,16 +263,16 @@ void psetExCommand(const AbstractCoordinator* coordinator,
 }
 
 void expireCommand(const AbstractCoordinator* coordinator,
-                   AbstractFlyClient* flyClient) {
+                   std::shared_ptr<AbstractFlyClient> flyClient) {
 }
 
 void expireatCommand(const AbstractCoordinator* coordinator,
-                     AbstractFlyClient* flyClient) {
+                     std::shared_ptr<AbstractFlyClient> flyClient) {
 
 }
 
 void mgetCommand(const AbstractCoordinator* coordinator,
-                 AbstractFlyClient* flyClient) {
+                 std::shared_ptr<AbstractFlyClient> flyClient) {
 
 }
 
@@ -282,7 +282,7 @@ enum ListLocation {
 };
 
 void pushGenericCommand(const AbstractCoordinator* coordinator,
-                        AbstractFlyClient* flyClient,
+                        std::shared_ptr<AbstractFlyClient> flyClient,
                         ListLocation location) {
     if (NULL == flyClient) {
         return;
@@ -321,17 +321,17 @@ void pushGenericCommand(const AbstractCoordinator* coordinator,
 }
 
 void rpushCommand(const AbstractCoordinator* coordinator,
-                  AbstractFlyClient* flyClient) {
+                  std::shared_ptr<AbstractFlyClient> flyClient) {
     pushGenericCommand(coordinator, flyClient, LIST_HEAD);
 }
 
 void lpushCommand(const AbstractCoordinator* coordinator,
-                  AbstractFlyClient* flyClient) {
+                  std::shared_ptr<AbstractFlyClient> flyClient) {
     pushGenericCommand(coordinator, flyClient, LIST_TAIL);
 }
 
 void pushSortCommand(const AbstractCoordinator* coordinator,
-                     AbstractFlyClient *flyClient) {
+                     std::shared_ptr<AbstractFlyClient> flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -364,7 +364,7 @@ void pushSortCommand(const AbstractCoordinator* coordinator,
 }
 
 void popSortCommand(const AbstractCoordinator* coordinator,
-                    AbstractFlyClient *flyClient) {
+                    std::shared_ptr<AbstractFlyClient> flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -392,7 +392,7 @@ void popSortCommand(const AbstractCoordinator* coordinator,
 }
 
 void popGenericCommand(const AbstractCoordinator *coordinator,
-                       AbstractFlyClient *flyClient,
+                       std::shared_ptr<AbstractFlyClient> flyClient,
                        ListLocation location) {
     if (NULL == flyClient) {
         return;
@@ -424,17 +424,17 @@ void popGenericCommand(const AbstractCoordinator *coordinator,
 }
 
 void rpopCommand(const AbstractCoordinator* coordinator,
-                 AbstractFlyClient* flyClient) {
+                 std::shared_ptr<AbstractFlyClient> flyClient) {
     popGenericCommand(coordinator, flyClient, LIST_HEAD);
 }
 
 void lpopCommand(const AbstractCoordinator* coordinator,
-                 AbstractFlyClient* flyClient) {
+                 std::shared_ptr<AbstractFlyClient> flyClient) {
     popGenericCommand(coordinator, flyClient, LIST_TAIL);
 }
 
 void hsetCommand(const AbstractCoordinator* coordinator,
-                 AbstractFlyClient* flyClient) {
+                 std::shared_ptr<AbstractFlyClient> flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -468,7 +468,7 @@ void hsetCommand(const AbstractCoordinator* coordinator,
 }
 
 void hgetCommand(const AbstractCoordinator* coordinator,
-                 AbstractFlyClient* flyClient) {
+                 std::shared_ptr<AbstractFlyClient> flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -498,14 +498,14 @@ void hgetCommand(const AbstractCoordinator* coordinator,
 }
 
 void saveCommand(const AbstractCoordinator* coordinator,
-                 AbstractFlyClient* flyClient) {
+                 std::shared_ptr<AbstractFlyClient> flyClient) {
     AbstractFDBHandler *fdbHandler = coordinator->getFdbHandler();
     fdbHandler->save();
 }
 
 /** BGSAVE [SCHEDULE] */
 void bgsaveCommand(const AbstractCoordinator* coordinator,
-                   AbstractFlyClient* flyClient) {
+                   std::shared_ptr<AbstractFlyClient> flyClient) {
     if (NULL == flyClient) {
         return;
     }
@@ -558,7 +558,7 @@ void bgsaveCommand(const AbstractCoordinator* coordinator,
 }
 
 void bgrewriteaofCommand(const AbstractCoordinator *coordinator,
-                         AbstractFlyClient *flyClient) {
+                         std::shared_ptr<AbstractFlyClient> flyClient) {
     /** have aof background thread */
     if (coordinator->getAofHandler()->haveChildPid()) {
         flyClient->addReply(
@@ -584,7 +584,7 @@ void bgrewriteaofCommand(const AbstractCoordinator *coordinator,
 
 
 void configSetCommand(const AbstractCoordinator* coordinator,
-                      AbstractFlyClient* flyClient) {
+                      std::shared_ptr<AbstractFlyClient> flyClient) {
     std::string *argv2 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[2]->getPtr());
     std::string *argv3 = reinterpret_cast<std::string*>(
@@ -609,12 +609,12 @@ void configSetCommand(const AbstractCoordinator* coordinator,
 }
 
 void configGetCommand(const AbstractCoordinator* coordinator,
-                      AbstractFlyClient* flyClient) {
+                      std::shared_ptr<AbstractFlyClient> flyClient) {
 
 }
 
 void configCommand(const AbstractCoordinator* coordinator,
-                   AbstractFlyClient* flyClient) {
+                   std::shared_ptr<AbstractFlyClient> flyClient) {
     std::string *argv1 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
 
@@ -643,7 +643,7 @@ void configCommand(const AbstractCoordinator* coordinator,
 }
 
 void selectCommand(const AbstractCoordinator* coordinator,
-                   AbstractFlyClient* flyClient) {
+                   std::shared_ptr<AbstractFlyClient> flyClient) {
     std::string *argv1 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
     int64_t num = 0;
@@ -663,7 +663,7 @@ void selectCommand(const AbstractCoordinator* coordinator,
 }
 
 void slaveOfCommand(const AbstractCoordinator* coordinator,
-                   AbstractFlyClient* flyClient) {
+                   std::shared_ptr<AbstractFlyClient> flyClient) {
     std::string *argv1 = reinterpret_cast<std::string*>(
             flyClient->getArgv()[1]->getPtr());
     std::string *argv2 = reinterpret_cast<std::string*>(

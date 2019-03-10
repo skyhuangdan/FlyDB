@@ -10,7 +10,8 @@
 #include "../flyClient/interface/AbstractFlyClient.h"
 #include "../flyServer/interface/AbstractFlyServer.h"
 
-typedef void (*commandProc)(const AbstractCoordinator*, AbstractFlyClient*);
+typedef void (*commandProc)(const AbstractCoordinator*,
+                            std::shared_ptr<AbstractFlyClient>);
 typedef int (*getKeysProc)(struct CommandEntry *cmd,
                            std::shared_ptr<FlyObj> *argv,
                            int argc,
@@ -120,28 +121,28 @@ private:
     uint64_t microseconds, calls;
 };
 
-void versionCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void getCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void setCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void setExCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void psetExCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void expireCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void expireatCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void mgetCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void rpushCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void lpushCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void rpopCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void lpopCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void pushSortCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void popSortCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void hsetCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void hgetCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void saveCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void bgsaveCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void bgrewriteaofCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void configCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void selectCommand(const AbstractCoordinator*, AbstractFlyClient*);
-void slaveOfCommand(const AbstractCoordinator*, AbstractFlyClient*);
+void versionCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void getCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void setCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void setExCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void psetExCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void expireCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void expireatCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void mgetCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void rpushCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void lpushCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void rpopCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void lpopCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void pushSortCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void popSortCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void hsetCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void hgetCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void saveCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void bgsaveCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void bgrewriteaofCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void configCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void selectCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
+void slaveOfCommand(const AbstractCoordinator*, std::shared_ptr<AbstractFlyClient>);
 
 extern std::vector<CommandEntry*> flyDBCommandTable;
 

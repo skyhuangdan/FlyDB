@@ -212,8 +212,10 @@ int AOFHandler::loadRemaindingAOF(FILE *fp) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
     /** create fake client: fake client`s id is -1 */
-    AbstractFlyClient *fakeClient = coordinator->getFlyClientFactory()
-            ->getFlyClient(-1, coordinator, flyServer->getFlyDB(0));
+    std::shared_ptr<AbstractFlyClient> fakeClient =
+            coordinator->getFlyClientFactory()->getFlyClient(-1,
+                                                             coordinator,
+                                                             flyServer->getFlyDB(0));
 
     /** 从AOF文件中读取命令数据 */
     while (1) {
@@ -231,7 +233,6 @@ int AOFHandler::loadRemaindingAOF(FILE *fp) {
 
     }
 
-    coordinator->getFlyClientFactory()->deleteFlyClient(&fakeClient);
     return 1;
 }
 
@@ -829,7 +830,7 @@ int AOFHandler::dictSaveScan(void *priv,
 /** 接收child发送的通知，该通知用于告知parent不要继续发送aof diff数据了 */
 void AOFHandler::childPipeReadable(const AbstractCoordinator *coordinator,
                                    int fd,
-                                   void *clientdata,
+                                   std::shared_ptr<AbstractFlyClient> flyClient,
                                    int mask) {
     /** 当接parent收到'!'时，代表child通知parent停止传输 */
     char byte;
@@ -910,7 +911,7 @@ void AOFHandler::rewriteBufferAppend(std::string buf) {
 
 void AOFHandler::childWriteDiffData(const AbstractCoordinator *coorinator,
                                     int fd,
-                                    void *clientdata,
+                                    std::shared_ptr<AbstractFlyClient> flyClient,
                                     int mask) {
     AbstractAOFHandler *aofHandler = coorinator->getAofHandler();
     AbstractEventLoop *eventLoop = coorinator->getEventLoop();

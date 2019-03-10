@@ -5,18 +5,10 @@
 #include "FlyClientFactory.h"
 #include "FlyClient.h"
 
-AbstractFlyClient* FlyClientFactory::getFlyClient(
+std::shared_ptr<AbstractFlyClient> FlyClientFactory::getFlyClient(
         int fd,
         const AbstractCoordinator *coordinator,
         AbstractFlyDB *flyDB) {
-    return new FlyClient(fd, coordinator, flyDB);
-}
-
-void FlyClientFactory::deleteFlyClient(AbstractFlyClient **flyClient) {
-    if (NULL == flyClient || NULL == *flyClient) {
-        return;
-    }
-
-    delete *flyClient;
-    *flyClient = NULL;
+    return std::shared_ptr<AbstractFlyClient>(
+            new FlyClient(fd, coordinator, flyDB));
 }

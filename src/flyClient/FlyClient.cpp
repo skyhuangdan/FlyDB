@@ -243,7 +243,8 @@ int FlyClient::prepareClientToWrite() {
      */
     if (hasNoPending() && !(this->flags & CLIENT_PENDING_WRITE)) {
         this->addFlag(CLIENT_PENDING_WRITE);
-        this->coordinator->getFlyServer()->addToClientsPendingToWrite(this);
+        this->coordinator->getFlyServer()->addToClientsPendingToWrite(
+                std::shared_ptr<AbstractFlyClient>(this));
     }
 
     return 1;

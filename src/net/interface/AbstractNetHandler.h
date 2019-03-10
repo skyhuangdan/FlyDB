@@ -85,10 +85,10 @@ public:
     virtual int unixAccept(char *err, int s) = 0;
 
     virtual int processInputBuffer(const AbstractCoordinator *coordinator,
-                                   AbstractFlyClient *flyClient) = 0;
+                                   std::shared_ptr<AbstractFlyClient> flyClient) = 0;
 
     virtual int writeToClient(const AbstractCoordinator *coordinator,
-                              AbstractFlyClient *flyClient,
+                              std::shared_ptr<AbstractFlyClient> flyClient,
                               int handlerInstalled) = 0;
 
     virtual int wait(int fd, int mask, int millseconds) = 0;

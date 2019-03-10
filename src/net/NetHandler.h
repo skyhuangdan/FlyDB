@@ -15,15 +15,15 @@
 // 对应socket的绑定接口
 void acceptTcpHandler(const AbstractCoordinator *coordinator,
                       int fd,
-                      void *clientdata,
+                      std::shared_ptr<AbstractFlyClient> flyClient,
                       int mask);
 void readQueryFromClient(const AbstractCoordinator *coordinator,
                          int fd,
-                         void *clientdata,
+                         std::shared_ptr<AbstractFlyClient> flyClient,
                          int mask);
 void sendReplyToClient(const AbstractCoordinator *coordinator,
                        int fd,
-                       void *clientdata,
+                       std::shared_ptr<AbstractFlyClient> flyClient,
                        int mask);
 
 class NetHandler : public AbstractNetHandler {
@@ -62,9 +62,9 @@ public:
     int tcpAccept(char *err, int s, char *ip, size_t iplen, int *port);
     int unixAccept(char *err, int s);
     int processInputBuffer(const AbstractCoordinator* coordinator,
-                           AbstractFlyClient *flyClient);
+                           std::shared_ptr<AbstractFlyClient> flyClient);
     int writeToClient(const AbstractCoordinator *coordinator,
-                      AbstractFlyClient *flyClient,
+                      std::shared_ptr<AbstractFlyClient> flyClient,
                       int handlerInstalled);
     int wait(int fd, int mask, int millseconds);
     ssize_t syncRead(int fd, char *ptr, ssize_t size, uint64_t timeout);
@@ -92,16 +92,19 @@ private:
                          int backlog);
     int tcpGenericAccept(char *err, int s, struct sockaddr *sa, socklen_t *len);
     void dealError(int fd, struct addrinfo *servinfo);
-    int processInlineBuffer(AbstractFlyClient *flyClient);
+    int processInlineBuffer(std::shared_ptr<AbstractFlyClient> flyClient);
     int processMultiBulkBuffer(const AbstractCoordinator* coordinator,
-                               AbstractFlyClient *flyClient);
-    int analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos);
+                               std::shared_ptr<AbstractFlyClient> flyClient);
+    int analyseMultiBulkLen(std::shared_ptr<AbstractFlyClient> flyClient,
+                            size_t &pos);
     int analyseMultiBulk(const AbstractCoordinator* coordinator,
-                         AbstractFlyClient *flyClient,
+                         std::shared_ptr<AbstractFlyClient> flyClient,
                          size_t &pos);
     int analyseBulk(const AbstractCoordinator* coordinator,
-                    AbstractFlyClient *flyClient);
-    int setProtocolError(char *err, AbstractFlyClient *flyClient, size_t pos);
+                    std::shared_ptr<AbstractFlyClient> flyClient);
+    int setProtocolError(char *err,
+                         std::shared_ptr<AbstractFlyClient> flyClient,
+                         size_t pos);
 
     AbstractLogHandler *logHandler;
 };

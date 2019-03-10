@@ -39,7 +39,8 @@ public:
     void init(ConfigCache *configCache);                  // 初始化函数
     pid_t getPID();                                       // 获取server id
     std::string getVersion();                             // 获取版本号
-    int dealWithCommand(AbstractFlyClient *flyclient);    // 处理命令
+    // 处理命令
+    int dealWithCommand(std::shared_ptr<AbstractFlyClient> flyclient);
     int getHz() const;
     void setHz(int hz);
     time_t getNowt() const;
@@ -77,14 +78,14 @@ public:
     /**
      *  client相关
      */
-    AbstractFlyClient* createClient(int fd);
-    int freeClient(AbstractFlyClient *flyClient);
-    void addToClientsPendingToWrite(AbstractFlyClient *flyClient);
+    std::shared_ptr<AbstractFlyClient> createClient(int fd);
+    int freeClient(std::shared_ptr<AbstractFlyClient> flyClient);
+    void addToClientsPendingToWrite(std::shared_ptr<AbstractFlyClient> flyClient);
     int handleClientsWithPendingWrites();
-    void freeClientAsync(AbstractFlyClient *flyClient);
+    void freeClientAsync(std::shared_ptr<AbstractFlyClient> flyClient);
     void freeClientsInAsyncFreeList();
     int getMaxClients() const;
-    void unlinkClient(AbstractFlyClient *flyClient);
+    void unlinkClient(std::shared_ptr<AbstractFlyClient> flyClient);
 
 private:
     /** 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）*/
@@ -144,11 +145,11 @@ private:
     uint64_t nextClientId;
     pthread_mutex_t nextClientIdMutex;
     /** client列表 */
-    std::list<AbstractFlyClient *> clients;
+    std::list<std::shared_ptr<AbstractFlyClient>> clients;
     /** 需要install write handler */
-    std::list<AbstractFlyClient*> clientsPendingWrite;
+    std::list<std::shared_ptr<AbstractFlyClient>> clientsPendingWrite;
     /** 异步关闭的client链表 */
-    std::list<AbstractFlyClient*> clientsToClose;
+    std::list<std::shared_ptr<AbstractFlyClient>> clientsToClose;
     /** 由于超过了maxclients而拒绝连接的次数 */
     uint64_t statRejectedConn;
     /** client buff最大长度 */

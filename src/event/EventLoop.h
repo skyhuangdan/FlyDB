@@ -29,7 +29,7 @@ public:
     int createFileEvent(int fd,
                         int mask,
                         fileEventProc* proc,
-                        void *clientdata);
+                        std::shared_ptr<AbstractFlyClient> flyClient);
     int deleteFileEvent(int fd, int mask);
     int getFileEvents(int fd);
     beforeAndAfterSleepProc* getBeforeSleepProc() const;

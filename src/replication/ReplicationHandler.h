@@ -40,7 +40,7 @@ private:
     /** Port of master */
     int masterport = 6379;
     /** 主服务器可以看做一个client，因为本机也是master响应各种命令 */
-    AbstractFlyClient *master = NULL;
+    std::shared_ptr<AbstractFlyClient> master = NULL;
     /** Last selected DB in replication output */
     int slaveSelDB = -1;
     ReplicationState state = REPL_STATE_NONE;
@@ -53,9 +53,9 @@ private:
     /** Accept offsets up to this for replid2. */
     uint64_t secondReplidOffset = 0;
     /** cached master对于本服务器来说也是个client */
-    AbstractFlyClient *cachedMaster;
+    std::shared_ptr<AbstractFlyClient> cachedMaster;
     /** 所有的从机*/
-    std::list<AbstractFlyClient*> slaves;
+    std::list<std::shared_ptr<AbstractFlyClient>> slaves;
     /** Master SYNC socket */
     int transferSocket = -1;
     /** 接收PSYNC传输数据的临时文件 */

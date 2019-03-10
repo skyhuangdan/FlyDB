@@ -25,7 +25,7 @@ public:
     virtual std::string getVersion() = 0;
 
     // 处理命令
-    virtual int dealWithCommand(AbstractFlyClient *flyclient) = 0;
+    virtual int dealWithCommand(std::shared_ptr<AbstractFlyClient> flyclient) = 0;
 
     virtual int getHz() const = 0;
 
@@ -33,9 +33,9 @@ public:
 
     virtual char *getNeterr() const = 0;
 
-    virtual AbstractFlyClient *createClient(int fd) = 0;
+    virtual std::shared_ptr<AbstractFlyClient> createClient(int fd) = 0;
 
-    virtual int freeClient(AbstractFlyClient *flyClient) = 0;
+    virtual int freeClient(std::shared_ptr<AbstractFlyClient> flyClient) = 0;
 
     virtual time_t getNowt() const = 0;
 
@@ -49,11 +49,11 @@ public:
 
     virtual void closeListeningSockets(bool unlinkUnixSocket) = 0;
 
-    virtual void addToClientsPendingToWrite(AbstractFlyClient *flyClient) = 0;
+    virtual void addToClientsPendingToWrite(std::shared_ptr<AbstractFlyClient> flyClient) = 0;
 
     virtual int handleClientsWithPendingWrites() = 0;
 
-    virtual void freeClientAsync(AbstractFlyClient *flyClient) = 0;
+    virtual void freeClientAsync(std::shared_ptr<AbstractFlyClient> flyClient) = 0;
 
     virtual void freeClientsInAsyncFreeList() = 0;
 
@@ -96,7 +96,7 @@ public:
 
     virtual void tryResizeDB() = 0;
 
-    virtual void unlinkClient(AbstractFlyClient *flyClient) = 0;
+    virtual void unlinkClient(std::shared_ptr<AbstractFlyClient> flyClient) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

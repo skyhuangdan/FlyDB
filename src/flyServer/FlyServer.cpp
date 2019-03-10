@@ -142,7 +142,7 @@ std::string FlyServer::getVersion() {
     return this->version;
 }
 
-int FlyServer::dealWithCommand(AbstractFlyClient *flyclient) {
+int FlyServer::dealWithCommand(std::shared_ptr<AbstractFlyClient> flyclient) {
     return this->commandTable->dealWithCommand(flyclient);
 }
 
@@ -427,7 +427,7 @@ void FlyServer::tryResizeDB() {
     }
 }
 
-AbstractFlyClient* FlyServer::createClient(int fd) {
+std::shared_ptr<AbstractFlyClient> FlyServer::createClient(int fd) {
     if (fd <= 0) {
         return NULL;
     }
@@ -439,7 +439,7 @@ AbstractFlyClient* FlyServer::createClient(int fd) {
     }
 
     // create FlyClient
-    AbstractFlyClient *flyClient = this->coordinator
+    std::shared_ptr<AbstractFlyClient> flyClient = this->coordinator
             ->getFlyClientFactory()
             ->getFlyClient(fd, coordinator, this->getFlyDB(0));
     uint64_t clientId = 0;
@@ -455,7 +455,6 @@ AbstractFlyClient* FlyServer::createClient(int fd) {
     }
     if (-1 == this->coordinator->getEventLoop()->createFileEvent(
             fd, ES_READABLE, readQueryFromClient, flyClient)) {
-        coordinator->getFlyClientFactory()->deleteFlyClient(&flyClient);
         return NULL;
     }
 
@@ -465,18 +464,16 @@ AbstractFlyClient* FlyServer::createClient(int fd) {
     return flyClient;
 }
 
-int FlyServer::freeClient(AbstractFlyClient *flyClient) {
+int FlyServer::freeClient(std::shared_ptr<AbstractFlyClient> flyClient) {
     /** 将其从global list中删除*/
     this->unlinkClient(flyClient);
 
     // 在相应列表中删除
     this->deleteFromAsyncClose(flyClient->getFd());
-
-    // 删除FlyClient
-    coordinator->getFlyClientFactory()->deleteFlyClient(&flyClient);
 }
 
-void FlyServer::addToClientsPendingToWrite(AbstractFlyClient *flyClient) {
+void FlyServer::addToClientsPendingToWrite(
+        std::shared_ptr<AbstractFlyClient> flyClient) {
     this->clientsPendingWrite.push_back(flyClient);
 }
 
@@ -490,7 +487,7 @@ int FlyServer::handleClientsWithPendingWrites() {
         return 0;
     }
 
-    std::list<AbstractFlyClient*>::iterator iter =
+    std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
             this->clientsPendingWrite.begin();
     for (; iter != this->clientsPendingWrite.end(); iter++) {
         // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
@@ -506,7 +503,10 @@ int FlyServer::handleClientsWithPendingWrites() {
         // 异步发送
         if (!(*iter)->hasNoPending()) {
             if (-1 == this->coordinator->getEventLoop()->createFileEvent(
-                    (*iter)->getFd(), ES_WRITABLE, sendReplyToClient, *iter)) {
+                    (*iter)->getFd(),
+                    ES_WRITABLE,
+                    sendReplyToClient,
+                    *iter)) {
                 freeClientAsync(*iter);
             }
 
@@ -518,7 +518,7 @@ int FlyServer::handleClientsWithPendingWrites() {
     return pendingCount;
 }
 
-void FlyServer::freeClientAsync(AbstractFlyClient *flyClient) {
+void FlyServer::freeClientAsync(std::shared_ptr<AbstractFlyClient> flyClient) {
     if (flyClient->getFlags() & CLIENT_CLOSE_ASAP) {
         return;
     }
@@ -528,7 +528,7 @@ void FlyServer::freeClientAsync(AbstractFlyClient *flyClient) {
 }
 
 void FlyServer::deleteFromPending(int fd) {
-    std::list<AbstractFlyClient*>::iterator iter =
+    std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
             this->clientsPendingWrite.begin();
     for (; iter != this->clientsPendingWrite.end(); iter++) {
         if ((*iter)->getFd() == fd) {
@@ -539,7 +539,8 @@ void FlyServer::deleteFromPending(int fd) {
 }
 
 void FlyServer::deleteFromAsyncClose(int fd) {
-    std::list<AbstractFlyClient*>::iterator iter = this->clientsToClose.begin();
+    std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
+            this->clientsToClose.begin();
     for (iter; iter != this->clientsToClose.end(); iter++) {
         if ((*iter)->getFd() == fd) {
             this->clientsToClose.erase(iter);
@@ -556,10 +557,11 @@ int FlyServer::getMaxClients() const {
  * 将client从一切global list中删除掉
  * (除async delete列表之外, 否则可能导致无法删除)
  **/
-void FlyServer::unlinkClient(AbstractFlyClient *flyClient) {
+void FlyServer::unlinkClient(std::shared_ptr<AbstractFlyClient> flyClient) {
     /** 在clients列表中删除，并删除该client对应的文件事件 */
     if (-1 != flyClient->getFd()) {
-        std::list<AbstractFlyClient*>::iterator iter = this->clients.begin();
+        std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
+                this->clients.begin();
         for (iter; iter != this->clients.end(); iter++) {
             if ((*iter)->getFd() != flyClient->getFd()) {
                 this->clients.erase(iter);
@@ -575,7 +577,7 @@ void FlyServer::unlinkClient(AbstractFlyClient *flyClient) {
     }
 
     if (flyClient->IsPendingWrite()) {
-        std::list<AbstractFlyClient*>::iterator iter =
+        std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
                 this->clientsPendingWrite.begin();
         for (iter; iter != this->clientsPendingWrite.end(); iter++) {
             this->clientsPendingWrite.erase(iter);
@@ -613,7 +615,7 @@ int FlyServer::prepareForShutdown(int flags) {
     /** 如果有fdb子进程存在，kill并且删掉fdb的临时文件 */
     if (fdbHandler->haveChildPid()) {
         pid_t fdbPid = fdbHandler->getChildPid();
-        kill(fdbPid, SIGUSR1);      // 像子进程发送SIGUSR1，子进程退出，但不标记异常
+        kill(fdbPid, SIGUSR1);      // 向子进程发送SIGUSR1，子进程退出，但不标记异常
         fdbHandler->deleteTempFile(fdbPid);
     }
 

@@ -542,7 +542,7 @@ int NetHandler::tcpGenericAccept(char *err, int s,
 }
 
 int NetHandler::processInputBuffer(const AbstractCoordinator* coordinator,
-                                   AbstractFlyClient *flyClient) {
+                                   std::shared_ptr<AbstractFlyClient> flyClient) {
     while (flyClient->getQueryBufSize() > 0) {
         // 第一个字符是'*'代表是整体multibulk串;
         // reqtype=multibulk代表是上次读取已经处理了部分的multibulk
@@ -565,7 +565,7 @@ int NetHandler::processInputBuffer(const AbstractCoordinator* coordinator,
 }
 
 int NetHandler::writeToClient(const AbstractCoordinator *coordinator,
-                              AbstractFlyClient *flyClient,
+                              std::shared_ptr<AbstractFlyClient> flyClient,
                               int handlerInstalled) {
     ssize_t onceCount = 0, totalCount = 0;
     int fd = flyClient->getFd();
@@ -799,7 +799,7 @@ int NetHandler::peerToString(int fd, char *ip, size_t iplen, int *port) {
     return 1;
 }
 
-int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
+int NetHandler::processInlineBuffer(std::shared_ptr<AbstractFlyClient> flyClient) {
     size_t pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
@@ -843,7 +843,7 @@ int NetHandler::processInlineBuffer(AbstractFlyClient *flyClient) {
  *  2.当前协议解析失败，此时需要中断和客户端的连接
  */
 int NetHandler::processMultiBulkBuffer(const AbstractCoordinator* coordinator,
-                                       AbstractFlyClient *flyClient) {
+                                       std::shared_ptr<AbstractFlyClient> flyClient) {
     size_t pos = 0;
     flyClient->setReqType(PROTO_REQ_MULTIBULK);
 
@@ -867,7 +867,7 @@ int NetHandler::processMultiBulkBuffer(const AbstractCoordinator* coordinator,
     return 1;
 }
 
-int NetHandler::analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos) {
+int NetHandler::analyseMultiBulkLen(std::shared_ptr<AbstractFlyClient> flyClient, size_t &pos) {
     pos = flyClient->getQueryBuf().find("\r\n");
     if (pos == flyClient->getQueryBuf().npos) {     // 没有找到
         if (flyClient->getQueryBufSize() > PROTO_INLINE_MAX_SIZE) {
@@ -914,7 +914,7 @@ int NetHandler::analyseMultiBulkLen(AbstractFlyClient *flyClient, size_t &pos) {
 }
 
 int NetHandler::analyseMultiBulk(const AbstractCoordinator* coordinator,
-                                 AbstractFlyClient *flyClient,
+                                 std::shared_ptr<AbstractFlyClient> flyClient,
                                  size_t &pos) {
     int64_t multiBulkLen = flyClient->getMultiBulkLen();
     for (int i = flyClient->getArgc(); i < multiBulkLen; i++) {
@@ -925,7 +925,7 @@ int NetHandler::analyseMultiBulk(const AbstractCoordinator* coordinator,
 }
 
 int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
-                            AbstractFlyClient *flyClient) {
+                            std::shared_ptr<AbstractFlyClient> flyClient) {
     // 如果字符串为空，说明需要通过下次来读取，直接返回(但并不是协议错误)
     if (0 == flyClient->getQueryBuf().size()) {
         return -1;
@@ -987,7 +987,7 @@ int NetHandler::analyseBulk(const AbstractCoordinator* coordinator,
 
 int NetHandler::setProtocolError(
         char *err,
-        AbstractFlyClient *flyClient,
+        std::shared_ptr<AbstractFlyClient> flyClient,
         size_t pos) {
     // 打印log
     char buf[256];
@@ -1004,7 +1004,7 @@ int NetHandler::setProtocolError(
 
 void acceptTcpHandler(const AbstractCoordinator *coordinator,
                       int fd,
-                      void *clientdata,
+                      std::shared_ptr<AbstractFlyClient> flyClient,
                       int mask) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
     AbstractNetHandler *netHandler = coordinator->getNetHandler();
@@ -1018,8 +1018,9 @@ void acceptTcpHandler(const AbstractCoordinator *coordinator,
             return;
         }
 
-        AbstractFlyClient* flyClient = flyServer->createClient(cfd);
-        if (NULL == flyClient) {
+        std::shared_ptr<AbstractFlyClient> newClient =
+                flyServer->createClient(cfd);
+        if (NULL == newClient) {
             std::cout<< "error to create fly client" << std::endl;
             close(cfd);
         }
@@ -1028,12 +1029,10 @@ void acceptTcpHandler(const AbstractCoordinator *coordinator,
 
 void readQueryFromClient(const AbstractCoordinator *coordinator,
                          int fd,
-                         void *clientdata,
+                         std::shared_ptr<AbstractFlyClient> flyClient,
                          int mask) {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
     AbstractNetHandler *netHandler = coordinator->getNetHandler();
-    AbstractFlyClient *flyClient =
-            reinterpret_cast<AbstractFlyClient *>(clientdata);
 
     char buf[PROTO_IOBUF_LEN];
     int readCnt = read(fd, buf, sizeof(buf));
@@ -1070,10 +1069,8 @@ void readQueryFromClient(const AbstractCoordinator *coordinator,
 
 void sendReplyToClient(const AbstractCoordinator *coordinator,
                        int fd,
-                       void *clientdata,
+                       std::shared_ptr<AbstractFlyClient> flyClient,
                        int mask) {
-    AbstractFlyClient *flyClient =
-            reinterpret_cast<AbstractFlyClient *>(clientdata);
     coordinator->getNetHandler()->writeToClient(coordinator, flyClient, 1);
 }
 

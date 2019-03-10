@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <sys/time.h>
+#include "../flyClient/interface/AbstractFlyClient.h"
 
 enum EventStatus {
     ES_NONE = 0,
@@ -27,7 +28,7 @@ typedef int timeEventProc(const AbstractCoordinator *coorinator,
                           void *clientData);
 typedef void fileEventProc(const AbstractCoordinator *coorinator,
                            int fd,
-                           void *clientdata,
+                           std::shared_ptr<AbstractFlyClient> clientdata,
                            int mask);
 typedef void eventFinalizerProc(const AbstractCoordinator *coorinator,
                                 void *clientData);

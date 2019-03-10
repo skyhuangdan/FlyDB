@@ -76,7 +76,7 @@ void CommandTable::populateCommand() {
     }
 }
 
-int CommandTable::dealWithCommand(AbstractFlyClient* flyClient) {
+int CommandTable::dealWithCommand(std::shared_ptr<AbstractFlyClient> flyClient) {
     std::string *command = reinterpret_cast<std::string*>(
             flyClient->getArgv()[0]->getPtr());
     DictEntry<std::string, CommandEntry>* dictEntry =

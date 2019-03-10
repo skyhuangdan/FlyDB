@@ -19,7 +19,6 @@ void ReplicationHandler::unsetMaster() {
     this->shiftReplicationId();
 
     /** 删除master并取消与master的replication握手 */
-    coordinator->getFlyClientFactory()->deleteFlyClient(&this->master);
     this->cancelHandShake();
 
     /** 删除cached master */
@@ -48,7 +47,7 @@ void ReplicationHandler::setMaster(std::string ip, int port) {
 
     /** 删除原先的master */
     if (NULL != this->master) {
-        coordinator->getFlyClientFactory()->deleteFlyClient(&this->master);
+        this->master = NULL;
     }
 
     /** 令所有slave重新连接 */
@@ -121,7 +120,7 @@ void ReplicationHandler::cron() {
 }
 
 void ReplicationHandler::sendAck() {
-    AbstractFlyClient *flyClient = this->master;
+    std::shared_ptr<AbstractFlyClient> flyClient = this->master;
     if (NULL == flyClient) {
         return;
     }
@@ -185,15 +184,13 @@ void ReplicationHandler::disconnectWithMaster() {
 }
 
 void ReplicationHandler::disconnectWithSlaves() {
-    for (auto item : this->slaves) {
-        coordinator->getFlyClientFactory()->deleteFlyClient(&item);
-    }
+    this->slaves.clear();
 }
 
 void ReplicationHandler::discardCachedMaster() {
     coordinator->getLogHandler()->logWarning(
             "Discarding previously cached master state");
-    coordinator->getFlyClientFactory()->deleteFlyClient(&cachedMaster);
+    this->cachedMaster = NULL;
 }
 
 /**

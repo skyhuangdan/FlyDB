@@ -126,11 +126,11 @@ private:
     static int dictSaveScan(void *priv, std::string key, std::string val);
     static void childPipeReadable(const AbstractCoordinator *coordinator,
                                   int fd,
-                                  void *clientdata,
+                                  std::shared_ptr<AbstractFlyClient> flyClient,
                                   int mask);
     static void childWriteDiffData(const AbstractCoordinator *coorinator,
                                    int fd,
-                                   void *clientdata,
+                                   std::shared_ptr<AbstractFlyClient> flyClient,
                                    int mask);
     int rewriteAppendOnlyFileDiff(char *tmpfile, std::shared_ptr<FileFio> fio);
     int rewriteAppendOnlyFileFio(std::shared_ptr<Fio> fio);

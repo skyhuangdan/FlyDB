@@ -18,31 +18,9 @@ int FileEvent::getMask() const {
     return this->mask;
 }
 
-void FileEvent::setClientData(void *clientData) {
-    this->clientData = clientData;
-}
-
-void* FileEvent::getClientData() const {
-    return this->clientData;
-}
-
-fileEventProc* FileEvent::getRFileProc() const {
-    return this->rfileProc;
-}
-
-fileEventProc* FileEvent::getWFileProc() const {
-    return this->wfileProc;
-}
-
-void FileEvent::setRFileProc(fileEventProc *rfileProc) {
-    this->rfileProc = rfileProc;
-}
-
-void FileEvent::setWFileProc(fileEventProc *wfileProc) {
-    this->wfileProc = wfileProc;
-}
-
-int FileEvent::addFileProc(int mask, fileEventProc *proc, void *clientData) {
+int FileEvent::addFileProc(int mask,
+                           fileEventProc *proc,
+                           std::shared_ptr<AbstractFlyClient> clientData) {
     // 设置相应的proc
     this->mask |= mask;
     if (mask & ES_READABLE) {
@@ -51,7 +29,7 @@ int FileEvent::addFileProc(int mask, fileEventProc *proc, void *clientData) {
     if (mask & ES_WRITABLE) {
         this->wfileProc = proc;
     }
-    this->clientData = clientData;
+    this->flyClient = flyClient;
 
     return 1;
 }
@@ -70,11 +48,11 @@ void FileEvent::process(int mask) {
     // 如果是有可读/可写事件，则执行事件回调
     if (mask & ES_READABLE) {
         rfired = 1;
-        rfileProc(this->coordinator, this->fd, clientData, mask);
+        rfileProc(this->coordinator, this->fd, flyClient, mask);
     }
     if (mask & ES_WRITABLE) {
         if (this->wfileProc != this->rfileProc || 0 == rfired) {
-            wfileProc(this->coordinator, fd, clientData, mask);
+            wfileProc(this->coordinator, fd, flyClient, mask);
         }
     }
 }

@@ -18,7 +18,7 @@ public:
     CommandTable(const AbstractCoordinator* coordinator);
     ~CommandTable();
     void populateCommand();
-    int dealWithCommand(AbstractFlyClient *flyClient);
+    int dealWithCommand(std::shared_ptr<AbstractFlyClient> flyClient);
 
 private:
     const AbstractCoordinator* coordinator;

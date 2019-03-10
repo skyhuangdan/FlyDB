@@ -21,7 +21,7 @@ public:
     virtual int createFileEvent(int fd,
                                 int mask,
                                 fileEventProc* proc,
-                                void *clientdata) = 0;
+                                std::shared_ptr<AbstractFlyClient> flyClient) = 0;
     virtual int deleteFileEvent(int fd, int mask) = 0;
     virtual int getFileEvents(int fd) = 0;
     virtual beforeAndAfterSleepProc* getBeforeSleepProc() const = 0;
