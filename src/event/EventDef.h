@@ -28,7 +28,7 @@ typedef int timeEventProc(const AbstractCoordinator *coorinator,
                           void *clientData);
 typedef void fileEventProc(const AbstractCoordinator *coorinator,
                            int fd,
-                           std::shared_ptr<AbstractFlyClient> clientdata,
+                           std::shared_ptr<AbstractFlyClient> flyClient,
                            int mask);
 typedef void eventFinalizerProc(const AbstractCoordinator *coorinator,
                                 void *clientData);

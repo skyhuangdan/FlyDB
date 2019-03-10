@@ -59,6 +59,7 @@ public:
     int64_t getStatNetInputBytes() const;
     void addToStatNetInputBytes(int64_t size);
     void closeListeningSockets(bool unlinkUnixSocket);
+    const std::string* getFirstBindAddr() const;
 
     /**
      * flydb

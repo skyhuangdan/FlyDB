@@ -6,6 +6,7 @@
 #define FLYDB_ABSTRACTREPLICATIONHANDLER_H
 
 #include <string>
+class AbstractFlyClient;
 
 class AbstractReplicationHandler {
 public:
@@ -15,6 +16,9 @@ public:
     virtual bool haveMasterhost() const = 0;
     virtual void setMaster(std::string ip, int port) = 0;
     virtual void cron() = 0;
+    virtual void syncWithMaster(int fd,
+                                std::shared_ptr<AbstractFlyClient> flyClient,
+                                int mask) = 0;
 };
 
 #endif //FLYDB_ABSTRACTREPLICATIONHANDLER_H

@@ -9,6 +9,7 @@
 
 ReplicationHandler::ReplicationHandler(AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
+    this->logHandler = logFactory->getLogger();
 }
 
 void ReplicationHandler::unsetMaster() {
@@ -104,11 +105,11 @@ void ReplicationHandler::cron() {
 
     /** 等待连接状态 */
     if (REPL_STATE_CONNECT == this->state) {
-        coordinator->getLogHandler()->logNotice(
-                "Connecting to MASTER %s:%d", masterhost.c_str(), masterport);
+        logHandler->logNotice("Connecting to MASTER %s:%d",
+                              masterhost.c_str(),
+                              masterport);
         if (1 == this->connectWithMaster()) {
-            coordinator->getLogHandler()->logNotice(
-                    "MASTER <--> SLAVE sync started!");
+            logHandler->logNotice("MASTER <--> SLAVE sync started!");
         }
     }
 
@@ -118,6 +119,22 @@ void ReplicationHandler::cron() {
     }
 
     // todo:
+}
+
+
+void ReplicationHandler::syncWithMasterStatic(
+        const AbstractCoordinator *coorinator,
+        int fd,
+        std::shared_ptr<AbstractFlyClient> flyClient,
+        int mask) {
+    coorinator->getReplicationHandler()->syncWithMaster(fd, flyClient, mask);
+}
+
+void ReplicationHandler::syncWithMaster(
+        int fd,
+        std::shared_ptr<AbstractFlyClient> flyClient,
+        int mask) {
+
 }
 
 void ReplicationHandler::sendAck() {
@@ -164,7 +181,35 @@ void ReplicationHandler::cacheMasterUsingMyself() {
 }
 
 int ReplicationHandler::connectWithMaster() {
+    AbstractFlyServer* flyServer = coordinator->getFlyServer();
 
+    /** 创建与master的连接 */
+    int fd = coordinator->getNetHandler()->tcpNonBlockBestEffortBindConnect(
+            NULL,
+            this->masterhost.c_str(),
+            this->masterport,
+            flyServer->getFirstBindAddr()->c_str());
+    if (-1 == fd) {
+        logHandler->logWarning("Unable to connect to MASTER: %S",
+                               strerror(errno));
+        return -1;
+    }
+
+    /** 创建网络事件, 用于和master通信 */
+    if (-1 == coordinator->getEventLoop()->createFileEvent(
+            fd,
+            ES_READABLE | ES_WRITABLE,
+            syncWithMasterStatic,
+            NULL)) {
+        close(fd);
+        logHandler->logWarning("Can`t create readable event for SYNC");
+        return -1;
+    }
+
+    this->transferLastIO = flyServer->getNowt();
+    this->transferSocket = fd;
+    this->state = REPL_STATE_CONNECTING;
+    return 1;
 }
 
 bool ReplicationHandler::abortSyncTransfer() {
@@ -192,8 +237,7 @@ void ReplicationHandler::disconnectWithSlaves() {
 }
 
 void ReplicationHandler::discardCachedMaster() {
-    coordinator->getLogHandler()->logWarning(
-            "Discarding previously cached master state");
+    logHandler->logWarning("Discarding previously cached master state");
     this->cachedMaster = NULL;
 }
 

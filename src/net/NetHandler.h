@@ -47,9 +47,9 @@ public:
                                int port,
                                char *source_addr);
     int tcpNonBlockBestEffortBindConnect(char *err,
-                                         char *addr,
+                                         const char *addr,
                                          int port,
-                                         char *source_addr);
+                                         const char *source_addr);
     int setListen(char *err,
                   int s,
                   struct sockaddr *sa,
@@ -81,9 +81,9 @@ private:
                        int flags);
     int setReuseAddr(char *err, int fd);
     int tcpGenericConnect(char *err,
-                          char *addr,
+                          const char *addr,
                           int port,
-                          char *source_addr,
+                          const char *source_addr,
                           int flags);
     int tcpGenericServer(char *err,
                          int port,

@@ -21,6 +21,9 @@ public:
     int getMasterport() const;
     bool haveMasterhost() const;
     void cron();
+    void syncWithMaster(int fd,
+                        std::shared_ptr<AbstractFlyClient> flyClient,
+                        int mask);
 
 private:
     int cancelHandShake();
@@ -34,6 +37,12 @@ private:
     void cacheMasterUsingMyself();
     int connectWithMaster();
     void sendAck();
+
+    static void syncWithMasterStatic(
+            const AbstractCoordinator *coorinator,
+            int fd,
+            std::shared_ptr<AbstractFlyClient> flyClient,
+            int mask);
 
     /** Hostname of master */
     std::string masterhost;
@@ -72,6 +81,7 @@ private:
     int64_t offset = 0;
 
     AbstractCoordinator *coordinator;
+    AbstractLogHandler *logHandler;
 };
 
 

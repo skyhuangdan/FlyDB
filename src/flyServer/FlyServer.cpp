@@ -714,6 +714,14 @@ void FlyServer::databaseCron() {
     }
 }
 
+const std::string* FlyServer::getFirstBindAddr() const {
+    if (this->bindAddr.empty()) {
+        return NULL;
+    }
+
+    return &(this->bindAddr.at(0));
+}
+
 int serverCron(const AbstractCoordinator *coordinator,
                uint64_t id,
                void *clientData) {

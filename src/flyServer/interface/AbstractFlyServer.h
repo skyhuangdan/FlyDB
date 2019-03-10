@@ -25,13 +25,16 @@ public:
     virtual std::string getVersion() = 0;
 
     // 处理命令
-    virtual int dealWithCommand(std::shared_ptr<AbstractFlyClient> flyclient) = 0;
+    virtual int dealWithCommand(
+            std::shared_ptr<AbstractFlyClient> flyclient) = 0;
 
     virtual int getHz() const = 0;
 
     virtual void setHz(int hz) = 0;
 
     virtual char *getNeterr() const = 0;
+
+    virtual const std::string* getFirstBindAddr() const = 0;
 
     virtual std::shared_ptr<AbstractFlyClient> createClient(int fd) = 0;
 
@@ -49,11 +52,13 @@ public:
 
     virtual void closeListeningSockets(bool unlinkUnixSocket) = 0;
 
-    virtual void addToClientsPendingToWrite(std::shared_ptr<AbstractFlyClient> flyClient) = 0;
+    virtual void addToClientsPendingToWrite(
+            std::shared_ptr<AbstractFlyClient> flyClient) = 0;
 
     virtual int handleClientsWithPendingWrites() = 0;
 
-    virtual void freeClientAsync(std::shared_ptr<AbstractFlyClient> flyClient) = 0;
+    virtual void freeClientAsync(
+            std::shared_ptr<AbstractFlyClient> flyClient) = 0;
 
     virtual void freeClientsInAsyncFreeList() = 0;
 

@@ -181,9 +181,9 @@ int NetHandler::tcpNonBlockBindConnect(char *err,
 }
 
 int NetHandler::tcpNonBlockBestEffortBindConnect(char *err,
-                                                 char *addr,
+                                                 const char *addr,
                                                  int port,
-                                                 char *source_addr) {
+                                                 const char *source_addr) {
     return tcpGenericConnect(err, addr, port, source_addr,
                              NET_CONNECT_NONBLOCK | NET_CONNECT_BE_BINDING);
 }
@@ -289,9 +289,9 @@ int NetHandler::setListen(char *err,
 }
 
 int NetHandler::tcpGenericConnect(char *err,
-                                  char *addr,
+                                  const char *addr,
                                   int port,
-                                  char *source_addr,
+                                  const char *source_addr,
                                   int flags) {
     int s = -1, rv;
     char portstr[6];  /* strlen("65535") + 1; */

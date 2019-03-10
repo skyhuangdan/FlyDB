@@ -49,9 +49,9 @@ public:
                                        char *source_addr) = 0;
 
     virtual int tcpNonBlockBestEffortBindConnect(char *err,
-                                                 char *addr,
+                                                 const char *addr,
                                                  int port,
-                                                 char *source_addr) = 0;
+                                                 const char *source_addr) = 0;
 
     virtual int setListen(char *err,
                           int s,
