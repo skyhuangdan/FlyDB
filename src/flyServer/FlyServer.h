@@ -23,6 +23,9 @@
 
 class CommandTable;
 
+/** 共享multi bulk len字段，其格式为: "*<value>\r\n" */
+extern std::shared_ptr<FlyObj> mbulkHeader[OBJ_SHARED_BULKHDR_LEN];
+
 int serverCron(const AbstractCoordinator *coordinator,
                uint64_t id,
                void *clientData);
@@ -93,6 +96,7 @@ private:
     void loadDataFromDisk();
     void loadFromConfig(ConfigCache *configCache);
     void setupSignalHandlers();
+    void createSharedObjects();
 
     static void sigShutDownHandlers(int sig);
 

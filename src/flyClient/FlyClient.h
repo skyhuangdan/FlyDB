@@ -26,30 +26,35 @@ public:
     void setFd(int fd);
     std::shared_ptr<FlyObj> getName() const;
     void setName(std::shared_ptr<FlyObj> name);
+
+    /** 客户端标志操作 */
     int getFlags() const;
     void setFlags(int flags);
     void addFlag(int flag);
     void delFlag(int flag);
+
+    /** 输入缓冲区相关*/
     const std::string &getQueryBuf() const;
     void setQueryBuf(const std::string &queryBuf);
-    /** 向输入缓冲中添加数据 */
     void addToQueryBuf(const std::string &str);
     void trimQueryBuf(int begin, int end);
     int getQueryBufSize() const;
+
+    /** 命令参数相关 */
     std::shared_ptr<FlyObj> *getArgv() const;
     void freeArgv();
     void allocArgv(int64_t count);
     int getArgc() const;
     void addArgv(std::shared_ptr<FlyObj> obj);
     void setArgc(int argc);
+
+    /** aof命令追加缓冲区相关操作 */
     const char *getBuf() const;
     void clearBuf();
     bool bufSendOver();
     bool IsPendingWrite() const;
     int getBufpos() const;
-    const std::list<std::string*> &getReply() const;
-    void replyPopFront();
-    void setReply(const std::list<std::string*> &reply);
+
     int getAuthentiated() const;
     void setAuthentiated(int authentiated);
     time_t getCreateTime() const;
@@ -66,15 +71,22 @@ public:
     void setBulkLen(int64_t bulkLen);
     int prepareClientToWrite();
     bool hasNoPending();
-    void addReply(const char *s, size_t len);
-    void addReply(const char *fmt, ...);
-    void addReplyErrorFormat(const char *fmt, ...);
-    int addReplyError(const char *err);
+
+    /** 客户端回复相关操作 */
+    void replyPopFront();
     int getReqType() const;
     void setReqType(int reqType);
     size_t getSendLen() const;
     void setSendLen(size_t sentLen);
     void addSendLen(size_t sentLen);
+    const std::list<std::string*> &getReply() const;
+    void setReply(const std::list<std::string*> &reply);
+    void addReply(const char *s, size_t len);
+    void addReply(const char *fmt, ...);
+    void addReplyErrorFormat(const char *fmt, ...);
+    int addReplyError(const char *err);
+
+    /** db相关 */
     AbstractFlyDB *getFlyDB() const;
     void setFlyDB(AbstractFlyDB *flyDB);
 

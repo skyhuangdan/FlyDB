@@ -14,4 +14,7 @@ enum ShutDownFlag {
     SHUTDOWN_NOSAVE = 2        /** Don't SAVE on SHUTDOWN. */
 };
 
+const int OBJ_SHARED_BULKHDR_LEN = 32;
+
+
 #endif //FLYDB_FLYSERVERDEF_H

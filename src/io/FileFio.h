@@ -14,7 +14,6 @@ public:
     FileFio();
     void setFp(FILE *fp);
     void setAutosync(off_t autosync);
-    void setMaxProcessingChunk(uint64_t maxProcessingChunk);
     int tell();
     int flush();
     FILE *getFp() const;

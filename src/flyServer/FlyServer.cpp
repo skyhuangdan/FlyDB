@@ -31,6 +31,9 @@
  */
 bool canResize = true;
 
+/** 共享multi bulk len字段，其格式为: "*<value>\r\n" */
+std::shared_ptr<FlyObj> mbulkHeader[OBJ_SHARED_BULKHDR_LEN];
+
 FlyServer::FlyServer(const AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
     
@@ -124,6 +127,9 @@ void FlyServer::init(ConfigCache *configCache) {
 
     // 信号处理
     this->setupSignalHandlers();
+
+    /** 创建共享FlyObj */
+    this->createSharedObjects();
 
     return;
 }
@@ -543,7 +549,10 @@ int FlyServer::getMaxClients() const {
     return this->maxClients;
 }
 
-/** 将client从一切global list中删除掉(除async delete列表之外, 否则可能导致无法删除) */
+/**
+ * 将client从一切global list中删除掉
+ * (除async delete列表之外, 否则可能导致无法删除)
+ **/
 void FlyServer::unlinkClient(AbstractFlyClient *flyClient) {
     /** 在clients列表中删除，并删除该client对应的文件事件 */
     if (-1 != flyClient->getFd()) {
@@ -575,6 +584,15 @@ void FlyServer::unlinkClient(AbstractFlyClient *flyClient) {
 void FlyServer::setupSignalHandlers() {
     signal(SIGTERM, sigShutDownHandlers);
     signal(SIGINT, sigShutDownHandlers);
+}
+
+void FlyServer::createSharedObjects() {
+    for (int i = 0; i < OBJ_SHARED_BULKHDR_LEN; i++) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "*%d\r\n", i);
+        std::string str(buf);
+        mbulkHeader[i] = coordinator->getFlyObjStringFactory()->getObject(&str);
+    }
 }
 
 bool FlyServer::isShutdownASAP() const {
