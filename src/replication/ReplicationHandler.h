@@ -5,7 +5,6 @@
 #ifndef FLYDB_REPLICATIONHANDLER_H
 #define FLYDB_REPLICATIONHANDLER_H
 
-
 #include <list>
 #include "interface/AbstractReplicationHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
