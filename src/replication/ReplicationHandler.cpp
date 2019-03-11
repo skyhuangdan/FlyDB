@@ -159,6 +159,9 @@ void ReplicationHandler::syncWithMaster(
         this->state = REPL_STATE_CONNECT;
     }
 
+    /** 调用相应的命令处理函数进行处理 */
+    this->stateFuncMap.at(this->state)(coordinator);
+
 }
 
 void ReplicationHandler::sendAck() {
@@ -300,6 +303,8 @@ void ReplicationHandler::initStateFuncMap() {
 
 
 void connectingStateProc(AbstractCoordinator *coordinator) {
+    coordinator->getLogHandler()->logNotice("Non blocking connect for SYNC fired the event.");
+    //coordinator->getEventLoop()->deleteFileEvent();
 
 }
 
