@@ -87,8 +87,6 @@ private:
      * replication
      **/
     AbstractReplicationHandler *replicationHandler; 
-     
 };
-
 
 #endif //FLYDB_COORDINATOR_H
