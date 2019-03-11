@@ -7,9 +7,12 @@
 #include "../flyClient/ClientDef.h"
 #include "../io/StringFio.h"
 
+
 ReplicationHandler::ReplicationHandler(AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
     this->logHandler = logFactory->getLogger();
+
+    this->initStateFuncMap();
 }
 
 void ReplicationHandler::unsetMaster() {
@@ -134,6 +137,27 @@ void ReplicationHandler::syncWithMaster(
         int fd,
         std::shared_ptr<AbstractFlyClient> flyClient,
         int mask) {
+    /** no active replication state */
+    if (REPL_STATE_NONE == this->state) {
+        close(fd);
+        return;
+    }
+
+    /** 检查一遍socket的状态，一直处于sync状态，有可能socket已经出现了error */
+    int sockerr;
+    socklen_t errlen = sizeof(sockerr);
+    if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, &sockerr, &errlen)) {
+        sockerr = errno;
+    }
+    if (sockerr != 0) {
+        logHandler->logWarning(
+                "Something is wrong with this socket for SYNC: %s",
+                strerror(sockerr));
+        coordinator->getEventLoop()->deleteFileEvent(fd, ES_READABLE | ES_WRITABLE);
+        close(fd);
+        this->transferSocket = -1;
+        this->state = REPL_STATE_CONNECT;
+    }
 
 }
 
@@ -258,3 +282,68 @@ void ReplicationHandler::randomReplicationId() {
     miscTool->getRandomHexChars(this->replid, len);
     this->replid[len] = '\0';
 }
+
+void ReplicationHandler::initStateFuncMap() {
+    this->stateFuncMap[REPL_STATE_CONNECTING] = connectingStateProc;
+    this->stateFuncMap[REPL_STATE_RECEIVE_PONG] = recvPongStateProc;
+    this->stateFuncMap[REPL_STATE_SEND_AUTH] = sendAuthStateProc;
+    this->stateFuncMap[REPL_STATE_RECEIVE_AUTH] = recvAuthStateProc;
+    this->stateFuncMap[REPL_STATE_SEND_PORT] = sendPortStateProc;
+    this->stateFuncMap[REPL_STATE_RECEIVE_PORT] = recvPortStateProc;
+    this->stateFuncMap[REPL_STATE_SEND_IP] = sendIPStateProc;
+    this->stateFuncMap[REPL_STATE_RECEIVE_IP] = recvIPStateProc;
+    this->stateFuncMap[REPL_STATE_SEND_CAPA] = sendCAPAStateProc;
+    this->stateFuncMap[REPL_STATE_RECEIVE_CAPA] = recvCAPAStateProc;
+    this->stateFuncMap[REPL_STATE_SEND_PSYNC] = sendPsyncStateProc;
+    this->stateFuncMap[REPL_STATE_RECEIVE_PSYNC] = recvPsyncStateProc;
+}
+
+
+void connectingStateProc(AbstractCoordinator *coordinator) {
+
+}
+
+void recvPongStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void sendAuthStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void recvAuthStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void sendPortStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void recvPortStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void sendIPStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void recvIPStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void sendCAPAStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void recvCAPAStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void sendPsyncStateProc(AbstractCoordinator* coordinator) {
+
+}
+
+void recvPsyncStateProc(AbstractCoordinator* coordinator) {
+
+}
+

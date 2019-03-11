@@ -6,9 +6,24 @@
 #define FLYDB_REPLICATIONHANDLER_H
 
 #include <list>
+#include <map>
 #include "interface/AbstractReplicationHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 #include "ReplicationDef.h"
+
+typedef void stateProc(AbstractCoordinator*);
+void connectingStateProc(AbstractCoordinator*);
+void recvPongStateProc(AbstractCoordinator*);
+void sendAuthStateProc(AbstractCoordinator*);
+void recvAuthStateProc(AbstractCoordinator*);
+void sendPortStateProc(AbstractCoordinator*);
+void recvPortStateProc(AbstractCoordinator*);
+void sendIPStateProc(AbstractCoordinator*);
+void recvIPStateProc(AbstractCoordinator*);
+void sendCAPAStateProc(AbstractCoordinator*);
+void recvCAPAStateProc(AbstractCoordinator*);
+void sendPsyncStateProc(AbstractCoordinator*);
+void recvPsyncStateProc(AbstractCoordinator*);
 
 class ReplicationHandler : public AbstractReplicationHandler {
 public:
@@ -36,12 +51,14 @@ private:
     void cacheMasterUsingMyself();
     int connectWithMaster();
     void sendAck();
+    void initStateFuncMap();
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,
             int fd,
             std::shared_ptr<AbstractFlyClient> flyClient,
             int mask);
+
 
     /** Hostname of master */
     std::string masterhost;
@@ -78,6 +95,9 @@ private:
     int timeout = CONFIG_DEFAULT_REPL_TIMEOUT;
     /** replication offset */
     int64_t offset = 0;
+
+    /** 状态与其处理函数 */
+    std::map<ReplicationState, stateProc*> stateFuncMap;
 
     AbstractCoordinator *coordinator;
     AbstractLogHandler *logHandler;
