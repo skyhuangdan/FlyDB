@@ -163,7 +163,18 @@ void ReplicationHandler::syncWithMaster(
 }
 
 void ReplicationHandler::connectingStateProcess() {
+    this->logHandler->logNotice("Non blocking connect for SYNC fired the event.");
 
+    /** 删除写文件事件，只保留读文件事件，便于接收接下来的PONG回复 */
+    coordinator->getEventLoop()->deleteFileEvent(this->transferSocket, ES_WRITABLE);
+
+    /** 设置状态为等待接收PONG */
+    this->state = REPL_STATE_RECEIVE_PONG;
+
+    /** send ping command */
+    if (NULL != sendSynchronousReadCommand(this->transferSocket, "PING")) {
+        //error;
+    }
 }
 
 void ReplicationHandler::recvPongStateProcess() {
@@ -221,6 +232,14 @@ void ReplicationHandler::sendAck() {
     flyClient->addReplyBulkString("REPLCONF");
     flyClient->addReplyBulkString("ACK");
     flyClient->addReplyBulkString(std::to_string(this->offset));
+}
+
+char *ReplicationHandler::sendSynchronousReadCommand(int fd, ...) {
+
+}
+
+char *ReplicationHandler::sendSynchronousWriteCommand(int fd, ...) {
+
 }
 
 int ReplicationHandler::cancelHandShake() {

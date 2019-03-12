@@ -52,6 +52,8 @@ private:
     void cacheMasterUsingMyself();
     int connectWithMaster();
     void sendAck();
+    char* sendSynchronousReadCommand(int fd, ...);
+    char* sendSynchronousWriteCommand(int fd, ...);
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,

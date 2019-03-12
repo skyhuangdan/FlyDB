@@ -13,6 +13,7 @@ public:
     ReplicationStateAdapter(AbstractReplicationHandler *handler);
     void processState(ReplicationState state);
 
+private:
     AbstractReplicationHandler *handler;
 };
 
