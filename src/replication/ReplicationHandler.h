@@ -10,20 +10,7 @@
 #include "interface/AbstractReplicationHandler.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 #include "ReplicationDef.h"
-
-typedef void stateProc(AbstractCoordinator*);
-void connectingStateProc(AbstractCoordinator*);
-void recvPongStateProc(AbstractCoordinator*);
-void sendAuthStateProc(AbstractCoordinator*);
-void recvAuthStateProc(AbstractCoordinator*);
-void sendPortStateProc(AbstractCoordinator*);
-void recvPortStateProc(AbstractCoordinator*);
-void sendIPStateProc(AbstractCoordinator*);
-void recvIPStateProc(AbstractCoordinator*);
-void sendCAPAStateProc(AbstractCoordinator*);
-void recvCAPAStateProc(AbstractCoordinator*);
-void sendPsyncStateProc(AbstractCoordinator*);
-void recvPsyncStateProc(AbstractCoordinator*);
+#include "ReplicationStateAdapter.h"
 
 class ReplicationHandler : public AbstractReplicationHandler {
 public:
@@ -39,6 +26,20 @@ public:
                         std::shared_ptr<AbstractFlyClient> flyClient,
                         int mask);
 
+    /** state process procs */
+    void connectingStateProcess();
+    void recvPongStateProcess();
+    void sendAuthStateProcess();
+    void recvAuthStateProcess();
+    void sendPortStateProcess();
+    void recvPortStateProcess();
+    void sendIPStateProcess();
+    void recvIPStateProcess();
+    void sendCAPAStateProcess();
+    void recvCAPAStateProcess();
+    void sendPsyncStateProcess();
+    void recvPsyncStateProcess();
+
 private:
     int cancelHandShake();
     void discardCachedMaster();
@@ -51,7 +52,6 @@ private:
     void cacheMasterUsingMyself();
     int connectWithMaster();
     void sendAck();
-    void initStateFuncMap();
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,
@@ -96,11 +96,9 @@ private:
     /** replication offset */
     int64_t offset = 0;
 
-    /** 状态与其处理函数 */
-    std::map<ReplicationState, stateProc*> stateFuncMap;
-
     AbstractCoordinator *coordinator;
     AbstractLogHandler *logHandler;
+    ReplicationStateAdapter *stateAdapter;
 };
 
 
