@@ -7,11 +7,10 @@
 #include "../flyClient/ClientDef.h"
 #include "../io/StringFio.h"
 
-
 ReplicationHandler::ReplicationHandler(AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
     this->logHandler = logFactory->getLogger();
-    this->stateAdapter = new ReplicationStateAdapter(this);
+    this->stateAdapter = new ReplicationStateAdapter();
 }
 
 void ReplicationHandler::unsetMaster() {
