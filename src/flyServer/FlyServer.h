@@ -60,6 +60,7 @@ public:
     void addToStatNetInputBytes(int64_t size);
     void closeListeningSockets(bool unlinkUnixSocket);
     const std::string* getFirstBindAddr() const;
+    int getPort() const;
 
     /**
      * flydb

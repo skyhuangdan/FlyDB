@@ -722,6 +722,10 @@ const std::string* FlyServer::getFirstBindAddr() const {
     return &(this->bindAddr.at(0));
 }
 
+int FlyServer::getPort() const {
+    return this->port;
+}
+
 int serverCron(const AbstractCoordinator *coordinator,
                uint64_t id,
                void *clientData) {

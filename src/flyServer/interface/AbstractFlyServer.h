@@ -36,6 +36,8 @@ public:
 
     virtual const std::string* getFirstBindAddr() const = 0;
 
+    virtual int getPort() const = 0;
+
     virtual std::shared_ptr<AbstractFlyClient> createClient(int fd) = 0;
 
     virtual int freeClient(std::shared_ptr<AbstractFlyClient> flyClient) = 0;

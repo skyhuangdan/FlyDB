@@ -52,8 +52,8 @@ private:
     void cacheMasterUsingMyself();
     int connectWithMaster();
     void sendAck();
-    std::string recvSynchronousCommand(int fd, ...);
-    std::string sendSynchronousCommand(int fd, ...);
+    char* recvSynchronousCommand(int fd, ...);
+    char* sendSynchronousCommand(int fd, ...);
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,
@@ -100,6 +100,9 @@ private:
     /** 鉴权 */
     std::string masterAuth;
     std::string masterUser;
+    /** 发送给master保存的slave ip和port */
+    int slaveAnnouncePort;
+    std::string slaveAnnounceIP;
 
     AbstractCoordinator *coordinator;
     AbstractLogHandler *logHandler;

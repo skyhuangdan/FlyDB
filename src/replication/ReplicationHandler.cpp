@@ -168,7 +168,7 @@ int ReplicationHandler::connectingStateProcess() {
     coordinator->getEventLoop()->deleteFileEvent(this->transferSocket, ES_WRITABLE);
 
     /** send ping command */
-    if (sendSynchronousCommand(this->transferSocket, "PING").empty()) {
+    if (NULL != sendSynchronousCommand(this->transferSocket, "PING")) {
         return -1;
     }
 
@@ -178,12 +178,12 @@ int ReplicationHandler::connectingStateProcess() {
 }
 
 int ReplicationHandler::recvPongStateProcess() {
-    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
+    char *res = recvSynchronousCommand(this->transferSocket, NULL);
     /** 这里接收到的命令回复只有两种，一种是'+PONG'，这表示正常。或者是'-NOAUTH'，表示失败 */
-    if (!res.empty() && '+' == res[0]) {
+    if (NULL != res && '+' == res[0]) {
         this->logHandler->logNotice("Master replied to PING, replication can continue...");
     } else {
-        this->logHandler->logWarning("Error reply to PING from master: '%s", res.c_str());
+        this->logHandler->logWarning("Error reply to PING from master: '%s", res);
         return -1;
     }
 
@@ -192,11 +192,12 @@ int ReplicationHandler::recvPongStateProcess() {
 }
 
 int ReplicationHandler::sendAuthStateProcess() {
+    /** 如果存在鉴权信息，则发送鉴权，否则直接跳过 */
     if (!masterAuth.empty()) {
-        std::string res = sendSynchronousCommand(
+        char *res = sendSynchronousCommand(
                 this->transferSocket, "AUTH", this->masterAuth.c_str(), this->masterUser.c_str(), NULL);
         /** 发送失败 */
-        if (res.empty()) {
+        if (NULL != res) {
             return -1;
         }
         this->state = REPL_STATE_RECEIVE_AUTH;
@@ -208,10 +209,10 @@ int ReplicationHandler::sendAuthStateProcess() {
 }
 
 int ReplicationHandler::recvAuthStateProcess() {
-    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
+    char* res = recvSynchronousCommand(this->transferSocket, NULL);
     /** 如果接收到第一个字符是'-'，代表鉴权错误 */
-    if (res.empty() || '-' == res[0]) {
-        this->logHandler->logWarning("Unable AUTH to master: %s", res.c_str());
+    if (NULL != res && '-' == res[0]) {
+        this->logHandler->logWarning("Unable AUTH to master: %s", res);
         return -1;
     }
 
@@ -220,22 +221,55 @@ int ReplicationHandler::recvAuthStateProcess() {
 }
 
 int ReplicationHandler::sendPortStateProcess() {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+    int port = this->slaveAnnouncePort ? this->slaveAnnouncePort : flyServer->getPort();
+    /** send REPLCONF listening-port [port] */
+    if (NULL != sendSynchronousCommand(this->transferSocket,
+                                       "REPLCONF",
+                                       "listening-port",
+                                       std::to_string(port).c_str(),
+                                       NULL)) {
+        return -1;
+    }
 
+    this->state = REPL_STATE_RECEIVE_PORT;
     return 1;
 }
 
 int ReplicationHandler::recvPortStateProcess() {
+    char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    if (NULL != res && '-' == res[0]) {
+        logHandler->logWarning("Master does not understand REPLCONF listening-port: %s", res);
+    }
 
+    this->state = REPL_STATE_SEND_IP;
     return 1;
 }
 
 int ReplicationHandler::sendIPStateProcess() {
+    /** 如果没有slaveAnnounceIp, 则跳过发送ip阶段 */
+    if (this->slaveAnnounceIP.empty()) {
+        this->state = REPL_STATE_SEND_CAPA;
+    } else {
+        /** send REPLCONF ip-address [ip] */
+        if (NULL != sendSynchronousCommand(this->transferSocket, "REPLCONF",
+                                           "ip-address", this->slaveAnnounceIP.c_str(), NULL)) {
+            return -1;
+        }
+        this->state = REPL_STATE_RECEIVE_IP;
+    }
 
     return 1;
 }
 
 int ReplicationHandler::recvIPStateProcess() {
+    char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    if (NULL != res && '-' == res[0]) {
+        logHandler->logWarning("Master does not understand REPLCONF ip-address: %s", res);
 
+    }
+
+    this->state = REPL_STATE_SEND_CAPA;
     return 1;
 }
 
@@ -271,11 +305,11 @@ void ReplicationHandler::sendAck() {
     flyClient->addReplyBulkString(std::to_string(this->offset));
 }
 
-std::string ReplicationHandler::recvSynchronousCommand(int fd, ...) {
+char* ReplicationHandler::recvSynchronousCommand(int fd, ...) {
 
 }
 
-std::string ReplicationHandler::sendSynchronousCommand(int fd, ...) {
+char* ReplicationHandler::sendSynchronousCommand(int fd, ...) {
 
 }
 
