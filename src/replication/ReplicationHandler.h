@@ -97,6 +97,9 @@ private:
     int timeout = CONFIG_DEFAULT_REPL_TIMEOUT;
     /** replication offset */
     int64_t offset = 0;
+    /** 鉴权 */
+    std::string masterAuth;
+    std::string masterUser;
 
     AbstractCoordinator *coordinator;
     AbstractLogHandler *logHandler;

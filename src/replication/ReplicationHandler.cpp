@@ -147,7 +147,9 @@ void ReplicationHandler::syncWithMaster(
     if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, &sockerr, &errlen)) {
         sockerr = errno;
     }
-    if (sockerr != 0) {
+
+    /** 调用相应的命令处理函数进行处理 */
+    if (sockerr != 0 || -1 == this->stateAdapter->processState(this->state)) {
         logHandler->logWarning(
                 "Something is wrong with this socket for SYNC: %s",
                 strerror(sockerr));
@@ -155,14 +157,7 @@ void ReplicationHandler::syncWithMaster(
         close(fd);
         this->transferSocket = -1;
         this->state = REPL_STATE_CONNECT;
-    }
-
-    /** 调用相应的命令处理函数进行处理 */
-    if (-1 == this->stateAdapter->processState(this->state)) {
-        coordinator->getEventLoop()->deleteFileEvent(this->transferSocket, ES_WRITABLE | ES_READABLE);
-        close(fd);
-        this->transferSocket = -1;
-        this->state = REPL_STATE_CONNECT;
+        return;
     }
 }
 
@@ -172,19 +167,19 @@ int ReplicationHandler::connectingStateProcess() {
     /** 删除写文件事件，只保留读文件事件，便于接收接下来的PONG回复 */
     coordinator->getEventLoop()->deleteFileEvent(this->transferSocket, ES_WRITABLE);
 
-    /** 设置状态为等待接收PONG */
-    this->state = REPL_STATE_RECEIVE_PONG;
-
     /** send ping command */
     if (sendSynchronousCommand(this->transferSocket, "PING").empty()) {
         return -1;
     }
 
+    /** 设置状态为等待接收PONG */
+    this->state = REPL_STATE_RECEIVE_PONG;
     return 1;
 }
 
 int ReplicationHandler::recvPongStateProcess() {
     std::string res = recvSynchronousCommand(this->transferSocket, NULL);
+    /** 这里接收到的命令回复只有两种，一种是'+PONG'，这表示正常。或者是'-NOAUTH'，表示失败 */
     if (!res.empty() && '+' == res[0]) {
         this->logHandler->logNotice("Master replied to PING, replication can continue...");
     } else {
@@ -197,12 +192,30 @@ int ReplicationHandler::recvPongStateProcess() {
 }
 
 int ReplicationHandler::sendAuthStateProcess() {
+    if (!masterAuth.empty()) {
+        std::string res = sendSynchronousCommand(
+                this->transferSocket, "AUTH", this->masterAuth.c_str(), this->masterUser.c_str(), NULL);
+        /** 发送失败 */
+        if (res.empty()) {
+            return -1;
+        }
+        this->state = REPL_STATE_RECEIVE_AUTH;
+    } else {
+        this->state = REPL_STATE_SEND_PORT;
+    }
 
     return 1;
 }
 
 int ReplicationHandler::recvAuthStateProcess() {
+    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
+    /** 如果接收到第一个字符是'-'，代表鉴权错误 */
+    if (res.empty() || '-' == res[0]) {
+        this->logHandler->logWarning("Unable AUTH to master: %s", res.c_str());
+        return -1;
+    }
 
+    this->state = REPL_STATE_SEND_PORT;
     return 1;
 }
 
