@@ -210,7 +210,7 @@ int ReplicationHandler::sendAuthStateProcess() {
 
 int ReplicationHandler::recvAuthStateProcess() {
     char* res = recvSynchronousCommand(this->transferSocket, NULL);
-    /** 如果接收到第一个字符是'-'，代表鉴权错误 */
+    /** 如果接收到第一个字符是'-'，代表鉴权错误, 鉴权错误则不能再继续了 */
     if (NULL != res && '-' == res[0]) {
         this->logHandler->logWarning("Unable AUTH to master: %s", res);
         return -1;
@@ -238,6 +238,7 @@ int ReplicationHandler::sendPortStateProcess() {
 
 int ReplicationHandler::recvPortStateProcess() {
     char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    /** 这时发生的错误可以容忍，所以只是打印错误日志，状态机继续 */
     if (NULL != res && '-' == res[0]) {
         logHandler->logWarning("Master does not understand REPLCONF listening-port: %s", res);
     }
@@ -264,9 +265,9 @@ int ReplicationHandler::sendIPStateProcess() {
 
 int ReplicationHandler::recvIPStateProcess() {
     char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    /** 这时发生的错误可以容忍，所以只是打印错误日志，状态机继续 */
     if (NULL != res && '-' == res[0]) {
         logHandler->logWarning("Master does not understand REPLCONF ip-address: %s", res);
-
     }
 
     this->state = REPL_STATE_SEND_CAPA;
@@ -274,12 +275,22 @@ int ReplicationHandler::recvIPStateProcess() {
 }
 
 int ReplicationHandler::sendCAPAStateProcess() {
+    if (NULL != sendSynchronousCommand(this->transferSocket, "REPLCONF", "capa", "eof", "capa", "psync2", NULL)) {
+        return -1;
+    }
 
+    this->state = REPL_STATE_RECEIVE_CAPA;
     return 1;
 }
 
 int ReplicationHandler::recvCAPAStateProcess() {
+    char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    /** 这时发生的错误可以容忍，所以只是打印错误日志，状态机继续 */
+    if (NULL != res && '-' == res[0]) {
+        logHandler->logWarning("Master does not understand REPLCONF capa: %s", res);
+    }
 
+    this->state = REPL_STATE_SEND_PSYNC;
     return 1;
 }
 
