@@ -27,18 +27,18 @@ public:
                         int mask);
 
     /** state process procs */
-    void connectingStateProcess();
-    void recvPongStateProcess();
-    void sendAuthStateProcess();
-    void recvAuthStateProcess();
-    void sendPortStateProcess();
-    void recvPortStateProcess();
-    void sendIPStateProcess();
-    void recvIPStateProcess();
-    void sendCAPAStateProcess();
-    void recvCAPAStateProcess();
-    void sendPsyncStateProcess();
-    void recvPsyncStateProcess();
+    int connectingStateProcess();
+    int recvPongStateProcess();
+    int sendAuthStateProcess();
+    int recvAuthStateProcess();
+    int sendPortStateProcess();
+    int recvPortStateProcess();
+    int sendIPStateProcess();
+    int recvIPStateProcess();
+    int sendCAPAStateProcess();
+    int recvCAPAStateProcess();
+    int sendPsyncStateProcess();
+    int recvPsyncStateProcess();
 
 private:
     int cancelHandShake();
@@ -52,8 +52,8 @@ private:
     void cacheMasterUsingMyself();
     int connectWithMaster();
     void sendAck();
-    char* sendSynchronousReadCommand(int fd, ...);
-    char* sendSynchronousWriteCommand(int fd, ...);
+    std::string recvSynchronousCommand(int fd, ...);
+    std::string sendSynchronousCommand(int fd, ...);
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,

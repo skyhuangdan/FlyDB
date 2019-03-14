@@ -10,26 +10,26 @@
 #include "ReplicationDef.h"
 #include "../coordinator/interface/AbstractCoordinator.h"
 
-typedef void stateProc();
+typedef int stateProc();
 
 class ReplicationStateAdapter {
 public:
     ReplicationStateAdapter();
-    void processState(ReplicationState state);
+    int processState(ReplicationState state);
 
 private:
-    static void connectingStateProcess();
-    static void recvPongStateProcess();
-    static void sendAuthStateProcess();
-    static void recvAuthStateProcess();
-    static void sendPortStateProcess();
-    static void recvPortStateProcess();
-    static void sendIPStateProcess();
-    static void recvIPStateProcess();
-    static void sendCAPAStateProcess();
-    static void recvCAPAStateProcess();
-    static void sendPsyncStateProcess();
-    static void recvPsyncStateProcess();
+    static int connectingStateProcess();
+    static int recvPongStateProcess();
+    static int sendAuthStateProcess();
+    static int recvAuthStateProcess();
+    static int sendPortStateProcess();
+    static int recvPortStateProcess();
+    static int sendIPStateProcess();
+    static int recvIPStateProcess();
+    static int sendCAPAStateProcess();
+    static int recvCAPAStateProcess();
+    static int sendPsyncStateProcess();
+    static int recvPsyncStateProcess();
     static std::map<ReplicationState, stateProc*> initStateMap();
 
     static std::map<ReplicationState, stateProc*> stateProcMap;

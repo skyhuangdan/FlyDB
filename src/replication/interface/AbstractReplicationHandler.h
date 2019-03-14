@@ -19,18 +19,18 @@ public:
     virtual void syncWithMaster(int fd,
                                 std::shared_ptr<AbstractFlyClient> flyClient,
                                 int mask) = 0;
-    virtual void connectingStateProcess() = 0;
-    virtual void recvPongStateProcess() = 0;
-    virtual void sendAuthStateProcess() = 0;
-    virtual void recvAuthStateProcess() = 0;
-    virtual void sendPortStateProcess() = 0;
-    virtual void recvPortStateProcess() = 0;
-    virtual void sendIPStateProcess() = 0;
-    virtual void recvIPStateProcess() = 0;
-    virtual void sendCAPAStateProcess() = 0;
-    virtual void recvCAPAStateProcess() = 0;
-    virtual void sendPsyncStateProcess() = 0;
-    virtual void recvPsyncStateProcess() = 0;
+    virtual int connectingStateProcess() = 0;
+    virtual int recvPongStateProcess() = 0;
+    virtual int sendAuthStateProcess() = 0;
+    virtual int recvAuthStateProcess() = 0;
+    virtual int sendPortStateProcess() = 0;
+    virtual int recvPortStateProcess() = 0;
+    virtual int sendIPStateProcess() = 0;
+    virtual int recvIPStateProcess() = 0;
+    virtual int sendCAPAStateProcess() = 0;
+    virtual int recvCAPAStateProcess() = 0;
+    virtual int sendPsyncStateProcess() = 0;
+    virtual int recvPsyncStateProcess() = 0;
 };
 
 #endif //FLYDB_ABSTRACTREPLICATIONHANDLER_H

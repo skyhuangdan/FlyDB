@@ -11,58 +11,60 @@ std::map<ReplicationState, stateProc*> ReplicationStateAdapter::stateProcMap =
 ReplicationStateAdapter::ReplicationStateAdapter() {
 }
 
-void ReplicationStateAdapter::processState(ReplicationState state) {
+int ReplicationStateAdapter::processState(ReplicationState state) {
     if (stateProcMap.find(state) != stateProcMap.end()) {
-        stateProcMap.at(state)();
+        return stateProcMap.at(state)();
     }
+    
+    return -1;
 }
 
-void ReplicationStateAdapter::connectingStateProcess() {
-    coordinator->getReplicationHandler()->connectingStateProcess();
+int ReplicationStateAdapter::connectingStateProcess() {
+    return coordinator->getReplicationHandler()->connectingStateProcess();
 }
 
-void ReplicationStateAdapter::recvPongStateProcess() {
-    coordinator->getReplicationHandler()->recvPongStateProcess();
+int ReplicationStateAdapter::recvPongStateProcess() {
+    return coordinator->getReplicationHandler()->recvPongStateProcess();
 }
 
-void ReplicationStateAdapter::sendAuthStateProcess() {
-    coordinator->getReplicationHandler()->sendAuthStateProcess();
+int ReplicationStateAdapter::sendAuthStateProcess() {
+    return coordinator->getReplicationHandler()->sendAuthStateProcess();
 }
 
-void ReplicationStateAdapter::recvAuthStateProcess() {
-    coordinator->getReplicationHandler()->recvAuthStateProcess();
+int ReplicationStateAdapter::recvAuthStateProcess() {
+    return coordinator->getReplicationHandler()->recvAuthStateProcess();
 }
 
-void ReplicationStateAdapter::sendPortStateProcess() {
-    coordinator->getReplicationHandler()->sendPortStateProcess();
+int ReplicationStateAdapter::sendPortStateProcess() {
+    return coordinator->getReplicationHandler()->sendPortStateProcess();
 }
 
-void ReplicationStateAdapter::recvPortStateProcess() {
-    coordinator->getReplicationHandler()->recvPortStateProcess();
+int ReplicationStateAdapter::recvPortStateProcess() {
+    return coordinator->getReplicationHandler()->recvPortStateProcess();
 }
 
-void ReplicationStateAdapter::sendIPStateProcess() {
-    coordinator->getReplicationHandler()->sendIPStateProcess();
+int ReplicationStateAdapter::sendIPStateProcess() {
+    return coordinator->getReplicationHandler()->sendIPStateProcess();
 }
 
-void ReplicationStateAdapter::recvIPStateProcess() {
-    coordinator->getReplicationHandler()->recvIPStateProcess();
+int ReplicationStateAdapter::recvIPStateProcess() {
+    return coordinator->getReplicationHandler()->recvIPStateProcess();
 }
 
-void ReplicationStateAdapter::sendCAPAStateProcess() {
-    coordinator->getReplicationHandler()->sendCAPAStateProcess();
+int ReplicationStateAdapter::sendCAPAStateProcess() {
+    return coordinator->getReplicationHandler()->sendCAPAStateProcess();
 }
 
-void ReplicationStateAdapter::recvCAPAStateProcess() {
-    coordinator->getReplicationHandler()->recvCAPAStateProcess();
+int ReplicationStateAdapter::recvCAPAStateProcess() {
+    return coordinator->getReplicationHandler()->recvCAPAStateProcess();
 }
 
-void ReplicationStateAdapter::sendPsyncStateProcess() {
-    coordinator->getReplicationHandler()->sendPsyncStateProcess();
+int ReplicationStateAdapter::sendPsyncStateProcess() {
+    return coordinator->getReplicationHandler()->sendPsyncStateProcess();
 }
 
-void ReplicationStateAdapter::recvPsyncStateProcess() {
-    coordinator->getReplicationHandler()->recvPsyncStateProcess();
+int ReplicationStateAdapter::recvPsyncStateProcess() {
+    return coordinator->getReplicationHandler()->recvPsyncStateProcess();
 }
 
 std::map<ReplicationState, stateProc*> ReplicationStateAdapter::initStateMap() {

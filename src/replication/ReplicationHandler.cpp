@@ -132,7 +132,7 @@ void ReplicationHandler::syncWithMasterStatic(
 }
 
 void ReplicationHandler::syncWithMaster(
-        int fd,
+        int fd,                     /** 这里的fd就是this->transferSocket */
         std::shared_ptr<AbstractFlyClient> flyClient,
         int mask) {
     /** no active replication state */
@@ -158,10 +158,15 @@ void ReplicationHandler::syncWithMaster(
     }
 
     /** 调用相应的命令处理函数进行处理 */
-    this->stateAdapter->processState(this->state);
+    if (-1 == this->stateAdapter->processState(this->state)) {
+        coordinator->getEventLoop()->deleteFileEvent(this->transferSocket, ES_WRITABLE | ES_READABLE);
+        close(fd);
+        this->transferSocket = -1;
+        this->state = REPL_STATE_CONNECT;
+    }
 }
 
-void ReplicationHandler::connectingStateProcess() {
+int ReplicationHandler::connectingStateProcess() {
     this->logHandler->logNotice("Non blocking connect for SYNC fired the event.");
 
     /** 删除写文件事件，只保留读文件事件，便于接收接下来的PONG回复 */
@@ -171,53 +176,73 @@ void ReplicationHandler::connectingStateProcess() {
     this->state = REPL_STATE_RECEIVE_PONG;
 
     /** send ping command */
-    if (NULL != sendSynchronousReadCommand(this->transferSocket, "PING")) {
-        //error;
+    if (sendSynchronousCommand(this->transferSocket, "PING").empty()) {
+        return -1;
     }
+
+    return 1;
 }
 
-void ReplicationHandler::recvPongStateProcess() {
+int ReplicationHandler::recvPongStateProcess() {
+    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
+    if (!res.empty() && '+' == res[0]) {
+        this->logHandler->logNotice("Master replied to PING, replication can continue...");
+    } else {
+        this->logHandler->logWarning("Error reply to PING from master: '%s", res.c_str());
+        return -1;
+    }
 
+    this->state = REPL_STATE_SEND_AUTH;
+    return 1;
 }
 
-void ReplicationHandler::sendAuthStateProcess() {
+int ReplicationHandler::sendAuthStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::recvAuthStateProcess() {
+int ReplicationHandler::recvAuthStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::sendPortStateProcess() {
+int ReplicationHandler::sendPortStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::recvPortStateProcess() {
+int ReplicationHandler::recvPortStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::sendIPStateProcess() {
+int ReplicationHandler::sendIPStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::recvIPStateProcess() {
+int ReplicationHandler::recvIPStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::sendCAPAStateProcess() {
+int ReplicationHandler::sendCAPAStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::recvCAPAStateProcess() {
+int ReplicationHandler::recvCAPAStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::sendPsyncStateProcess() {
+int ReplicationHandler::sendPsyncStateProcess() {
 
+    return 1;
 }
 
-void ReplicationHandler::recvPsyncStateProcess() {
-
+int ReplicationHandler::recvPsyncStateProcess() {
+    return 1;
 }
 
 void ReplicationHandler::sendAck() {
@@ -233,11 +258,11 @@ void ReplicationHandler::sendAck() {
     flyClient->addReplyBulkString(std::to_string(this->offset));
 }
 
-char *ReplicationHandler::sendSynchronousReadCommand(int fd, ...) {
+std::string ReplicationHandler::recvSynchronousCommand(int fd, ...) {
 
 }
 
-char *ReplicationHandler::sendSynchronousWriteCommand(int fd, ...) {
+std::string ReplicationHandler::sendSynchronousCommand(int fd, ...) {
 
 }
 
