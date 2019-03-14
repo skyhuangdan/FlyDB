@@ -21,15 +21,10 @@ public:
                                 int mask) = 0;
     virtual int connectingStateProcess() = 0;
     virtual int recvPongStateProcess() = 0;
-    virtual int sendAuthStateProcess() = 0;
     virtual int recvAuthStateProcess() = 0;
-    virtual int sendPortStateProcess() = 0;
     virtual int recvPortStateProcess() = 0;
-    virtual int sendIPStateProcess() = 0;
     virtual int recvIPStateProcess() = 0;
-    virtual int sendCAPAStateProcess() = 0;
     virtual int recvCAPAStateProcess() = 0;
-    virtual int sendPsyncStateProcess() = 0;
     virtual int recvPsyncStateProcess() = 0;
 };
 

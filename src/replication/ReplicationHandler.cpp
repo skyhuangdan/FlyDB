@@ -164,7 +164,11 @@ void ReplicationHandler::syncWithMaster(
 int ReplicationHandler::connectingStateProcess() {
     this->logHandler->logNotice("Non blocking connect for SYNC fired the event.");
 
-    /** 删除写文件事件，只保留读文件事件，便于接收接下来的PONG回复 */
+    /**
+     * 删除写文件事件，只保留读文件事件，便于接收接下来的PONG回复
+     * 由于这里删除了写文件时间，此时只有读事件可以被触发(对应各种recv函数)，因此在下面的状态中，
+     * 当recv之后需要同时发送下一个阶段需要发送的数据，否则的话，发送状态将无法触发
+     **/
     coordinator->getEventLoop()->deleteFileEvent(this->transferSocket, ES_WRITABLE);
 
     /** send ping command */
@@ -187,11 +191,6 @@ int ReplicationHandler::recvPongStateProcess() {
         return -1;
     }
 
-    this->state = REPL_STATE_SEND_AUTH;
-    return 1;
-}
-
-int ReplicationHandler::sendAuthStateProcess() {
     /** 如果存在鉴权信息，则发送鉴权，否则直接跳过 */
     if (!masterAuth.empty()) {
         char *res = sendSynchronousCommand(
@@ -216,11 +215,6 @@ int ReplicationHandler::recvAuthStateProcess() {
         return -1;
     }
 
-    this->state = REPL_STATE_SEND_PORT;
-    return 1;
-}
-
-int ReplicationHandler::sendPortStateProcess() {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
     int port = this->slaveAnnouncePort ? this->slaveAnnouncePort : flyServer->getPort();
     /** send REPLCONF listening-port [port] */
@@ -243,11 +237,6 @@ int ReplicationHandler::recvPortStateProcess() {
         logHandler->logWarning("Master does not understand REPLCONF listening-port: %s", res);
     }
 
-    this->state = REPL_STATE_SEND_IP;
-    return 1;
-}
-
-int ReplicationHandler::sendIPStateProcess() {
     /** 如果没有slaveAnnounceIp, 则跳过发送ip阶段 */
     if (this->slaveAnnounceIP.empty()) {
         this->state = REPL_STATE_SEND_CAPA;
@@ -270,11 +259,11 @@ int ReplicationHandler::recvIPStateProcess() {
         logHandler->logWarning("Master does not understand REPLCONF ip-address: %s", res);
     }
 
-    this->state = REPL_STATE_SEND_CAPA;
-    return 1;
-}
-
-int ReplicationHandler::sendCAPAStateProcess() {
+    /**
+     * 通知master，当前服务器所支持的能力：
+     *  1.eof代表支EOF格式的FDB文件
+     *  2.PSYNC2代表支持PSYNC v2，因此可以识别 +CONTINUE <new repl ID>
+     **/
     if (NULL != sendSynchronousCommand(this->transferSocket, "REPLCONF", "capa", "eof", "capa", "psync2", NULL)) {
         return -1;
     }
@@ -290,12 +279,8 @@ int ReplicationHandler::recvCAPAStateProcess() {
         logHandler->logWarning("Master does not understand REPLCONF capa: %s", res);
     }
 
+    // todo: send psync
     this->state = REPL_STATE_SEND_PSYNC;
-    return 1;
-}
-
-int ReplicationHandler::sendPsyncStateProcess() {
-
     return 1;
 }
 

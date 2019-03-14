@@ -20,15 +20,10 @@ public:
 private:
     static int connectingStateProcess();
     static int recvPongStateProcess();
-    static int sendAuthStateProcess();
     static int recvAuthStateProcess();
-    static int sendPortStateProcess();
     static int recvPortStateProcess();
-    static int sendIPStateProcess();
     static int recvIPStateProcess();
-    static int sendCAPAStateProcess();
     static int recvCAPAStateProcess();
-    static int sendPsyncStateProcess();
     static int recvPsyncStateProcess();
     static std::map<ReplicationState, stateProc*> initStateMap();
 

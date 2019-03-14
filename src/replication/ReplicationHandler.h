@@ -29,15 +29,10 @@ public:
     /** state process procs */
     int connectingStateProcess();
     int recvPongStateProcess();
-    int sendAuthStateProcess();
     int recvAuthStateProcess();
-    int sendPortStateProcess();
     int recvPortStateProcess();
-    int sendIPStateProcess();
     int recvIPStateProcess();
-    int sendCAPAStateProcess();
     int recvCAPAStateProcess();
-    int sendPsyncStateProcess();
     int recvPsyncStateProcess();
 
 private:
