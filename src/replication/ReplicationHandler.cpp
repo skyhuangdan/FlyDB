@@ -279,8 +279,11 @@ int ReplicationHandler::recvCAPAStateProcess() {
         logHandler->logWarning("Master does not understand REPLCONF capa: %s", res);
     }
 
-    // todo: send psync
-    this->state = REPL_STATE_SEND_PSYNC;
+    if (-1 == slaveTryPartialResynchronization(this->transferSocket, 0)) {
+        return -1;
+    }
+
+    this->state = REPL_STATE_RECEIVE_PSYNC;
     return 1;
 }
 
@@ -306,6 +309,10 @@ char* ReplicationHandler::recvSynchronousCommand(int fd, ...) {
 }
 
 char* ReplicationHandler::sendSynchronousCommand(int fd, ...) {
+
+}
+
+int ReplicationHandler::slaveTryPartialResynchronization(int fd, int read_reply) {
 
 }
 

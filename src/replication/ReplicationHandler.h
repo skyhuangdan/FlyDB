@@ -49,6 +49,7 @@ private:
     void sendAck();
     char* recvSynchronousCommand(int fd, ...);
     char* sendSynchronousCommand(int fd, ...);
+    int slaveTryPartialResynchronization(int fd, int read_reply);
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,
