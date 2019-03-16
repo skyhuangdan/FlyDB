@@ -133,6 +133,11 @@ public:
     virtual AbstractFlyDB *getFlyDB() const = 0;
 
     virtual void setFlyDB(AbstractFlyDB *flyDB) = 0;
+
+    /** 主从同步相关 */
+    virtual const char *getReplid() const = 0;
+    virtual uint64_t getReploff() const = 0;
+    virtual void setReploff(uint64_t reploff) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYCLIENT_H

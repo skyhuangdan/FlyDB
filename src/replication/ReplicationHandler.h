@@ -38,6 +38,7 @@ public:
 private:
     int cancelHandShake();
     void discardCachedMaster();
+    void resurrectCachedMaster(int fd);
     void disconnectWithMaster();
     void disconnectWithSlaves();
     void shiftReplicationId();
@@ -49,7 +50,11 @@ private:
     void sendAck();
     std::string recvSynchronousCommand(int fd, ...);
     bool sendSynchronousCommand(int fd, ...);
-    int slaveTryPartialResynchronization(int fd, bool readReply);
+    PsyncResult slaveTrySendPartialResynchronization(int fd);
+    PsyncResult slaveTryRecvPartialResynchronization(int fd);
+    void dealWithFullResyncReply(std::string reply);
+    void dealWithContinueReply(int fd, std::string reply);
+    void createReplicationBacklog();
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,
@@ -72,9 +77,9 @@ private:
     /** replid inherited from master*/
     char replid2[CONFIG_RUN_ID_SIZE+1];
     /** current replication offset */
-    uint64_t masterReplOffset = 0;
+    int64_t masterReplOffset = 0;
     /** Accept offsets up to this for replid2. */
-    uint64_t secondReplidOffset = 0;
+    int64_t secondReplidOffset = 0;
     /** cached master对于本服务器来说也是个client */
     std::shared_ptr<AbstractFlyClient> cachedMaster;
     /** 所有的从机*/
@@ -101,6 +106,10 @@ private:
     std::string slaveAnnounceIP;
     /** 同步io操作超时时间 */
     int syncioTimeout = CONFIG_REPL_SYNCIO_TIMEOUT;
+    /** Master PSYNC offset. */
+    int64_t masterInitOffset;
+    /** Replication backlog for partial syncs */
+    char *backlog;
 
     AbstractCoordinator *coordinator;
     AbstractLogHandler *logHandler;

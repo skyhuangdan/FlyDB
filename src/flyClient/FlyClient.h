@@ -92,6 +92,11 @@ public:
     AbstractFlyDB *getFlyDB() const;
     void setFlyDB(AbstractFlyDB *flyDB);
 
+    /** 主从同步相关 */
+    const char *getReplid() const;
+    uint64_t getReploff() const;
+    void setReploff(uint64_t reploff);
+
 private:
     int addReplyToBuffer(const char *s, size_t len);
     int addReplyToReplyList(const char *s, size_t len);
@@ -119,6 +124,10 @@ private:
     int32_t multiBulkLen;               // 剩余可读的multi bulk参数数量
     int64_t bulkLen;
     size_t sendLen;                     // 记录发送长度，用于处理一次没有发送完的情况
+
+    /** 主从同步相关 */
+    char replid[CONFIG_RUN_ID_SIZE + 1];
+    uint64_t reploff;
 
     AbstractFlyDB *flyDB;
 

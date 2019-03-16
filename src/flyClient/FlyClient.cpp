@@ -410,3 +410,15 @@ AbstractFlyDB *FlyClient::getFlyDB() const {
 void FlyClient::setFlyDB(AbstractFlyDB *flyDB) {
     this->flyDB = flyDB;
 }
+
+const char *FlyClient::getReplid() const {
+    return this->replid;
+}
+
+uint64_t FlyClient::getReploff() const {
+    return this->reploff;
+}
+
+void FlyClient::setReploff(uint64_t reploff) {
+    this->reploff = reploff;
+}

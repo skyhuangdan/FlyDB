@@ -26,6 +26,15 @@ enum ReplicationState {
     REPL_STATE_CONNECTED = 15       /** Connected to master */
 };
 
+enum PsyncResult {
+    PSYNC_WRITE_ERROR = 0,          /** 向socket中写入错误 */
+    PSYNC_WAIT_REPLY = 1,           /** 等待回复 */
+    PSYNC_CONTINUE = 2,             /** 表示部分同步 */
+    PSYNC_FULLRESYNC = 3,           /** 表示支持PSYNC但是需要全量同步 */
+    PSYNC_NOT_SUPPORTED = 4,        /** 表示不支持PSYNC, 需要进行SYNC */
+    PSYNC_TRY_LATER = 5             /** Mater目前有些异常，稍后再试 */
+};
+
 const int CONFIG_DEFAULT_REPL_TIMEOUT = 60;
 const int CONFIG_REPL_SYNCIO_TIMEOUT = 5;
 
