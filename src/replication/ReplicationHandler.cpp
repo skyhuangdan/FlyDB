@@ -182,12 +182,12 @@ int ReplicationHandler::connectingStateProcess() {
 }
 
 int ReplicationHandler::recvPongStateProcess() {
-    char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
     /** 这里接收到的命令回复只有两种，一种是'+PONG'，这表示正常。或者是'-NOAUTH'，表示失败 */
-    if (NULL != res && '+' == res[0]) {
+    if ('+' == res.at(0)) {
         this->logHandler->logNotice("Master replied to PING, replication can continue...");
     } else {
-        this->logHandler->logWarning("Error reply to PING from master: '%s", res);
+        this->logHandler->logWarning("Error reply to PING from master: '%s", res.c_str());
         return -1;
     }
 
@@ -206,10 +206,10 @@ int ReplicationHandler::recvPongStateProcess() {
 }
 
 int ReplicationHandler::recvAuthStateProcess() {
-    char* res = recvSynchronousCommand(this->transferSocket, NULL);
+    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
     /** 如果接收到第一个字符是'-'，代表鉴权错误, 鉴权错误则不能再继续了 */
-    if (NULL != res && '-' == res[0]) {
-        this->logHandler->logWarning("Unable AUTH to master: %s", res);
+    if ('-' == res.at(0)) {
+        this->logHandler->logWarning("Unable AUTH to master: %s", res.c_str());
         return -1;
     }
 
@@ -229,10 +229,10 @@ int ReplicationHandler::recvAuthStateProcess() {
 }
 
 int ReplicationHandler::recvPortStateProcess() {
-    char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
     /** 这时发生的错误可以容忍，所以只是打印错误日志，状态机继续 */
-    if (NULL != res && '-' == res[0]) {
-        logHandler->logWarning("Master does not understand REPLCONF listening-port: %s", res);
+    if ('-' == res.at(0)) {
+        logHandler->logWarning("Master does not understand REPLCONF listening-port: %s", res.c_str());
     }
 
     /** 如果没有slaveAnnounceIp, 则跳过发送ip阶段 */
@@ -251,10 +251,10 @@ int ReplicationHandler::recvPortStateProcess() {
 }
 
 int ReplicationHandler::recvIPStateProcess() {
-    char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
     /** 这时发生的错误可以容忍，所以只是打印错误日志，状态机继续 */
-    if (NULL != res && '-' == res[0]) {
-        logHandler->logWarning("Master does not understand REPLCONF ip-address: %s", res);
+    if ('-' == res.at(0)) {
+        logHandler->logWarning("Master does not understand REPLCONF ip-address: %s", res.c_str());
     }
 
     /**
@@ -271,10 +271,10 @@ int ReplicationHandler::recvIPStateProcess() {
 }
 
 int ReplicationHandler::recvCAPAStateProcess() {
-    char *res = recvSynchronousCommand(this->transferSocket, NULL);
+    std::string res = recvSynchronousCommand(this->transferSocket, NULL);
     /** 这时发生的错误可以容忍，所以只是打印错误日志，状态机继续 */
-    if (NULL != res && '-' == res[0]) {
-        logHandler->logWarning("Master does not understand REPLCONF capa: %s", res);
+    if ('-' == res.at(0)) {
+        logHandler->logWarning("Master does not understand REPLCONF capa: %s", res.c_str());
     }
 
     if (-1 == slaveTryPartialResynchronization(this->transferSocket, false)) {
@@ -303,9 +303,16 @@ void ReplicationHandler::sendAck() {
     flyClient->addReplyBulkString(std::to_string(this->offset));
 }
 
-char* ReplicationHandler::recvSynchronousCommand(int fd, ...) {
+std::string ReplicationHandler::recvSynchronousCommand(int fd, ...) {
+    char buf[256];
+    if (-1 == coordinator->getNetHandler()->syncReadLine(fd, buf, sizeof(buf), this->syncioTimeout * 1000)) {
+        char temp[100];
+        snprintf(temp, sizeof(temp), "-Reading from master: %s", strerror(errno));
+        return temp;
+    }
 
-    return NULL;
+    this->transferLastIO = coordinator->getFlyServer()->getNowt();
+    return buf;
 }
 
 bool ReplicationHandler::sendSynchronousCommand(int fd, ...) {

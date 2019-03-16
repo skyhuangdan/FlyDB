@@ -98,6 +98,8 @@ public:
                              int size,
                              uint64_t timeout) = 0;
 
+    virtual ssize_t syncReadLine(int fd, char *ptr, int size, uint64_t timeout) = 0;
+
     virtual ssize_t syncWrite(int fd,
                               std::string str,
                               uint64_t timeout) = 0;

@@ -47,7 +47,7 @@ private:
     void cacheMasterUsingMyself();
     int connectWithMaster();
     void sendAck();
-    char* recvSynchronousCommand(int fd, ...);
+    std::string recvSynchronousCommand(int fd, ...);
     bool sendSynchronousCommand(int fd, ...);
     int slaveTryPartialResynchronization(int fd, bool readReply);
 

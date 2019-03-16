@@ -713,6 +713,38 @@ ssize_t NetHandler::syncRead(int fd,
     return readCount;
 }
 
+ssize_t NetHandler::syncReadLine(int fd, char *ptr, int size, uint64_t timeout) {
+    ssize_t nread = 0;
+
+    /** 留出一个字节给'\0' */
+    size--;
+
+    /** 循环读取，每次读一个字节 */
+    while (size > 0) {
+        /** 读取一个字节 */
+        char ch;
+        if (-1 == this->syncRead(fd, &ch, 1, timeout)) {
+            return -1;
+        }
+
+        /** 如果当前字节是'\n'，如果是则说明读完了一行。判断上一个字节是否为'\r', 是的话设置为'\0' */
+        if ('\n' == ch) {
+            if (nread > 0 && '\r' == *(ptr - 1)) {
+                nread--;
+                *(ptr - 1) = '\0';
+            }
+            return nread;
+        } else {
+            *(ptr++) = ch;
+            *ptr = '\0';
+            nread++;
+        }
+        size--;
+    }
+
+    return nread;
+}
+
 ssize_t NetHandler::syncWrite(int fd,
                               std::string str,
                               uint64_t timeout) {
