@@ -48,8 +48,8 @@ private:
     int connectWithMaster();
     void sendAck();
     char* recvSynchronousCommand(int fd, ...);
-    char* sendSynchronousCommand(int fd, ...);
-    int slaveTryPartialResynchronization(int fd, int read_reply);
+    bool sendSynchronousCommand(int fd, ...);
+    int slaveTryPartialResynchronization(int fd, bool readReply);
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,
@@ -99,6 +99,8 @@ private:
     /** 发送给master保存的slave ip和port */
     int slaveAnnouncePort;
     std::string slaveAnnounceIP;
+    /** 同步io操作超时时间 */
+    int syncioTimeout = CONFIG_REPL_SYNCIO_TIMEOUT;
 
     AbstractCoordinator *coordinator;
     AbstractLogHandler *logHandler;

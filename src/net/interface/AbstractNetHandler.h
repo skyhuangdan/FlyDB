@@ -94,13 +94,12 @@ public:
     virtual int wait(int fd, int mask, int millseconds) = 0;
 
     virtual ssize_t syncRead(int fd,
-                             char *ptr,
-                             ssize_t size,
+                             char * ptr,
+                             int size,
                              uint64_t timeout) = 0;
 
     virtual ssize_t syncWrite(int fd,
-                              char *ptr,
-                              ssize_t size,
+                              std::string str,
                               uint64_t timeout) = 0;
 
     virtual int peerToString(int fd, char *ip, size_t iplen, int *port) = 0;

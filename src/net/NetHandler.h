@@ -67,8 +67,8 @@ public:
                       std::shared_ptr<AbstractFlyClient> flyClient,
                       int handlerInstalled);
     int wait(int fd, int mask, int millseconds);
-    ssize_t syncRead(int fd, char *ptr, ssize_t size, uint64_t timeout);
-    ssize_t syncWrite(int fd, char *ptr, ssize_t size, uint64_t timeout);
+    ssize_t syncRead(int fd, char*ptr, int size, uint64_t timeout);
+    ssize_t syncWrite(int fd, std::string str, uint64_t timeout);
     int peerToString(int fd, char *ip, size_t iplen, int *port);
 
 private:

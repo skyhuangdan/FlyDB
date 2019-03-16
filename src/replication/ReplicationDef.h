@@ -27,5 +27,6 @@ enum ReplicationState {
 };
 
 const int CONFIG_DEFAULT_REPL_TIMEOUT = 60;
+const int CONFIG_REPL_SYNCIO_TIMEOUT = 5;
 
 #endif //FLYDB_REPLICATIONDEF_H

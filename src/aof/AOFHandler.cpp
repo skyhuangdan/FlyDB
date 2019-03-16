@@ -601,8 +601,8 @@ int AOFHandler::rewriteAppendOnlyFileDiff(char *tmpfile, std::shared_ptr<FileFio
 
     /** 读取parent发送来的ack */
     char byte;
-    if (coordinator->getNetHandler()->syncRead(
-            ackToChildReadFd, &byte, 1, 5000) < 0 || byte != '!') {
+    if (coordinator->getNetHandler()->syncRead(ackToChildReadFd, &byte, 1, 5000) < 0
+        || byte != '!') {
         coordinator->getLogHandler()->logWarning(
                 "Cann`t get \"!\" from parent : %s", strerror(errno));
         fclose(fp);

@@ -172,7 +172,7 @@ int ReplicationHandler::connectingStateProcess() {
     coordinator->getEventLoop()->deleteFileEvent(this->transferSocket, ES_WRITABLE);
 
     /** send ping command */
-    if (NULL != sendSynchronousCommand(this->transferSocket, "PING")) {
+    if (!sendSynchronousCommand(this->transferSocket, "PING")) {
         return -1;
     }
 
@@ -193,10 +193,8 @@ int ReplicationHandler::recvPongStateProcess() {
 
     /** 如果存在鉴权信息，则发送鉴权，否则直接跳过 */
     if (!masterAuth.empty()) {
-        char *res = sendSynchronousCommand(
-                this->transferSocket, "AUTH", this->masterAuth.c_str(), this->masterUser.c_str(), NULL);
-        /** 发送失败 */
-        if (NULL != res) {
+        if (!sendSynchronousCommand(
+                this->transferSocket, "AUTH", this->masterAuth.c_str(), this->masterUser.c_str(), NULL)) {
             return -1;
         }
         this->state = REPL_STATE_RECEIVE_AUTH;
@@ -218,7 +216,7 @@ int ReplicationHandler::recvAuthStateProcess() {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
     int port = this->slaveAnnouncePort ? this->slaveAnnouncePort : flyServer->getPort();
     /** send REPLCONF listening-port [port] */
-    if (NULL != sendSynchronousCommand(this->transferSocket,
+    if (!sendSynchronousCommand(this->transferSocket,
                                        "REPLCONF",
                                        "listening-port",
                                        std::to_string(port).c_str(),
@@ -242,7 +240,7 @@ int ReplicationHandler::recvPortStateProcess() {
         this->state = REPL_STATE_SEND_CAPA;
     } else {
         /** send REPLCONF ip-address [ip] */
-        if (NULL != sendSynchronousCommand(this->transferSocket, "REPLCONF",
+        if (!sendSynchronousCommand(this->transferSocket, "REPLCONF",
                                            "ip-address", this->slaveAnnounceIP.c_str(), NULL)) {
             return -1;
         }
@@ -264,7 +262,7 @@ int ReplicationHandler::recvIPStateProcess() {
      *  1.eof代表支EOF格式的FDB文件
      *  2.PSYNC2代表支持PSYNC v2，因此可以识别 +CONTINUE <new repl ID>
      **/
-    if (NULL != sendSynchronousCommand(this->transferSocket, "REPLCONF", "capa", "eof", "capa", "psync2", NULL)) {
+    if (!sendSynchronousCommand(this->transferSocket, "REPLCONF", "capa", "eof", "capa", "psync2", NULL)) {
         return -1;
     }
 
@@ -279,7 +277,7 @@ int ReplicationHandler::recvCAPAStateProcess() {
         logHandler->logWarning("Master does not understand REPLCONF capa: %s", res);
     }
 
-    if (-1 == slaveTryPartialResynchronization(this->transferSocket, 0)) {
+    if (-1 == slaveTryPartialResynchronization(this->transferSocket, false)) {
         return -1;
     }
 
@@ -288,6 +286,7 @@ int ReplicationHandler::recvCAPAStateProcess() {
 }
 
 int ReplicationHandler::recvPsyncStateProcess() {
+    int result = slaveTryPartialResynchronization(this->transferSocket, true);
     return 1;
 }
 
@@ -306,13 +305,38 @@ void ReplicationHandler::sendAck() {
 
 char* ReplicationHandler::recvSynchronousCommand(int fd, ...) {
 
+    return NULL;
 }
 
-char* ReplicationHandler::sendSynchronousCommand(int fd, ...) {
+bool ReplicationHandler::sendSynchronousCommand(int fd, ...) {
+    std::string cmd;
 
+    va_list ap;
+    va_start(ap, fd);
+    char* arg;
+    while (1) {
+        /** 获取下一个参数 */
+        arg = va_arg(ap, char*);
+        if (NULL == arg) {
+            break;
+        }
+
+        /** 添加到写入缓冲里 */
+        char buf[100];
+        snprintf(buf, sizeof(buf), "$%zu\r\n%s", strlen(arg), arg);
+        cmd += buf;
+    }
+    va_end(ap);
+
+    if (-1 == coordinator->getNetHandler()->syncWrite(fd, cmd, this->syncioTimeout * 1000)) {
+        logHandler->logWarning("Error to syncWrite to master: %s", strerror(errno));
+        return false;
+    }
+
+    return true;
 }
 
-int ReplicationHandler::slaveTryPartialResynchronization(int fd, int read_reply) {
+int ReplicationHandler::slaveTryPartialResynchronization(int fd, bool readReply) {
 
 }
 

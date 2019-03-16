@@ -676,7 +676,7 @@ int NetHandler::wait(int fd, int mask, int millseconds) {
 
 ssize_t NetHandler::syncRead(int fd,
                              char *ptr,
-                             ssize_t size,
+                             int size,
                              uint64_t timeout) {
     if (0 == size) {
         return 0;
@@ -714,15 +714,15 @@ ssize_t NetHandler::syncRead(int fd,
 }
 
 ssize_t NetHandler::syncWrite(int fd,
-                              char *ptr,
-                              ssize_t size,
+                              std::string str,
                               uint64_t timeout) {
     uint64_t start = miscTool->mstime(), span = 0;
     ssize_t totalWrite = 0;
 
+    char *ptr = (char*)str.c_str();
     while ((span = miscTool->mstime() - start) < timeout) {
         int writeRes = 0;
-        if ((writeRes = write(fd, ptr + totalWrite, size - totalWrite)) <= 0) {
+        if ((writeRes = write(fd, ptr + totalWrite, str.length() - totalWrite)) <= 0) {
             /** if res is -1 and errno means read again, then continue */
             if (-1 == writeRes && EAGAIN == errno) {
                 continue;
@@ -733,7 +733,7 @@ ssize_t NetHandler::syncWrite(int fd,
 
         /** if write all done, break and return */
         totalWrite += writeRes;
-        if (writeRes == size) {
+        if (writeRes == str.length()) {
             break;
         }
 
