@@ -415,6 +415,10 @@ const char *FlyClient::getReplid() const {
     return this->replid;
 }
 
+void FlyClient::setReplid(const char* replid) {
+    memcpy(this->replid, replid, sizeof(replid));
+}
+
 uint64_t FlyClient::getReploff() const {
     return this->reploff;
 }

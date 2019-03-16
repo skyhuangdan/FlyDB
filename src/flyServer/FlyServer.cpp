@@ -586,6 +586,10 @@ void FlyServer::unlinkClient(std::shared_ptr<AbstractFlyClient> flyClient) {
     }
 }
 
+void FlyServer::linkClient(std::shared_ptr<AbstractFlyClient> flyClient) {
+    this->clients.push_back(flyClient);
+}
+
 void FlyServer::setupSignalHandlers() {
     signal(SIGTERM, sigShutDownHandlers);
     signal(SIGINT, sigShutDownHandlers);

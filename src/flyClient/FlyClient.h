@@ -94,6 +94,7 @@ public:
 
     /** 主从同步相关 */
     const char *getReplid() const;
+    void setReplid(const char* replid);
     uint64_t getReploff() const;
     void setReploff(uint64_t reploff);
 

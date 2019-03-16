@@ -107,9 +107,17 @@ private:
     /** 同步io操作超时时间 */
     int syncioTimeout = CONFIG_REPL_SYNCIO_TIMEOUT;
     /** Master PSYNC offset. */
-    int64_t masterInitOffset;
-    /** Replication backlog for partial syncs */
-    char *backlog;
+    int64_t masterInitOffset = -1;
+    /** PSYNC操作的环形缓冲区 */
+    char *backlog = NULL;
+    /** backlog环形缓冲区的大小 */
+    int64_t backlogSize = CONFIG_DEFAULT_REPL_BACKLOG_SIZE;
+    /** backlog buffer实际的长度 */
+    int64_t backlogHistlen = 0;
+    /** 环形缓冲区下一个字节插入的位置 */
+    int64_t backlogIndex = 0;
+    /** backlog中首字节在master中的offset */
+    int64_t backlogOff;
 
     AbstractCoordinator *coordinator;
     AbstractLogHandler *logHandler;

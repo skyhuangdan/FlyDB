@@ -6,6 +6,7 @@
 #include "ReplicationHandler.h"
 #include "../flyClient/ClientDef.h"
 #include "../io/StringFio.h"
+#include "../net/NetHandler.h"
 
 ReplicationHandler::ReplicationHandler(AbstractCoordinator *coordinator) {
     this->coordinator = coordinator;
@@ -386,6 +387,7 @@ PsyncResult ReplicationHandler::slaveTryRecvPartialResynchronization(int fd) {
         return PSYNC_CONTINUE;
     } else if (!strncmp(reply.c_str(), "-NOMASTERLINK", 13)
                || !strncmp(reply.c_str(), "-LOADING", 8)) {
+        logHandler->logNotice("Master is unable to PSYNC, but should be in the future: %s", reply.c_str());
         return PSYNC_TRY_LATER;
     } else {
         logHandler->logWarning("Unexpected reply to PSYNC from master: %s", reply.c_str());
@@ -444,10 +446,16 @@ void ReplicationHandler::dealWithContinueReply(int fd, std::string reply) {
         /** 如果当前获取的replid和cachedMaster中保存的replid不同 */
         if (strcmp(replid, this->cachedMaster->getReplid())) {
             logHandler->logWarning("Master replication ID changed to %s", replid);
+
+            /** (cacheMaster->replid) --> replid2 */
             memcpy(this->replid2, this->cachedMaster->getReplid(), sizeof(this->replid2));
             this->secondReplidOffset = this->masterReplOffset + 1;
-            memcpy(this->replid, replid, sizeof(this->replid));
-            //memcpy(this->cachedMaster->getReplid(), replid, sizeof(replid));
+
+            /** replid --> (this->replid) */
+            memcpy(this->replid, replid, sizeof(replid));
+
+            /** replid --> (cachedMaster->replid) */
+            cachedMaster->setReplid(replid);
 
             /** 重连接所有的slave */
             this->disconnectWithSlaves();
@@ -455,6 +463,7 @@ void ReplicationHandler::dealWithContinueReply(int fd, std::string reply) {
     }
     this->resurrectCachedMaster(fd);
 
+    /** 如果当前环形缓冲区为空，则创建一个 */
     if (NULL == this->backlog) {
         this->createReplicationBacklog();
     }
@@ -551,8 +560,31 @@ void ReplicationHandler::discardCachedMaster() {
     this->cachedMaster = NULL;
 }
 
+/** 将cached master切换到current master */
 void ReplicationHandler::resurrectCachedMaster(int fd) {
+    this->master = this->cachedMaster;
+    this->cachedMaster = NULL;
+    this->master->setFd(fd);
+    this->master->delFlag(CLIENT_CLOSE_AFTER_REPLY | CLIENT_CLOSE_ASAP);
+    this->master->setAuthentiated(1);
+    this->master->setLastInteractionTime(coordinator->getFlyServer()->getNowt());
+    this->state = REPL_STATE_CONNECTED;
+    this->masterDownSince = 0;
 
+    /** add master to client list */
+    coordinator->getFlyServer()->linkClient(this->master);
+    if (-1 == this->coordinator->getEventLoop()->createFileEvent(
+            fd, ES_READABLE, readQueryFromClient, this->master)) {
+        coordinator->getFlyServer()->freeClientAsync(this->master);
+    }
+
+    /** 当回复缓冲区中有数据的时候，需要创建回复文件事件 */
+    if (!this->master->hasNoPending()) {
+        if (-1 == this->coordinator->getEventLoop()->createFileEvent(
+                fd, ES_WRITABLE, sendReplyToClient, this->master)) {
+            coordinator->getFlyServer()->freeClientAsync(this->master);
+        }
+    }
 }
 
 /**
@@ -574,5 +606,12 @@ void ReplicationHandler::randomReplicationId() {
 }
 
 void ReplicationHandler::createReplicationBacklog() {
+    if(NULL != this->backlog) {
+        return;
+    }
 
+    this->backlog = (char*)malloc(this->backlogSize);
+    this->backlogHistlen = 0;
+    this->backlogIndex = 0;
+    this->backlogOff = masterReplOffset + 1;
 }

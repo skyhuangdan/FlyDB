@@ -104,6 +104,8 @@ public:
     virtual void tryResizeDB() = 0;
 
     virtual void unlinkClient(std::shared_ptr<AbstractFlyClient> flyClient) = 0;
+
+    virtual void linkClient(std::shared_ptr<AbstractFlyClient> flyClient) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYSERVER_H

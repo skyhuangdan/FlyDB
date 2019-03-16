@@ -88,6 +88,7 @@ public:
     void freeClientsInAsyncFreeList();
     int getMaxClients() const;
     void unlinkClient(std::shared_ptr<AbstractFlyClient> flyClient);
+    void linkClient(std::shared_ptr<AbstractFlyClient> flyClient);
 
 private:
     /** 调整客户端描述符文件最大数量（即最大允许同时连接的client数量）*/
