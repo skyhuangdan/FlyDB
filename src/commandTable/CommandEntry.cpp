@@ -671,7 +671,7 @@ void slaveOfCommand(const AbstractCoordinator* coordinator,
 
     AbstractReplicationHandler *replicationHandler =
             coordinator->getReplicationHandler();
-    /** slave no one */
+    /** slave no one means it wants to be a master */
     if (!strcasecmp(argv1->c_str(), "no")
         && !strcasecmp(argv2->c_str(), "one")) {
         if (replicationHandler->haveMasterhost()) {
@@ -689,5 +689,6 @@ void slaveOfCommand(const AbstractCoordinator* coordinator,
         replicationHandler->setMaster(*argv1, port);
     }
 
+    /** 先回复OK，后续再做PSYNC流程 */
     flyClient->addReply("+OK\r\n");
 }

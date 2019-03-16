@@ -3,6 +3,7 @@
 //
 
 #include <cassert>
+#include <fcntl.h>
 #include "ReplicationHandler.h"
 #include "../flyClient/ClientDef.h"
 #include "../io/StringFio.h"
@@ -51,6 +52,7 @@ void ReplicationHandler::setMaster(std::string ip, int port) {
 
     /** 删除原先的master */
     if (NULL != this->master) {
+        coordinator->getFlyServer()->freeClient(this->master);
         this->master = NULL;
     }
 
@@ -278,7 +280,7 @@ int ReplicationHandler::recvCAPAStateProcess() {
         logHandler->logWarning("Master does not understand REPLCONF capa: %s", res.c_str());
     }
 
-    if (-1 == slaveTrySendPartialResynchronization(this->transferSocket)) {
+    if (PSYNC_WRITE_ERROR == slaveTrySendPartialResynchronization(this->transferSocket)) {
         return -1;
     }
 
@@ -288,7 +290,51 @@ int ReplicationHandler::recvCAPAStateProcess() {
 
 int ReplicationHandler::recvPsyncStateProcess() {
     int result = slaveTryRecvPartialResynchronization(this->transferSocket);
-    return 1;
+    switch (result) {
+        case PSYNC_TRY_LATER:
+            return -1;
+        case PSYNC_WAIT_REPLY:
+            return 0;
+        case PSYNC_CONTINUE:
+            logHandler->logNotice("MASTER <-> REPLICA sync: Master accepted a Partial Resynchronization.");
+            return 1;
+        case PSYNC_NOT_SUPPORTED:
+            if (coordinator->getNetHandler()->syncWrite(this->transferSocket,
+                                                        "SYNC\r\n",
+                                                        this->syncioTimeout * 1000) == -1) {
+                logHandler->logWarning("I/O error writing to MASTER: %s", strerror(errno));
+                return -1;
+            }
+        case PSYNC_FULLRESYNC:
+            this->disconnectWithSlaves();
+            this->freeReplicationBacklog();
+            break;
+        default:
+            return -1;
+    }
+
+    int maxTries = 5;
+    int tempfd = -1;
+    while (maxTries--) {
+        char tempfile[256];
+        snprintf(tempfile, sizeof(tempfile), "temp-%d.%ld.fdb", coordinator->getFlyServer()->getNowt(), getpid());
+        if (-1 != (tempfd = open(tempfile, O_CREAT | O_WRONLY | O_EXCL, 0644))) {
+            break;
+        }
+
+        /** 创建文件失败 */
+        sleep(1);
+    }
+
+    /** 创建文件事件用于同步fdb文件 */
+    if (coordinator->getEventLoop()->createFileEvent(this->transferSocket, ES_READABLE, NULL, NULL)) {
+        logHandler->logWarning("Error to create readable event for sync: %s", strerror(errno));
+        return -1;
+    }
+
+    //todo: transfer
+
+    this->state = REPL_STATE_TRANSFER;
 }
 
 void ReplicationHandler::sendAck() {
@@ -382,7 +428,7 @@ PsyncResult ReplicationHandler::slaveTryRecvPartialResynchronization(int fd) {
     if (!strncmp(reply.c_str(), "+FULLRESYNC", 11)) { /** 全量读取 */
         this->dealWithFullResyncReply(reply);
         return PSYNC_FULLRESYNC;
-    } else if (!strncmp(reply.c_str(), "+CONTIINUE", 9)) {
+    } else if (!strncmp(reply.c_str(), "+CONTIINUE", 9)) { /** 部分同步 */
         this->dealWithContinueReply(fd, reply);
         return PSYNC_CONTINUE;
     } else if (!strncmp(reply.c_str(), "-NOMASTERLINK", 13)
@@ -415,8 +461,8 @@ void ReplicationHandler::dealWithFullResyncReply(std::string reply) {
 
     /** 设置replid和masterInitOffset */
     if (-1 == idpos || -1 == offsetpos || (offsetpos - idpos - 1) != CONFIG_RUN_ID_SIZE) {
-        logHandler->logWarning("Master replied with wrong +FULLRESYNC syntax.");
         memset(this->replid, 0, CONFIG_RUN_ID_SIZE + 1);
+        logHandler->logWarning("Master replied with wrong +FULLRESYNC syntax.");
     } else {
         memcpy(this->replid, replid.c_str(), replid.length());
         this->replid[CONFIG_RUN_ID_SIZE] = '\0';
@@ -449,7 +495,7 @@ void ReplicationHandler::dealWithContinueReply(int fd, std::string reply) {
 
             /** (cacheMaster->replid) --> replid2 */
             memcpy(this->replid2, this->cachedMaster->getReplid(), sizeof(this->replid2));
-            this->secondReplidOffset = this->masterReplOffset + 1;
+            this->secondReplOffset = this->masterReplOffset + 1;
 
             /** replid --> (this->replid) */
             memcpy(this->replid, replid, sizeof(replid));
@@ -588,14 +634,15 @@ void ReplicationHandler::resurrectCachedMaster(int fd) {
 }
 
 /**
- * 本机从主切换到从，replication id切换：
+ * 本机由从切换到主，replication id切换：
  *  1.将replication id/offset存入replication id2/offset2
- *  2.replid2 = replid + 1，这样在切换成slave时，slave取其已经拥有的字节的下一个字节
+ *  2.secondReplOffset = masterReplOffset + 1，这样在切换成slave时，slave取其已经拥有的字节的下一个字节
  *  3.重新生成replication id
  **/
 void ReplicationHandler::shiftReplicationId() {
+    /** replid-->replid2，将replid2保存其前任master的id */
     memcpy(this->replid2, this->replid, sizeof(this->replid));
-    this->secondReplidOffset = this->masterReplOffset + 1;
+    this->secondReplOffset = this->masterReplOffset + 1;
     this->randomReplicationId();
 }
 
@@ -614,4 +661,8 @@ void ReplicationHandler::createReplicationBacklog() {
     this->backlogHistlen = 0;
     this->backlogIndex = 0;
     this->backlogOff = masterReplOffset + 1;
+}
+
+void ReplicationHandler::freeReplicationBacklog() {
+
 }

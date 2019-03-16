@@ -55,6 +55,7 @@ private:
     void dealWithFullResyncReply(std::string reply);
     void dealWithContinueReply(int fd, std::string reply);
     void createReplicationBacklog();
+    void freeReplicationBacklog();
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,
@@ -79,7 +80,7 @@ private:
     /** current replication offset */
     int64_t masterReplOffset = 0;
     /** Accept offsets up to this for replid2. */
-    int64_t secondReplidOffset = 0;
+    int64_t secondReplOffset = 0;
     /** cached master对于本服务器来说也是个client */
     std::shared_ptr<AbstractFlyClient> cachedMaster;
     /** 所有的从机*/

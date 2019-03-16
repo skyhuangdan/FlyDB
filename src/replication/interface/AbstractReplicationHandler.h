@@ -11,10 +11,10 @@ class AbstractFlyClient;
 class AbstractReplicationHandler {
 public:
     virtual void unsetMaster() = 0;
+    virtual void setMaster(std::string ip, int port) = 0;
     virtual const std::string &getMasterhost() const = 0;
     virtual int getMasterport() const = 0;
     virtual bool haveMasterhost() const = 0;
-    virtual void setMaster(std::string ip, int port) = 0;
     virtual void cron() = 0;
     virtual void syncWithMaster(int fd,
                                 std::shared_ptr<AbstractFlyClient> flyClient,
