@@ -298,15 +298,9 @@ int ReplicationHandler::recvPsyncStateProcess() {
         case PSYNC_CONTINUE:
             logHandler->logNotice("MASTER <-> REPLICA sync: Master accepted a Partial Resynchronization.");
             return 1;
-        case PSYNC_NOT_SUPPORTED:
-            if (coordinator->getNetHandler()->syncWrite(this->transferSocket,
-                                                        "SYNC\r\n",
-                                                        this->syncioTimeout * 1000) == -1) {
-                logHandler->logWarning("I/O error writing to MASTER: %s", strerror(errno));
-                return -1;
-            }
         case PSYNC_FULLRESYNC:
             this->disconnectWithSlaves();
+            /** 全量更新，不需要backlog */
             this->freeReplicationBacklog();
             break;
         default:
@@ -315,8 +309,8 @@ int ReplicationHandler::recvPsyncStateProcess() {
 
     int maxTries = 5;
     int tempfd = -1;
+    char tempfile[256];
     while (maxTries--) {
-        char tempfile[256];
         snprintf(tempfile, sizeof(tempfile), "temp-%d.%ld.fdb", coordinator->getFlyServer()->getNowt(), getpid());
         if (-1 != (tempfd = open(tempfile, O_CREAT | O_WRONLY | O_EXCL, 0644))) {
             break;
@@ -332,8 +326,7 @@ int ReplicationHandler::recvPsyncStateProcess() {
         return -1;
     }
 
-    //todo: transfer
-
+    this->initTransfer(tempfd, tempfile);
     this->state = REPL_STATE_TRANSFER;
 }
 
@@ -441,7 +434,6 @@ PsyncResult ReplicationHandler::slaveTryRecvPartialResynchronization(int fd) {
 
     /** 释放cached master */
     this->discardCachedMaster();
-
     return PSYNC_NOT_SUPPORTED;
 }
 
@@ -664,5 +656,16 @@ void ReplicationHandler::createReplicationBacklog() {
 }
 
 void ReplicationHandler::freeReplicationBacklog() {
+    assert(0 == this->slaves.size());
+    free(this->backlog);
+    this->backlog = NULL;
+}
 
+void ReplicationHandler::initTransfer(int fd, char *fileName) {
+    this->transferSize = -1;
+    this->transferRead = 0;
+    this->transferLastFsyncOff = 0;
+    this->transferfd = fd;
+    this->transferLastIO = coordinator->getFlyServer()->getNowt();
+    this->transferTempFile = strdup(fileName);
 }

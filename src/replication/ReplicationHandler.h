@@ -56,6 +56,7 @@ private:
     void dealWithContinueReply(int fd, std::string reply);
     void createReplicationBacklog();
     void freeReplicationBacklog();
+    void initTransfer(int fd, char* fileName);
 
     static void syncWithMasterStatic(
             const AbstractCoordinator *coorinator,
@@ -85,14 +86,8 @@ private:
     std::shared_ptr<AbstractFlyClient> cachedMaster;
     /** 所有的从机*/
     std::list<std::shared_ptr<AbstractFlyClient>> slaves;
-    /** Master SYNC socket */
-    int transferSocket = -1;
-    /** 接收PSYNC传输数据的临时文件 */
-    std::string transferTempFile;
     /** 与master断开连接的时间 */
     time_t masterDownSince = 0;
-    /** 上次io时间 */
-    time_t transferLastIO = 0;
     /** 上次交互时间 */
     time_t lastInteraction = 0;
     /** 超时时间(秒) */
@@ -119,6 +114,21 @@ private:
     int64_t backlogIndex = 0;
     /** backlog中首字节在master中的offset */
     int64_t backlogOff;
+    /**
+     * transfer(主从同步)相关
+     **/
+    /** 同步期间从master读取的FDB大小 */
+    off_t transferSize = -1;
+    off_t transferRead = -1;
+    /**最后一次执行fsync-ed时的offset */
+    off_t transferLastFsyncOff = 0;
+    /** Master SYNC socket */
+    int transferSocket = -1;
+    /** 接收PSYNC传输数据的临时文件 */
+    std::string transferTempFile;
+    /** 上次io时间 */
+    time_t transferLastIO = 0;
+    int transferfd = -1;    /* Slave -> Master SYNC期间的临时文件的fd */
 
     AbstractCoordinator *coordinator;
     AbstractLogHandler *logHandler;
