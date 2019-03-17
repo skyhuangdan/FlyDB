@@ -14,9 +14,7 @@ SkipListNode<T>::SkipListNode(const T &obj, double score) {
     this->obj = obj;
     this->score = score;
     this->previous = NULL;
-    for (int i = 0; i < SKIP_LIST_MAX_LEVEL; i++) {
-        this->levels.push_back(SkipListLevel<T>());
-    }
+    this->levels.resize(SKIP_LIST_MAX_LEVEL);
 }
 
 template<class T>
