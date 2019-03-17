@@ -8,6 +8,7 @@
 #include "../dataStructure/skiplist/SkipList.cpp"
 #include "../dataStructure/dict/Dict.cpp"
 #include "CommandTableDef.h"
+#include "../flyClient/ClientDef.h"
 
 /**
  * 命令列表：
@@ -678,6 +679,11 @@ void slaveOfCommand(const AbstractCoordinator* coordinator,
             replicationHandler->unsetMaster();
         }
     } else {
+        if (0 != flyClient->getFlags() & CLIENT_SLAVE) {
+            flyClient->addReply("Command is not valid when it`s a replica");
+            return;
+        }
+
         int port = atoi(argv2->c_str());
         if (port == replicationHandler->getMasterport() &&
             0 == replicationHandler->getMasterhost().compare(*argv1)) {

@@ -139,9 +139,13 @@ public:
 
     virtual void setReplid(const char* replid) = 0;
 
-    virtual uint64_t getReploff() const = 0;
+    virtual int64_t getReploff() const = 0;
 
     virtual void setReploff(uint64_t reploff) = 0;
+
+    virtual int64_t getReadReploff() const = 0;
+
+    virtual void setReadReploff(int64_t readReploff) = 0;
 };
 
 #endif //FLYDB_ABSTRACTFLYCLIENT_H

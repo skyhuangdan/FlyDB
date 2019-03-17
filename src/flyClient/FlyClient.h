@@ -95,8 +95,10 @@ public:
     /** 主从同步相关 */
     const char *getReplid() const;
     void setReplid(const char* replid);
-    uint64_t getReploff() const;
+    int64_t getReploff() const;
     void setReploff(uint64_t reploff);
+    int64_t getReadReploff() const;
+    void setReadReploff(int64_t readReploff);
 
 private:
     int addReplyToBuffer(const char *s, size_t len);
@@ -126,12 +128,14 @@ private:
     int64_t bulkLen;
     size_t sendLen;                     // 记录发送长度，用于处理一次没有发送完的情况
 
-    /** 主从同步相关 */
+    /**
+     * 主从同步相关
+     **/
     char replid[CONFIG_RUN_ID_SIZE + 1];
-    uint64_t reploff;
+    int64_t reploff;
+    int64_t readReploff;
 
     AbstractFlyDB *flyDB;
-
     AbstractLogHandler *logHandler;
 };
 

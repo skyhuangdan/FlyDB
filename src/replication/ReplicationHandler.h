@@ -46,6 +46,7 @@ private:
     bool inHandshakeState();
     bool abortSyncTransfer();
     void cacheMasterUsingMyself();
+    void createMasterClient(int fd, int dbid);
     int connectWithMaster();
     void sendAck();
     std::string recvSynchronousCommand(int fd, ...);
@@ -102,6 +103,8 @@ private:
     std::string slaveAnnounceIP;
     /** 同步io操作超时时间 */
     int syncioTimeout = CONFIG_REPL_SYNCIO_TIMEOUT;
+    /** Master PSYNC runid */
+    char masterReplid[CONFIG_RUN_ID_SIZE+1];
     /** Master PSYNC offset. */
     int64_t masterInitOffset = -1;
     /** PSYNC操作的环形缓冲区 */

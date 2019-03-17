@@ -419,10 +419,18 @@ void FlyClient::setReplid(const char* replid) {
     memcpy(this->replid, replid, sizeof(replid));
 }
 
-uint64_t FlyClient::getReploff() const {
+int64_t FlyClient::getReploff() const {
     return this->reploff;
 }
 
 void FlyClient::setReploff(uint64_t reploff) {
     this->reploff = reploff;
+}
+
+int64_t FlyClient::getReadReploff() const {
+    return this->readReploff;
+}
+
+void FlyClient::setReadReploff(int64_t readReploff) {
+    this->readReploff = readReploff;
 }

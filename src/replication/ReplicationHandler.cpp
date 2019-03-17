@@ -415,7 +415,7 @@ PsyncResult ReplicationHandler::slaveTryRecvPartialResynchronization(int fd) {
         return PSYNC_WAIT_REPLY;
     }
 
-    /** 删除读取文件事件 */
+    /** 删除读取文件事件, 不在接收master的文件事件 */
     coordinator->getEventLoop()->deleteFileEvent(fd, ES_READABLE);
 
     if (!strncmp(reply.c_str(), "+FULLRESYNC", 11)) { /** 全量读取 */
@@ -429,12 +429,11 @@ PsyncResult ReplicationHandler::slaveTryRecvPartialResynchronization(int fd) {
         logHandler->logNotice("Master is unable to PSYNC, but should be in the future: %s", reply.c_str());
         return PSYNC_TRY_LATER;
     } else {
+        /** 此时出现未知错误：释放cached master */
         logHandler->logWarning("Unexpected reply to PSYNC from master: %s", reply.c_str());
+        this->discardCachedMaster();
+        return PSYNC_NOT_SUPPORTED;
     }
-
-    /** 释放cached master */
-    this->discardCachedMaster();
-    return PSYNC_NOT_SUPPORTED;
 }
 
 void ReplicationHandler::dealWithFullResyncReply(std::string reply) {
@@ -462,6 +461,7 @@ void ReplicationHandler::dealWithFullResyncReply(std::string reply) {
         logHandler->logNotice("Full resync from master: %s:%lld", this->replid, this->masterInitOffset);
     }
 
+    /** 因为没有成功执行了部分同步，说明cached mater和真正的master匹配不上，忽略掉cached master */
     this->discardCachedMaster();
 }
 
@@ -485,7 +485,7 @@ void ReplicationHandler::dealWithContinueReply(int fd, std::string reply) {
         if (strcmp(replid, this->cachedMaster->getReplid())) {
             logHandler->logWarning("Master replication ID changed to %s", replid);
 
-            /** (cacheMaster->replid) --> replid2 */
+            /** (cacheMaster->replid) --> replid2, replid2保存前任master的replid */
             memcpy(this->replid2, this->cachedMaster->getReplid(), sizeof(this->replid2));
             this->secondReplOffset = this->masterReplOffset + 1;
 
@@ -527,14 +527,34 @@ int ReplicationHandler::cancelHandShake() {
 
 /**
  * 当一个服务器由master切换成slave时调用
- *  为了创建一个cached master，将其用于在晋升为master时与slave做PSYNC用
  * */
 void ReplicationHandler::cacheMasterUsingMyself() {
     AbstractFlyServer *flyServer = coordinator->getFlyServer();
 
+    /** create master */
+    this->createMasterClient(-1, -1);
+
+    /** set master replid/offset by our replid/offset */
+    this->masterInitOffset = this->masterReplOffset;
+    this->master->setReplid(this->replid);
+
+    /** set master as cached master */
     flyServer->unlinkClient(this->master);
     this->master = NULL;
     this->cachedMaster = this->master;
+}
+
+void ReplicationHandler::createMasterClient(int fd, int dbid) {
+    AbstractFlyServer *flyServer = coordinator->getFlyServer();
+    this->master = coordinator->getFlyClientFactory()->getFlyClient(fd, coordinator, flyServer->getFlyDB(dbid));
+    this->master->addFlag(CLIENT_MASTER);
+    this->master->setAuthentiated(1);
+    this->master->setReploff(this->masterInitOffset);
+    this->master->setReadReploff(this->masterInitOffset);
+    this->master->setReplid(this->masterReplid);
+    if (-1 == this->masterInitOffset) {
+        this->master->addFlag(CLIENT_PRE_PSYNC);
+    }
 }
 
 int ReplicationHandler::connectWithMaster() {

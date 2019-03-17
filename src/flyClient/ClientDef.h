@@ -17,6 +17,8 @@ const int CLIENT_PENDING_WRITE = 1 << 21;
 const int CLIENT_CLOSE_ASAP = 1 << 10;
 /** 对于master是不接收reply的，但是如果设置了该flag，则即使是master也要接收reply **/
 const int CLIENT_MASTER_FORCE_REPLY = 1 << 13;
+/** Instance don't understand PSYNC */
+const int CLIENT_PRE_PSYNC = 1 << 16;
 
 const int FLY_REPLY_CHUNK_BYTES = 16 * 1024;
 

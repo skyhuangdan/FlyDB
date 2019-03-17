@@ -325,7 +325,7 @@ void FlyServer::freeClientsInAsyncFreeList() {
 }
 
 AbstractFlyDB* FlyServer::getFlyDB(int dbnum) {
-    if (dbnum >= this->dbArray.size()) {
+    if (dbnum >= this->dbArray.size() || dbnum < 0) {
         return NULL;
     }
 
