@@ -489,7 +489,8 @@ int FlyServer::handleClientsWithPendingWrites() {
 
     std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
             this->clientsPendingWrite.begin();
-    for (; iter != this->clientsPendingWrite.end(); ++iter) {
+    for (; iter != this->clientsPendingWrite.end(); ++iter) 
+    {
         // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
         // 否则无法加入。也就无法处理其输出
         (*iter)->delFlag(CLIENT_PENDING_WRITE);
@@ -530,7 +531,7 @@ void FlyServer::freeClientAsync(std::shared_ptr<AbstractFlyClient> flyClient) {
 void FlyServer::deleteFromPending(int fd) {
     std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
             this->clientsPendingWrite.begin();
-    for (; iter != this->clientsPendingWrite.end(); iter++) {
+    for (; iter != this->clientsPendingWrite.end(); ++iter) {
         if ((*iter)->getFd() == fd) {
             this->clientsPendingWrite.erase(iter);
             return;
@@ -541,7 +542,7 @@ void FlyServer::deleteFromPending(int fd) {
 void FlyServer::deleteFromAsyncClose(int fd) {
     std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
             this->clientsToClose.begin();
-    for (iter; iter != this->clientsToClose.end(); iter++) {
+    for (iter; iter != this->clientsToClose.end(); ++iter) {
         if ((*iter)->getFd() == fd) {
             this->clientsToClose.erase(iter);
             return;
@@ -562,7 +563,7 @@ void FlyServer::unlinkClient(std::shared_ptr<AbstractFlyClient> flyClient) {
     if (-1 != flyClient->getFd()) {
         std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
                 this->clients.begin();
-        for (iter; iter != this->clients.end(); iter++) {
+        for (iter; iter != this->clients.end(); ++iter) {
             if ((*iter)->getFd() != flyClient->getFd()) {
                 this->clients.erase(iter);
                 coordinator->getEventLoop()->deleteFileEvent(
@@ -579,7 +580,7 @@ void FlyServer::unlinkClient(std::shared_ptr<AbstractFlyClient> flyClient) {
     if (flyClient->IsPendingWrite()) {
         std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
                 this->clientsPendingWrite.begin();
-        for (iter; iter != this->clientsPendingWrite.end(); iter++) {
+        for (iter; iter != this->clientsPendingWrite.end(); ++iter) {
             this->clientsPendingWrite.erase(iter);
             break;
         }
