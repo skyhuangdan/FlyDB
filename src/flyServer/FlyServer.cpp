@@ -489,7 +489,7 @@ int FlyServer::handleClientsWithPendingWrites() {
 
     std::list<std::shared_ptr<AbstractFlyClient>>::iterator iter =
             this->clientsPendingWrite.begin();
-    for (; iter != this->clientsPendingWrite.end(); iter++) {
+    for (; iter != this->clientsPendingWrite.end(); ++iter) {
         // 先清除标记，清空了该标记才回保证该客户端再次加入到clientsPendingWrite里；
         // 否则无法加入。也就无法处理其输出
         (*iter)->delFlag(CLIENT_PENDING_WRITE);
