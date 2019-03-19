@@ -202,7 +202,7 @@ int EventLoop::processEvents(int flags) {
 
         // 处理获取到的文件事件, 处理完清空firedEvents
         std::map<int, int>::iterator iter = pollRes.begin();
-        for (iter; iter != pollRes.end(); iter++) {
+        for (iter; iter != pollRes.end(); ++iter) {
             int fd = iter->first;
             int mask = iter->second;
             FileEvent* fileEvent = &this->fileEvents[fd];
